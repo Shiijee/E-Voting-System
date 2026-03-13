@@ -19,18 +19,19 @@ body {
   background: var(--ink);
   min-height: 100vh;
   display: flex;
-  overflow: hidden;
+  overflow: hidden; /* keep scrolling confined to the right panel */
 }
 
 /* LEFT PANEL */
 .left-panel {
   width: 52%;
+  height: 100vh;
   background: var(--navy);
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 60px;
+  padding: 40px; /* tighter vertical spacing */
   overflow: hidden;
 }
 
@@ -176,12 +177,14 @@ body {
 /* RIGHT PANEL */
 .right-panel {
   flex: 1;
+  height: 100vh;
   background: var(--paper);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px 50px;
+  padding: 28px 22px;
   position: relative;
+  overflow: hidden; /* keep panel fixed without scrolling */
 }
 
 .right-panel::before {
@@ -197,17 +200,21 @@ body {
 /* LOGIN BOX */
 .login-box {
   width: 100%;
-  max-width: 400px;
+  max-width: 340px;
   animation: fadeUp 0.55s ease both;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
 }
 
 .login-header {
-  margin-bottom: 36px;
+  margin-bottom: 18px;
 }
 
 .login-header h2 {
   font-family: 'Playfair Display', serif;
-  font-size: 2.1rem;
+  font-size: 1.7rem;
   font-weight: 700;
   color: var(--ink);
   margin-bottom: 6px;
@@ -225,7 +232,7 @@ body {
   background: #ece6d9;
   border-radius: 8px;
   padding: 4px;
-  margin-bottom: 32px;
+  margin-bottom: 14px;
 }
 
 .role-btn {
@@ -250,7 +257,7 @@ body {
 
 /* FORM */
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .form-group label {

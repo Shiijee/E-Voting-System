@@ -44,10 +44,15 @@ def logout():
 @auth_bp.route("/signup", methods=["GET","POST"])
 def signup():
     if request.method == "POST":
-        name = request.form["name"]
+        name = request.form["full_name"]
+        email = request.form["email"]
         username = request.form["username"]
-        password = generate_password_hash(request.form["password"])
-        role = request.form["role"]
+        password = request.form["password"]
+        confirm_password = request.form["confirm_password"]
+
+        if password != confirm_password:
+            flash("Passwords do not match", "error")
+            return render_template("signup.html")
 
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor()
@@ -60,9 +65,13 @@ def signup():
             flash("Username already exists", "error")
             return render_template("signup.html")
 
+        # For now, set role to 'voter', student_id to email (assuming email as student_id)
+        role = 'voter'
+        student_id = email
+
         cursor.execute(
-            "INSERT INTO users (name, username, password, role) VALUES (%s, %s, %s, %s)",
-            (name, username, password, role)
+            "INSERT INTO users (student_id, name, username, password, role) VALUES (%s, %s, %s, %s, %s)",
+            (student_id, name, username, password, role)
         )
 
         conn.commit()
