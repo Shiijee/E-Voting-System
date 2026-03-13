@@ -181,7 +181,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 28px 22px;
+  padding: 12px 10px;
   position: relative;
   overflow: hidden; /* keep panel fixed without scrolling */
 }
@@ -199,7 +199,7 @@ body {
 /* LOGIN BOX */
 .login-box {
   width: 100%;
-  max-width: 340px;
+  max-width: 560px;
   animation: fadeUp 0.55s ease both;
   display: flex;
   flex-direction: column;
@@ -269,6 +269,28 @@ body {
   margin-bottom: 8px;
 }
 
+.name-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.name-row .name-field {
+  flex: 1;
+  min-width: 120px;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.form-row .form-group {
+  flex: 1;
+  min-width: 200px;
+}
 .input-wrap {
   position: relative;
 }
