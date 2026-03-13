@@ -10,9 +10,9 @@ def get_db_connection():
     )
     return connection
 
-
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder=None)
+    app.secret_key = '04a5b29e6c18f7f5035af7fa603b3fc1'  # Change this to a random secret key
 
     # Register modules
     from Voxify.Admin.routes import admin_bp

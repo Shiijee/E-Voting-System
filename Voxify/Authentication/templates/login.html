@@ -6,7 +6,7 @@
   <title>Voxify — Sign In</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+  <link rel="stylesheet" href="{{ url_for('auth.static', filename='css/login.css') }}">
 </head>
 
 <body>
@@ -68,9 +68,18 @@
       <p>Sign in to continue to your dashboard</p>
     </div>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <div class="role-selector">
       <button type="button" class="role-btn active" onclick="setRole(this,'voter')">Voter</button>
-      <button type="button" class="role-btn" onclick="setRole(this,'admin')">Administrator</button>
     </div>
 
     <!-- FLASK LOGIN FORM -->
@@ -127,7 +136,7 @@
 
 </div>
 
-<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+<script src="{{ url_for('auth.static', filename='js/login.js') }}"></script>
 
 </body>
 </html>
