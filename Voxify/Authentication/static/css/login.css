@@ -267,6 +267,26 @@ body {
   position: relative;
 }
 
+.password-wrap .toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-wrap .toggle-btn img {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
 .input-wrap svg {
   position: absolute;
   left: 14px;
@@ -283,7 +303,7 @@ body {
 
 .form-group input {
   width: 100%;
-  padding: 13px 14px 13px 42px;
+  padding: 13px 42px 13px 42px;
   background: #fff;
   border: 1.5px solid var(--border);
   border-radius: 8px;
