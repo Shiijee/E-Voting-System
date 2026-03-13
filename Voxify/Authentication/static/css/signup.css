@@ -272,12 +272,11 @@ body {
 .name-row {
   display: flex;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
-.name-row .name-field {
-  flex: 1;
-  min-width: 120px;
+.name-row .name-field .input-wrap input {
+  padding: 13px 13px 13px 13px;
 }
 
 .form-row {
