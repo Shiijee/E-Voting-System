@@ -25,13 +25,12 @@ body {
 /* LEFT PANEL */
 .left-panel {
   width: 52%;
-  height: 100vh;
   background: var(--navy);
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 40px; /* tighter vertical spacing */
+  padding: 60px;
   overflow: hidden;
 }
 
