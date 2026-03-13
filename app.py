@@ -1,16 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for
+from Voxify import create_app
 
-app = Flask(__name__)
+app = create_app()
 
-@app.route('/')
-def home():
-    return render_template('home.html')
-@app.route('/vote', methods=['POST'])
-
-def vote():
-    candidate = request.form['candidate']
-    print(f'Vote cast for: {candidate}')
-    return redirect(url_for('home'))    
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
