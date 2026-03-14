@@ -1,0 +1,112 @@
+{% extends "admin/base.html" %}
+{% block title %}Positions{% endblock %}
+{% block page_title %}Positions{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('admin.static', filename='css/positions.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">Position Management</h2>
+    <p class="page-subheading">Manage ballot positions for each election.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Add Position Form -->
+  <div class="col-lg-4">
+    <div class="card-panel sticky-top" style="top:80px">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-plus-circle-fill me-2"></i>Add Position</h5>
+      </div>
+      <div class="card-panel-body">
+        <div class="mb-3">
+          <label class="form-label-custom">Election</label>
+          <select class="form-select form-control-custom">
+            <option value="">Select election…</option>
+            {% for election in elections %}
+            <option value="{{ election.id }}">{{ election.title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label-custom">Position Title</label>
+          <input type="text" class="form-control form-control-custom"
+                 placeholder="e.g. President, Vice President…" maxlength="255"/>
+        </div>
+        <div class="mb-3">
+          <label class="form-label-custom">Description</label>
+          <textarea class="form-control form-control-custom" rows="2"
+                    placeholder="Optional description…"></textarea>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label-custom">Max Votes</label>
+            <input type="number" class="form-control form-control-custom" value="1" min="1" max="10"/>
+          </div>
+          <div class="col-6">
+            <label class="form-label-custom">Display Order</label>
+            <input type="number" class="form-control form-control-custom" value="0" min="0"/>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary-custom w-100">
+          <i class="bi bi-plus-lg me-2"></i>Add Position
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Positions Table -->
+  <div class="col-lg-8">
+    <div class="card-panel">
+      <div class="card-panel-body p-0">
+        {% if positions %}
+        <div class="table-responsive">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Position</th>
+                <th>Election</th>
+                <th>Max Votes</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for position in positions %}
+              <tr>
+                <td><span class="order-badge">{{ position.display_order }}</span></td>
+                <td>
+                  <div class="fw-600">{{ position.title }}</div>
+                  {% if position.description %}
+                  <div class="text-muted-sm">{{ position.description[:50] }}…</div>
+                  {% endif %}
+                </td>
+                <td class="text-muted-sm">{{ position.election_title or '—' }}</td>
+                <td><span class="badge-count">{{ position.max_votes }}</span></td>
+                <td>
+                  <div class="action-buttons">
+                    <button type="button" class="btn-action btn-action-delete" title="Delete">
+                      <i class="bi bi-trash3-fill"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <i class="bi bi-layout-three-columns"></i>
+          <h5>No Positions Found</h5>
+          <p>Add a position using the form on the left.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

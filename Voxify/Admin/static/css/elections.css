@@ -1,0 +1,159 @@
+/* ═══════════════════════════════════════
+   elections.css  —  Elections List
+═══════════════════════════════════════ */
+
+/* ── Page Header ─────────────────────── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.page-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.15;
+  margin: 0 0 4px;
+}
+.page-subheading {
+  font-size: 0.87rem;
+  color: var(--muted);
+  font-weight: 300;
+  margin: 0;
+}
+.page-header-actions { display: flex; align-items: center; gap: 10px; }
+
+/* ── Card Panel ──────────────────────── */
+.card-panel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(13,17,23,0.07);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.card-panel-body { padding: 24px; }
+.card-panel-body.p-0 { padding: 0; }
+
+/* ── Table ───────────────────────────── */
+.table-responsive { overflow-x: auto; }
+.table-custom { width: 100%; border-collapse: collapse; }
+
+.table-custom thead th {
+  padding: 12px 18px;
+  font-size: 0.67rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  background: #fdfaf6;
+  border-bottom: 1.5px solid var(--border);
+  white-space: nowrap;
+}
+
+.table-custom tbody td {
+  padding: 15px 18px;
+  border-bottom: 1px solid rgba(221,213,196,0.4);
+  font-size: 0.875rem;
+  color: var(--ink);
+  vertical-align: middle;
+}
+.table-custom tbody tr:hover td { background: #fdf8f0; }
+.table-custom tbody tr:last-child td { border-bottom: none; }
+
+.fw-600 { font-weight: 600; }
+.text-muted-sm { font-size: 0.8rem; color: var(--muted); display: block; margin-top: 2px; }
+
+/* ── Status Badges ───────────────────── */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 11px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-active  { background: #dcfce7; color: #166534; }
+.badge-draft   { background: #f3f4f6; color: #6b7280; }
+.badge-closed  { background: #fee2e2; color: #991b1b; }
+
+/* ── Count Badge ─────────────────────── */
+.badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+/* ── Action Buttons ──────────────────── */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-action {
+  width: 32px; height: 32px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btn-action-edit    { background: rgba(26,58,92,0.1);   color: var(--navy); }
+.btn-action-delete  { background: rgba(200,57,43,0.1);   color: var(--accent); }
+.btn-action-success { background: rgba(34,197,94,0.12);  color: #16a34a; }
+.btn-action-warn    { background: rgba(212,168,67,0.15); color: #a37a10; }
+
+.btn-action-edit:hover    { background: var(--navy); color: #fff; }
+.btn-action-delete:hover  { background: var(--accent); color: #fff; }
+.btn-action-success:hover { background: #16a34a; color: #fff; }
+.btn-action-warn:hover    { background: var(--gold); color: var(--ink); }
+
+.d-inline { display: inline !important; }
+
+/* ── Empty State ─────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 64px 24px;
+  gap: 12px;
+  color: var(--muted);
+}
+.empty-state i {
+  font-size: 3.2rem;
+  color: var(--border);
+  margin-bottom: 4px;
+}
+.empty-state h5 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+.empty-state p {
+  font-size: 0.87rem;
+  max-width: 280px;
+  margin: 0;
+}

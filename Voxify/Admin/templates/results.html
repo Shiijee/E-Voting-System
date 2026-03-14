@@ -1,0 +1,126 @@
+{% extends "admin/base.html" %}
+{% block title %}Results{% endblock %}
+{% block page_title %}Election Results{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('admin.static', filename='css/results.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">Election Results</h2>
+    <p class="page-subheading">View vote counts and candidate standings.</p>
+  </div>
+</div>
+
+<!-- Election Selector -->
+<div class="card-panel mb-4">
+  <div class="card-panel-body">
+    <div class="d-flex gap-3 align-items-center flex-wrap">
+      <label class="form-label-custom mb-0">Select Election:</label>
+      <select class="form-select form-control-custom w-auto">
+        <option value="">Choose an election…</option>
+        {% for election in elections %}
+        <option value="{{ election.id }}" {% if election_id == election.id %}selected{% endif %}>
+          {{ election.title }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+</div>
+
+{% if selected_election %}
+<!-- Summary Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card-mini">
+      <i class="bi bi-check2-square text-blue"></i>
+      <div>
+        <span class="stat-num-mini">{{ total_votes }}</span>
+        <span class="stat-lbl-mini">Total Votes Cast</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card-mini">
+      <i class="bi bi-people-fill text-green"></i>
+      <div>
+        <span class="stat-num-mini">{{ total_voters_voted }}</span>
+        <span class="stat-lbl-mini">Voters Participated</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card-mini">
+      <i class="bi bi-layout-three-columns text-amber"></i>
+      <div>
+        <span class="stat-num-mini">{{ results|length }}</span>
+        <span class="stat-lbl-mini">Positions on Ballot</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if results %}
+  {% for result in results %}
+  <div class="card-panel mb-4">
+    <div class="card-panel-header">
+      <div>
+        <h5 class="card-panel-title">
+          <i class="bi bi-trophy-fill me-2 text-amber"></i>{{ result.position.title }}
+        </h5>
+        <span class="text-muted-sm">{{ result.total_votes }} vote{{ 's' if result.total_votes != 1 }}</span>
+      </div>
+      <span class="badge-count">{{ result.candidates|length }} candidate{{ 's' if result.candidates|length != 1 }}</span>
+    </div>
+    <div class="card-panel-body">
+      <div class="results-table">
+        {% for item in result.candidates %}
+        <div class="result-row {{ 'result-row-winner' if loop.first and result.total_votes > 0 }}">
+          <div class="result-rank">
+            {% if loop.first and result.total_votes > 0 %}
+            <i class="bi bi-trophy-fill text-amber"></i>
+            {% else %}
+            <span>{{ loop.index }}</span>
+            {% endif %}
+          </div>
+          <div class="result-candidate">
+            <div class="result-avatar">{{ item.candidate.full_name[0] }}</div>
+            <div>
+              <div class="fw-600">{{ item.candidate.full_name }}</div>
+              <div class="text-muted-sm">{{ item.candidate.partylist or 'Independent' }}</div>
+            </div>
+          </div>
+          <div class="result-votes">
+            <span class="result-count">{{ item.vote_count }}</span>
+            <span class="result-pct">{{ item.percentage }}%</span>
+          </div>
+          <div class="result-bar-wrap">
+            <div class="result-bar" style="width: {{ item.percentage }}%"></div>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-muted-sm text-center py-3">No candidates for this position.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <i class="bi bi-bar-chart"></i>
+    <h5>No Results Yet</h5>
+    <p>No votes have been cast for this election yet.</p>
+  </div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+  <i class="bi bi-bar-chart-fill"></i>
+  <h5>Select an Election</h5>
+  <p>Choose an election from the dropdown above to view its results.</p>
+</div>
+{% endif %}
+{% endblock %}

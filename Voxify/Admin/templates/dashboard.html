@@ -1,0 +1,123 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('admin.static', filename='css/dashboard.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">Welcome to the Admin Panel!</h2>
+    <p class="page-subheading">Here's an overview of your election system.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('admin.create_election') }}" class="btn btn-primary-custom">
+      <i class="bi bi-plus-lg me-2"></i>New Election
+    </a>
+  </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+  <div class="stat-card stat-card-blue">
+    <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">0</span>
+      <span class="stat-label">Total Voters</span>
+    </div>
+  </div>
+  <div class="stat-card stat-card-green">
+    <div class="stat-icon"><i class="bi bi-calendar2-event-fill"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">0</span>
+      <span class="stat-label">Elections</span>
+    </div>
+  </div>
+  <div class="stat-card stat-card-amber">
+    <div class="stat-icon"><i class="bi bi-person-badge-fill"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">0</span>
+      <span class="stat-label">Candidates</span>
+    </div>
+  </div>
+  <div class="stat-card stat-card-purple">
+    <div class="stat-icon"><i class="bi bi-check2-square"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">0</span>
+      <span class="stat-label">Votes Cast</span>
+    </div>
+  </div>
+</div>
+
+<!-- Content Row -->
+<div class="row g-4 mt-1">
+  <!-- Recent Elections -->
+  <div class="col-lg-7">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-calendar2-event-fill me-2"></i>Recent Elections</h5>
+        <a href="{{ url_for('admin.view_elections') }}" class="btn-link-subtle">View all</a>
+      </div>
+      <div class="card-panel-body">
+        <div class="empty-state-sm">
+          <i class="bi bi-calendar-x"></i>
+          <p>No elections yet. <a href="{{ url_for('admin.create_election') }}">Create one</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity Logs -->
+  <div class="col-lg-5">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-activity me-2"></i>Recent Activity</h5>
+        <a href="{{ url_for('admin.view_logs') }}" class="btn-link-subtle">View all</a>
+      </div>
+      <div class="card-panel-body">
+        <div class="empty-state-sm">
+          <i class="bi bi-journal-x"></i>
+          <p>No activity yet.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card-panel mt-4">
+  <div class="card-panel-header">
+    <h5 class="card-panel-title"><i class="bi bi-lightning-charge-fill me-2"></i>Quick Actions</h5>
+  </div>
+  <div class="card-panel-body">
+    <div class="quick-actions-grid">
+      <a href="{{ url_for('admin.create_election') }}" class="quick-action-btn">
+        <i class="bi bi-calendar2-plus-fill"></i>
+        <span>New Election</span>
+      </a>
+      <a href="{{ url_for('admin.view_positions') }}" class="quick-action-btn">
+        <i class="bi bi-layout-three-columns"></i>
+        <span>Manage Positions</span>
+      </a>
+      <a href="{{ url_for('admin.create_candidate') }}" class="quick-action-btn">
+        <i class="bi bi-person-plus-fill"></i>
+        <span>Add Candidate</span>
+      </a>
+      <a href="{{ url_for('admin.view_voters') }}" class="quick-action-btn">
+        <i class="bi bi-person-check-fill"></i>
+        <span>Approve Voters</span>
+      </a>
+      <a href="{{ url_for('admin.view_results') }}" class="quick-action-btn">
+        <i class="bi bi-bar-chart-fill"></i>
+        <span>View Results</span>
+      </a>
+      <a href="{{ url_for('admin.view_logs') }}" class="quick-action-btn">
+        <i class="bi bi-journal-text"></i>
+        <span>Audit Logs</span>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

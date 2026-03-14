@@ -1,0 +1,157 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'Edit' if action == 'edit' else 'Add' }} Candidate{% endblock %}
+{% block page_title %}{{ 'Edit' if action == 'edit' else 'Add' }} Candidate{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('admin.static', filename='css/candidate_form.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">{{ 'Edit Candidate' if action == 'edit' else 'Add New Candidate' }}</h2>
+    <p class="page-subheading">{{ 'Update candidate information.' if action == 'edit' else 'Fill in the candidate details below.' }}</p>
+  </div>
+  <a href="{{ url_for('admin.view_candidates') }}" class="btn btn-outline-custom">
+    <i class="bi bi-arrow-left me-2"></i>Back to Candidates
+  </a>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-person-badge-fill me-2"></i>Candidate Information</h5>
+      </div>
+      <div class="card-panel-body">
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label-custom">Election</label>
+            <select class="form-select form-control-custom">
+              <option value="">Select election…</option>
+              {% for election in elections %}
+              <option value="{{ election.id }}">{{ election.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label-custom">Position</label>
+            <select class="form-select form-control-custom">
+              <option value="">Select position…</option>
+              {% for position in positions %}
+              <option value="{{ position.id }}">{{ position.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label-custom">Full Name</label>
+          <input type="text" class="form-control form-control-custom"
+                 placeholder="Candidate's full name" maxlength="255"
+                 value="{{ candidate.full_name if candidate and candidate.full_name else '' }}"/>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label-custom">Partylist / Affiliation</label>
+          <input type="text" class="form-control form-control-custom"
+                 placeholder="e.g. Unity Party, Progressive Alliance" maxlength="255"
+                 value="{{ candidate.partylist if candidate and candidate.partylist else '' }}"/>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label-custom">Biography</label>
+          <textarea class="form-control form-control-custom" rows="4"
+                    placeholder="Candidate's background, achievements, and advocacy…">{{ candidate.biography if candidate and candidate.biography else '' }}</textarea>
+        </div>
+
+        <!-- Photo Upload -->
+        <div class="mb-4">
+          <label class="form-label-custom">Photo</label>
+          <div class="upload-area" id="uploadArea">
+            <input type="file" id="photoInput" accept="image/*" class="upload-input"
+                   onchange="previewPhoto(this)"/>
+            <div class="upload-placeholder" id="uploadPlaceholder">
+              <i class="bi bi-cloud-arrow-up-fill"></i>
+              <p>Click to upload or drag & drop</p>
+              <small>PNG, JPG, GIF, WEBP up to 5MB</small>
+            </div>
+            <img id="photoPreview" class="photo-preview-img d-none" alt="Preview"/>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label-custom">Display Order</label>
+          <input type="number" class="form-control form-control-custom"
+                 value="{{ candidate.display_order if candidate and candidate.display_order else 0 }}"
+                 min="0" style="max-width:120px"/>
+          <div class="form-hint">Lower numbers appear first on the ballot.</div>
+        </div>
+
+        <div class="form-actions">
+          <a href="{{ url_for('admin.view_candidates') }}" class="btn btn-outline-custom">Cancel</a>
+          <button type="button" class="btn btn-primary-custom">
+            <i class="bi bi-{{ 'save' if action == 'edit' else 'person-plus-fill' }} me-2"></i>
+            {{ 'Save Changes' if action == 'edit' else 'Add Candidate' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-info-circle-fill me-2"></i>Guidelines</h5>
+      </div>
+      <div class="card-panel-body">
+        <div class="tips-list">
+          <div class="tip-item">
+            <i class="bi bi-image text-blue"></i>
+            <p>Use a clear, professional headshot photo for the candidate (max 5MB).</p>
+          </div>
+          <div class="tip-item">
+            <i class="bi bi-card-text text-green"></i>
+            <p>The biography should highlight the candidate's qualifications and platform.</p>
+          </div>
+          <div class="tip-item">
+            <i class="bi bi-sort-numeric-down text-amber"></i>
+            <p>Display order determines the sequence candidates appear on the ballot.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+function previewPhoto(input) {
+  const preview = document.getElementById('photoPreview');
+  const placeholder = document.getElementById('uploadPlaceholder');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.classList.remove('d-none');
+      placeholder.classList.add('d-none');
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+const uploadArea = document.getElementById('uploadArea');
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadArea.classList.remove('drag-over');
+  const files = e.dataTransfer.files;
+  if (files.length) {
+    document.getElementById('photoInput').files = files;
+    previewPhoto(document.getElementById('photoInput'));
+  }
+});
+</script>
+{% endblock %}
+{% endblock %}

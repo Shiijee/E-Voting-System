@@ -1,0 +1,86 @@
+{% extends "admin/base.html" %}
+{% block title %}Audit Logs{% endblock %}
+{% block page_title %}Audit Logs{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('admin.static', filename='css/logs.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">Audit Log System</h2>
+    <p class="page-subheading">A complete record of all administrative actions and system events.</p>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar mb-3">
+  <div class="d-flex gap-2 align-items-center flex-wrap w-100">
+    <div class="search-input-wrap flex-grow-1">
+      <i class="bi bi-search search-icon"></i>
+      <input type="text" class="form-control form-control-custom search-input"
+             placeholder="Search actions, details, IP addresses…"
+             value="{{ search }}"/>
+    </div>
+    <select class="form-select form-control-custom w-auto">
+      <option value="">All Actions</option>
+      {% for action_type in action_types %}
+      <option value="{{ action_type }}" {% if action_filter == action_type %}selected{% endif %}>
+        {{ action_type.replace('_', ' ').title() }}
+      </option>
+      {% endfor %}
+    </select>
+    <button type="button" class="btn btn-primary-custom">Filter</button>
+  </div>
+</div>
+
+<div class="card-panel">
+  <div class="card-panel-body p-0">
+    {% if logs %}
+    <div class="table-responsive">
+      <table class="table-custom">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Timestamp</th>
+            <th>User</th>
+            <th>Action</th>
+            <th>Details</th>
+            <th>IP Address</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td class="text-muted-sm">{{ log.id }}</td>
+            <td class="text-muted-sm text-nowrap">{{ log.created_at }}</td>
+            <td><span class="text-muted-sm">System</span></td>
+            <td>
+              <span class="log-action-badge log-action-gray">
+                {{ log.action.replace('_', ' ') if log.action else '—' }}
+              </span>
+            </td>
+            <td>
+              <span class="text-muted-sm">
+                {{ log.details[:100] if log.details else '—' }}{% if log.details and log.details|length > 100 %}…{% endif %}
+              </span>
+            </td>
+            <td>
+              <code class="ip-code">{{ log.ip_address or '—' }}</code>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-journal-x"></i>
+      <h5>No Logs Found</h5>
+      <p>No activity has been logged yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

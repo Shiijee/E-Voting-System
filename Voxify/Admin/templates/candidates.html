@@ -1,0 +1,95 @@
+{% extends "admin/base.html" %}
+{% block title %}Candidates{% endblock %}
+{% block page_title %}Candidates{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('admin.static', filename='css/candidates.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">Candidate Management</h2>
+    <p class="page-subheading">Manage all candidates across elections.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('admin.create_candidate') }}" class="btn btn-primary-custom">
+      <i class="bi bi-person-plus-fill me-2"></i>Add Candidate
+    </a>
+  </div>
+</div>
+
+<!-- Filter -->
+<div class="filter-bar mb-3">
+  <div class="d-flex gap-2 align-items-center flex-wrap">
+    <select class="form-select form-control-custom w-auto">
+      <option value="">All Elections</option>
+      {% for election in elections %}
+      <option value="{{ election.id }}">{{ election.title }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+<div class="card-panel">
+  <div class="card-panel-body p-0">
+    {% if candidates %}
+    <div class="table-responsive">
+      <table class="table-custom">
+        <thead>
+          <tr>
+            <th>Photo</th>
+            <th>Name</th>
+            <th>Position</th>
+            <th>Partylist</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for candidate in candidates %}
+          <tr>
+            <td>
+              <div class="candidate-avatar">
+                <div class="candidate-avatar-placeholder">
+                  {{ candidate.full_name[0] if candidate.full_name else '?' }}
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="fw-600">{{ candidate.full_name }}</div>
+              {% if candidate.biography %}
+              <div class="text-muted-sm">{{ candidate.biography[:60] }}{% if candidate.biography|length > 60 %}…{% endif %}</div>
+              {% endif %}
+            </td>
+            <td><span class="badge-position">{{ candidate.position_title or '—' }}</span></td>
+            <td class="text-muted-sm">{{ candidate.partylist or '—' }}</td>
+            <td>
+              <div class="action-buttons">
+                <a href="{{ url_for('admin.edit_candidate', candidate_id=candidate.id) }}"
+                   class="btn-action btn-action-edit" title="Edit">
+                  <i class="bi bi-pencil-fill"></i>
+                </a>
+                <a href="{{ url_for('admin.delete_candidate', candidate_id=candidate.id) }}"
+                   class="btn-action btn-action-delete" title="Delete">
+                  <i class="bi bi-trash3-fill"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-person-badge"></i>
+      <h5>No Candidates Found</h5>
+      <p>Add candidates to your elections to get started.</p>
+      <a href="{{ url_for('admin.create_candidate') }}" class="btn btn-primary-custom">
+        <i class="bi bi-person-plus-fill me-2"></i>Add Candidate
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

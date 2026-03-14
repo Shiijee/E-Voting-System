@@ -1,0 +1,103 @@
+{% extends "admin/base.html" %}
+{% block title %}Voters{% endblock %}
+{% block page_title %}Voters{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('admin.static', filename='css/voters.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">Voter Management</h2>
+    <p class="page-subheading">Approve, reject, and manage registered voters.</p>
+  </div>
+</div>
+
+<!-- Status Tabs -->
+<div class="status-tabs mb-4">
+  <a href="{{ url_for('admin.view_voters') }}" class="status-tab active">All</a>
+  <a href="{{ url_for('admin.view_voters') }}" class="status-tab tab-pending">Pending</a>
+  <a href="{{ url_for('admin.view_voters') }}" class="status-tab tab-approved">Approved</a>
+  <a href="{{ url_for('admin.view_voters') }}" class="status-tab tab-rejected">Rejected</a>
+</div>
+
+<!-- Search Bar -->
+<div class="filter-bar mb-3">
+  <div class="d-flex gap-2 w-100 flex-wrap">
+    <div class="search-input-wrap flex-grow-1">
+      <i class="bi bi-search search-icon"></i>
+      <input type="text" class="form-control form-control-custom search-input"
+             placeholder="Search by name, username, email, or student ID…"/>
+    </div>
+    <button type="button" class="btn btn-primary-custom">Search</button>
+  </div>
+</div>
+
+<div class="card-panel">
+  <div class="card-panel-body p-0">
+    {% if voters %}
+    <div class="table-responsive">
+      <table class="table-custom">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Voter</th>
+            <th>Student ID</th>
+            <th>Course</th>
+            <th>Year</th>
+            <th>Status</th>
+            <th>Registered</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for voter in voters %}
+          <tr>
+            <td class="text-muted-sm">{{ loop.index }}</td>
+            <td>
+              <div class="voter-cell">
+                <div class="voter-avatar-sm">{{ voter.full_name[0] if voter.full_name else '?' }}</div>
+                <div>
+                  <div class="fw-600">{{ voter.full_name or voter.username }}</div>
+                  <div class="text-muted-sm">{{ voter.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="text-muted-sm">{{ voter.student_id or '—' }}</td>
+            <td class="text-muted-sm">{{ voter.course or '—' }}</td>
+            <td class="text-muted-sm">{{ voter.year_level or '—' }}</td>
+            <td>
+              <span class="badge-status badge-{{ voter.status.lower() }}">
+                <i class="bi bi-circle-fill me-1" style="font-size:6px"></i>{{ voter.status }}
+              </span>
+            </td>
+            <td class="text-muted-sm">{{ voter.created_at }}</td>
+            <td>
+              <div class="action-buttons">
+                <button type="button" class="btn-action btn-action-success" title="Approve">
+                  <i class="bi bi-check-lg"></i>
+                </button>
+                <button type="button" class="btn-action btn-action-warn" title="Reject">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+                <button type="button" class="btn-action btn-action-delete" title="Delete Voter">
+                  <i class="bi bi-trash3-fill"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-people"></i>
+      <h5>No Voters Found</h5>
+      <p>No voters have registered yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

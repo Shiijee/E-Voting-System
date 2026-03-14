@@ -1,0 +1,263 @@
+/* ═══════════════════════════════════════
+   results.css  —  Election Results
+═══════════════════════════════════════ */
+
+/* ── Page Header ─────────────────────── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.page-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.15;
+  margin: 0 0 4px;
+}
+.page-subheading { font-size: 0.87rem; color: var(--muted); font-weight: 300; margin: 0; }
+
+/* ── Election Selector Card ──────────── */
+.card-panel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(13,17,23,0.07);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.card-panel-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.card-panel-title {
+  font-family: 'Playfair Display', serif !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+  margin: 0 !important;
+  display: flex; align-items: center;
+}
+.card-panel-body { padding: 20px 22px; }
+
+.form-label-custom {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 0;
+}
+.form-control-custom,
+.form-select {
+  padding: 9px 13px;
+  background: var(--paper);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-control-custom:focus,
+.form-select:focus {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(26,58,92,0.09);
+  background: #fff;
+}
+.w-auto { width: auto !important; }
+.d-flex { display: flex !important; }
+.gap-3  { gap: 12px !important; }
+.align-items-center { align-items: center !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+.ms-auto { margin-left: auto !important; }
+.mb-4 { margin-bottom: 24px; }
+
+/* ── Status badge ────────────────────── */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.badge-active  { background: #dcfce7; color: #166534; }
+.badge-draft   { background: #f3f4f6; color: #6b7280; }
+.badge-closed  { background: #fee2e2; color: #991b1b; }
+
+/* ── Summary Stats Row ───────────────── */
+.row { display: flex; flex-wrap: wrap; margin: 0 -8px; }
+.row.g-3 > * { padding: 0 8px; margin-bottom: 16px; }
+.row.g-4 > * { padding: 0 12px; margin-bottom: 24px; }
+.col-md-4  { width: 33.333%; }
+.col-lg-6  { width: 50%; }
+@media (max-width:768px) { .col-md-4 { width:100%; } }
+@media (max-width:992px) { .col-lg-6 { width:100%; } }
+
+.stat-card-mini {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(13,17,23,0.06);
+  transition: transform 0.2s;
+}
+.stat-card-mini:hover { transform: translateY(-2px); }
+.stat-card-mini i { font-size: 1.7rem; flex-shrink: 0; }
+.stat-num-mini {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--navy);
+  display: block;
+  line-height: 1;
+}
+.stat-lbl-mini {
+  font-size: 0.73rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  font-weight: 600;
+  display: block;
+  margin-top: 3px;
+}
+
+.text-blue  { color: #3b82f6 !important; }
+.text-green { color: #22c55e !important; }
+.text-amber { color: var(--gold) !important; }
+.mb-4 { margin-bottom: 24px; }
+.mt-1 { margin-top: 6px; }
+
+/* ── Per-Position Results Card ───────── */
+.card-panel .card-panel-body { padding: 22px; }
+
+.text-muted-sm { font-size: 0.8rem; color: var(--muted); }
+
+.badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+/* ── Result Rows ─────────────────────── */
+.results-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 72px;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  row-gap: 6px;
+  padding: 13px 15px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  align-items: center;
+  transition: all 0.2s;
+}
+.result-row:hover { border-color: var(--navy); background: #fdfaf6; }
+
+.result-row-winner {
+  border-color: var(--gold);
+  background: linear-gradient(to right, #fffdf5, #fff);
+}
+
+.result-rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  grid-row: 1 / 3;
+}
+
+.result-candidate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.result-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 0.84rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.result-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.fw-600 { font-weight: 600; }
+
+.result-votes { text-align: right; line-height: 1.2; }
+.result-count {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--navy);
+  display: block;
+}
+.result-pct {
+  font-size: 0.72rem;
+  color: var(--muted);
+  display: block;
+}
+
+.result-bar-wrap {
+  grid-column: 2 / 4;
+  height: 6px;
+  background: var(--paper);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.result-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--navy), var(--gold));
+  border-radius: 3px;
+  transition: width 0.8s ease;
+}
+
+/* ── Chart ───────────────────────────── */
+.chart-container { position: relative; padding: 8px 0; }
+.chart-container canvas { max-height: 260px; }
+
+/* ── Empty State ─────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 64px 24px;
+  gap: 12px;
+  color: var(--muted);
+}
+.empty-state i  { font-size: 3.2rem; color: var(--border); margin-bottom: 4px; }
+.empty-state h5 { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--ink); margin:0; }
+.empty-state p  { font-size: 0.87rem; max-width: 280px; margin: 0; }
