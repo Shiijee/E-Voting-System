@@ -46,8 +46,7 @@ def signup():
     if request.method == "POST":
         surname = request.form["surname"]
         firstname = request.form["firstname"]
-        middlename = request.form.get("middlename", "").strip()
-        name = f"{firstname} {middlename} {surname}".strip()
+        middlename = request.form["middlename"]
         email = request.form["email"]
         username = request.form["student_id"]
         password = request.form["password"]
@@ -75,8 +74,8 @@ def signup():
         student_id = email
 
         cursor.execute(
-            "INSERT INTO users (student_id, name, username, password, role) VALUES (%s, %s, %s, %s, %s)",
-            (student_id, name, username, password, role)
+            "INSERT INTO users (student_id, firstname, middlename, surname, username, password, role) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            (student_id, firstname, middlename, surname, username, password, role)
         )
 
         conn.commit()
