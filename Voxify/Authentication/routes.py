@@ -21,10 +21,10 @@ def login():
         cursor.close()
         conn.close()
 
-        if user and check_password_hash(user[4], password):
+        if user and check_password_hash(user[6], password):
             session['user_id'] = user[0]
-            session['role'] = user[5]
-            role = user[5]
+            session['role'] = user[7]
+            role = user[7]
 
             if role == "admin":
                 return redirect(url_for("admin.dashboard"))
