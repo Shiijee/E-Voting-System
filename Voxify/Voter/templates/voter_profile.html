@@ -1,0 +1,126 @@
+{% extends "voter/base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('voter.static', filename='css/profile.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">My Profile</h2>
+    <p class="page-subheading">View your registered voter information.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <!-- Profile Hero -->
+    <div class="profile-hero">
+      <div class="profile-avatar-lg">
+        {{ voter.full_name[0] if voter and voter.full_name else 'V' }}
+      </div>
+      <div class="profile-hero-info">
+        <div class="profile-hero-name">{{ voter.full_name if voter and voter.full_name else 'Voter' }}</div>
+        <div class="profile-hero-username">@{{ voter.username if voter and voter.username else 'username' }}</div>
+        {% set status = voter.status if voter and voter.status else 'pending' %}
+        <span class="profile-status-badge status-{{ status.lower() }}">
+          <i class="bi bi-{{ 'check2-circle' if status == 'approved' else 'hourglass-split' if status == 'pending' else 'x-circle' }}-fill"></i>
+          {{ status.title() }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Personal Info Card -->
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-person-lines-fill me-2"></i>Personal Information</h5>
+      </div>
+      <div class="card-panel-body">
+        <div class="profile-fields">
+          <div class="profile-field">
+            <div class="profile-field-label">Full Name</div>
+            <div class="profile-field-value">{{ voter.full_name if voter and voter.full_name else '—' }}</div>
+          </div>
+          <div class="profile-field">
+            <div class="profile-field-label">Username</div>
+            <div class="profile-field-value">{{ voter.username if voter and voter.username else '—' }}</div>
+          </div>
+          <div class="profile-field">
+            <div class="profile-field-label">Email Address</div>
+            <div class="profile-field-value">{{ voter.email if voter and voter.email else '—' }}</div>
+          </div>
+          <div class="profile-field">
+            <div class="profile-field-label">Student ID</div>
+            <div class="profile-field-value">{{ voter.student_id if voter and voter.student_id else '—' }}</div>
+          </div>
+          <div class="profile-field">
+            <div class="profile-field-label">Course / Program</div>
+            <div class="profile-field-value">{{ voter.course if voter and voter.course else '—' }}</div>
+          </div>
+          <div class="profile-field">
+            <div class="profile-field-label">Year Level</div>
+            <div class="profile-field-value">{{ voter.year_level if voter and voter.year_level else '—' }}</div>
+          </div>
+          <div class="profile-field">
+            <div class="profile-field-label">Registered On</div>
+            <div class="profile-field-value">{{ voter.created_at if voter and voter.created_at else '—' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <!-- Account Status -->
+    <div class="card-panel mb-4">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-shield-check me-2"></i>Account Status</h5>
+      </div>
+      <div class="card-panel-body">
+        {% set status = voter.status if voter and voter.status else 'pending' %}
+        <div class="account-status-display">
+          {% if status == 'approved' %}
+          <i class="bi bi-check-circle-fill account-status-icon" style="color:#22c55e;"></i>
+          <div class="account-status-title">Approved Voter</div>
+          <div class="account-status-desc">Your account is verified. You can participate in active elections.</div>
+          {% elif status == 'pending' %}
+          <i class="bi bi-hourglass-split account-status-icon" style="color:var(--gold);"></i>
+          <div class="account-status-title">Pending Approval</div>
+          <div class="account-status-desc">Your account is awaiting administrator approval before you can vote.</div>
+          {% else %}
+          <i class="bi bi-x-circle-fill account-status-icon" style="color:var(--accent);"></i>
+          <div class="account-status-title">Account Rejected</div>
+          <div class="account-status-desc">Your account has been rejected. Contact an administrator for assistance.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Voting Summary -->
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-bar-chart-line me-2"></i>Voting Summary</h5>
+      </div>
+      <div class="card-panel-body">
+        <div class="voting-summary-list">
+          <div class="voting-summary-row">
+            <span class="voting-summary-key">Total Votes Cast</span>
+            <span class="voting-summary-val">0</span>
+          </div>
+          <div class="voting-summary-row">
+            <span class="voting-summary-key">Elections Participated</span>
+            <span class="voting-summary-val">0</span>
+          </div>
+        </div>
+        <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);">
+          <a href="{{ url_for('voter.my_votes') }}" class="btn-outline-custom w-100" style="justify-content:center;">
+            <i class="bi bi-check2-square me-2"></i>View My Votes
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

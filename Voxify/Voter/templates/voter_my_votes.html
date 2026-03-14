@@ -1,0 +1,65 @@
+{% extends "voter/base.html" %}
+{% block title %}My Votes{% endblock %}
+{% block page_title %}My Votes{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('voter.static', filename='css/my_votes.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">My Votes</h2>
+    <p class="page-subheading">A record of every vote you have cast.</p>
+  </div>
+</div>
+
+{% if votes %}
+{% set current_election = namespace(name='') %}
+{% for vote in votes %}
+{% if vote.election_title != current_election.name %}
+{% set current_election.name = vote.election_title %}
+<div class="card-panel mb-4">
+  <div class="card-panel-header">
+    <h5 class="card-panel-title">
+      <i class="bi bi-calendar2-event-fill me-2 text-amber"></i>
+      <span class="votes-election-heading">{{ vote.election_title }}</span>
+    </h5>
+    <span class="badge-status badge-voted"><i class="bi bi-check2 me-1"></i>Voted</span>
+  </div>
+  <div class="card-panel-body">
+{% endif %}
+    <div class="vote-record">
+      <div class="vote-record-icon"><i class="bi bi-check2-circle"></i></div>
+      <div class="vote-record-info">
+        <div class="vote-record-position">{{ vote.position_title }}</div>
+        <div class="vote-record-candidate">{{ vote.candidate_name }}</div>
+        {% if vote.candidate_party %}
+        <div class="vote-record-party">{{ vote.candidate_party }}</div>
+        {% endif %}
+      </div>
+      <div class="vote-record-meta">
+        <div class="vote-record-time">{{ vote.voted_at }}</div>
+      </div>
+    </div>
+{% if loop.last or votes[loop.index].election_title != current_election.name %}
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% else %}
+<div class="card-panel">
+  <div class="card-panel-body">
+    <div class="empty-state">
+      <i class="bi bi-check2-square"></i>
+      <h5>No Votes Yet</h5>
+      <p>You haven't cast any votes yet. Head to Active Elections to participate.</p>
+      <a href="{{ url_for('voter.elections') }}" class="btn-primary-custom" style="margin-top:16px;">
+        <i class="bi bi-calendar2-event-fill me-2"></i>View Elections
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

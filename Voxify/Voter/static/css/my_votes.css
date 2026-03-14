@@ -1,0 +1,124 @@
+/* ── My Votes Page ───────────────────────────────────── */
+
+.vote-record {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(221, 213, 196, 0.4);
+  transition: background var(--ease);
+}
+
+.vote-record:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.vote-record:first-child {
+  padding-top: 0;
+}
+
+.vote-record-icon {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  background: var(--gold-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.05rem;
+  color: var(--gold);
+  flex-shrink: 0;
+  border: 1px solid rgba(212, 168, 67, 0.3);
+}
+
+.vote-record-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.vote-record-position {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.vote-record-candidate {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vote-record-party {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.vote-record-meta {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.vote-record-time {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* Election group header */
+.votes-election-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Summary stats bar at top */
+.votes-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 24px;
+  background: #fff;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.votes-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.votes-summary-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1;
+}
+
+.votes-summary-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.votes-summary-divider {
+  width: 1px;
+  height: 36px;
+  background: var(--border);
+}

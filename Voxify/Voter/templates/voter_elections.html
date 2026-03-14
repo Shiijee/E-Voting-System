@@ -1,0 +1,77 @@
+{% extends "voter/base.html" %}
+{% block title %}Active Elections{% endblock %}
+{% block page_title %}Active Elections{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('voter.static', filename='css/elections.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">Active Elections</h2>
+    <p class="page-subheading">Select an election below to cast your vote.</p>
+  </div>
+</div>
+
+{% if elections %}
+<div class="elections-grid">
+  {% for election in elections %}
+  <div class="election-card">
+    <div class="election-card-banner"></div>
+    <div class="election-card-body">
+      <div class="election-status-strip">
+        <span class="badge-status badge-{{ election.status.lower() }}">
+          <i class="bi bi-circle-fill me-1" style="font-size:6px"></i>{{ election.status }}
+        </span>
+        {% if election.has_voted %}
+        <span class="badge-status badge-voted">
+          <i class="bi bi-check2 me-1"></i>Voted
+        </span>
+        {% endif %}
+      </div>
+      <h3 class="election-card-title">{{ election.title }}</h3>
+      <p class="election-card-desc">{{ election.description or 'No description provided.' }}</p>
+      <div class="election-card-meta">
+        <div class="election-meta-row">
+          <i class="bi bi-calendar-event"></i>
+          <span>Starts: {{ election.start_time }}</span>
+        </div>
+        <div class="election-meta-row">
+          <i class="bi bi-calendar-x"></i>
+          <span>Ends: {{ election.end_time }}</span>
+        </div>
+        <div class="election-meta-row">
+          <i class="bi bi-layout-three-columns"></i>
+          <span>{{ election.position_count or 0 }} position(s)</span>
+        </div>
+      </div>
+    </div>
+    <div class="election-card-footer">
+      {% if election.has_voted %}
+      <span class="text-muted-sm"><i class="bi bi-check2-circle me-1 text-green"></i>You have voted</span>
+      <a href="{{ url_for('voter.results') }}" class="btn-outline-custom" style="padding:7px 16px;font-size:0.82rem;">
+        <i class="bi bi-bar-chart me-1"></i>Results
+      </a>
+      {% else %}
+      <span class="text-muted-sm text-navy fw-600">Ready to vote</span>
+      <a href="{{ url_for('voter.ballot', election_id=election.id) }}" class="btn-primary-custom" style="padding:8px 18px;font-size:0.82rem;">
+        <i class="bi bi-check2-square me-1"></i>Vote Now
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card-panel">
+  <div class="card-panel-body">
+    <div class="empty-state">
+      <i class="bi bi-calendar-x"></i>
+      <h5>No Active Elections</h5>
+      <p>There are no active elections available at this time. Please check back later.</p>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

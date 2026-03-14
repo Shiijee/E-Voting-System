@@ -1,12 +1,105 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voxify - Voter Dashboard</title>
-</head>
-<body>
-    <h1>Welcome to Voter Dashboard</h1>
-    <p>This is the voter dashboard page.</p>
-</body>
-</html>
+{% extends "voter/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('voter.static', filename='css/dashboard.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">Welcome back!</h2>
+    <p class="page-subheading">Here's a summary of your voting activity.</p>
+  </div>
+  <a href="{{ url_for('voter.elections') }}" class="btn-primary-custom">
+    <i class="bi bi-calendar2-event-fill me-2"></i>View Elections
+  </a>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card stat-card-blue">
+    <div class="stat-icon"><i class="bi bi-calendar2-event-fill"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">0</span>
+      <span class="stat-label">Active Elections</span>
+    </div>
+  </div>
+  <div class="stat-card stat-card-green">
+    <div class="stat-icon"><i class="bi bi-check2-square"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">0</span>
+      <span class="stat-label">Votes Cast</span>
+    </div>
+  </div>
+  <div class="stat-card stat-card-amber">
+    <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">0</span>
+      <span class="stat-label">Pending Elections</span>
+    </div>
+  </div>
+  <div class="stat-card stat-card-purple">
+    <div class="stat-icon"><i class="bi bi-bar-chart-fill"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">0</span>
+      <span class="stat-label">Results Available</span>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-calendar2-event-fill me-2"></i>Active Elections</h5>
+        <a href="{{ url_for('voter.elections') }}" class="btn-link-subtle">View all</a>
+      </div>
+      <div class="card-panel-body">
+        <div class="empty-state">
+          <i class="bi bi-calendar-x"></i>
+          <h5>No Active Elections</h5>
+          <p>There are no active elections right now. Check back later.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-check2-circle me-2"></i>My Recent Votes</h5>
+        <a href="{{ url_for('voter.my_votes') }}" class="btn-link-subtle">View all</a>
+      </div>
+      <div class="card-panel-body">
+        <div class="empty-state">
+          <i class="bi bi-journal-x"></i>
+          <p>You haven't cast any votes yet.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card-panel mt-4">
+  <div class="card-panel-header">
+    <h5 class="card-panel-title"><i class="bi bi-lightning-charge-fill me-2"></i>Quick Actions</h5>
+  </div>
+  <div class="card-panel-body">
+    <div class="quick-actions-grid">
+      <a href="{{ url_for('voter.elections') }}" class="quick-action-btn">
+        <i class="bi bi-calendar2-event-fill"></i><span>Vote Now</span>
+      </a>
+      <a href="{{ url_for('voter.my_votes') }}" class="quick-action-btn">
+        <i class="bi bi-check2-square"></i><span>My Votes</span>
+      </a>
+      <a href="{{ url_for('voter.results') }}" class="quick-action-btn">
+        <i class="bi bi-bar-chart-fill"></i><span>Results</span>
+      </a>
+      <a href="{{ url_for('voter.profile') }}" class="quick-action-btn">
+        <i class="bi bi-person-fill"></i><span>My Profile</span>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

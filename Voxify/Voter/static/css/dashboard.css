@@ -1,0 +1,101 @@
+/* ── Voter Dashboard ─────────────────────────────────── */
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.quick-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 14px;
+  border-radius: var(--radius);
+  background: var(--paper);
+  border: 1.5px solid var(--border);
+  color: var(--navy);
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all var(--ease);
+  cursor: pointer;
+}
+
+.quick-action-btn i {
+  font-size: 1.4rem;
+  color: var(--navy);
+}
+
+.quick-action-btn:hover {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(26, 58, 92, 0.25);
+}
+
+.quick-action-btn:hover i {
+  color: var(--gold);
+}
+
+.dashboard-recent-elections .election-mini-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(221, 213, 196, 0.4);
+}
+
+.dashboard-recent-elections .election-mini-row:last-child {
+  border-bottom: none;
+}
+
+.election-mini-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.election-mini-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.vote-mini-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(221, 213, 196, 0.4);
+}
+
+.vote-mini-row:last-child {
+  border-bottom: none;
+}
+
+.vote-mini-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  flex-shrink: 0;
+}
+
+.vote-mini-info {
+  flex: 1;
+}
+
+.vote-mini-candidate {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.vote-mini-position {
+  font-size: 0.75rem;
+  color: var(--muted);
+}

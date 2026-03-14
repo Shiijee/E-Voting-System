@@ -1,0 +1,79 @@
+{% extends "voter/base.html" %}
+{% block title %}Ballot{% endblock %}
+{% block page_title %}Ballot{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('voter.static', filename='css/ballot.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="ballot-header">
+  <div class="ballot-title">{{ election.title if election and election.title else 'Election Ballot' }}</div>
+  <div class="ballot-subtitle">Select one candidate per position. Review carefully before submitting.</div>
+  <div class="ballot-timer">
+    <i class="bi bi-clock"></i>
+    <span>Voting is open</span>
+  </div>
+</div>
+
+{% if positions %}
+{% for position in positions %}
+<div class="position-section">
+  <div class="position-label">
+    <span class="position-label-text">{{ position.title }}</span>
+    <span class="position-badge">
+      <i class="bi bi-person-fill"></i>
+      Select {{ position.max_votes or 1 }}
+    </span>
+  </div>
+
+  <div class="candidates-grid">
+    {% for candidate in position.candidates %}
+    <div class="candidate-card" data-group="pos-{{ position.id }}" data-candidate="{{ candidate.id }}">
+      <div class="candidate-check"><i class="bi bi-check2"></i></div>
+      <div class="candidate-photo-wrap">
+        {% if candidate.photo %}
+        <img src="{{ candidate.photo }}" alt="{{ candidate.full_name }}"/>
+        {% else %}
+        {{ candidate.full_name[0] if candidate.full_name else '?' }}
+        {% endif %}
+      </div>
+      <div class="candidate-name">{{ candidate.full_name }}</div>
+      <div class="candidate-party">{{ candidate.partylist or 'Independent' }}</div>
+    </div>
+    {% else %}
+    <p class="text-muted-sm">No candidates for this position.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+
+<div id="voteConfirmBar" class="vote-confirm-bar" style="display:none;">
+  <div>
+    <div class="vote-confirm-count"><span id="selectedCount">0</span> selection(s) made</div>
+    <div class="vote-confirm-info">Review your choices before submitting</div>
+  </div>
+  <div class="confirm-actions">
+    <button type="button" class="btn-ghost-white"
+            onclick="document.querySelectorAll('.candidate-card.selected').forEach(c=>c.classList.remove('selected')); document.getElementById('voteConfirmBar').style.display='none';">
+      <i class="bi bi-x-lg"></i> Clear
+    </button>
+    <button type="button" class="btn-gold" onclick="alert('Ballot submission coming soon.')">
+      <i class="bi bi-check2-square me-2"></i>Submit Ballot
+    </button>
+  </div>
+</div>
+
+{% else %}
+<div class="card-panel">
+  <div class="card-panel-body">
+    <div class="empty-state">
+      <i class="bi bi-layout-three-columns"></i>
+      <h5>No Positions Available</h5>
+      <p>This election has no ballot positions configured yet.</p>
+      <a href="{{ url_for('voter.elections') }}" class="btn-outline-custom" style="margin-top:16px;">Back to Elections</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
