@@ -44,15 +44,20 @@ def logout():
 @auth_bp.route("/signup", methods=["GET","POST"])
 def signup():
     if request.method == "POST":
-        name = request.form["full_name"]
+        surname = request.form["surname"]
+        firstname = request.form["firstname"]
+        middlename = request.form.get("middlename", "").strip()
+        name = f"{firstname} {middlename} {surname}".strip()
         email = request.form["email"]
-        username = request.form["username"]
+        username = request.form["student_id"]
         password = request.form["password"]
         confirm_password = request.form["confirm_password"]
 
         if password != confirm_password:
             flash("Passwords do not match", "error")
             return render_template("signup.html")
+
+        password = generate_password_hash(password)
 
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor()
