@@ -32,6 +32,9 @@ def login():
             elif role == "voter":
                 return redirect(url_for("voter.dashboard"))
 
+            elif role == "superadmin":
+                return redirect(url_for("super_admin.dashboard"))
+
         flash("Invalid username or password", "error")
 
     return render_template("login.html")

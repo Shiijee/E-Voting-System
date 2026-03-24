@@ -1,0 +1,134 @@
+
+{% extends "base.html" %}
+{% block title %}System Logs{% endblock %}
+{% block page_title %}System Logs{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('super_admin.static', filename='css/system_logs.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">System Log Viewer</h2>
+    <p class="page-subheading">Complete record of all system-level events and super admin actions.</p>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar mb-3">
+  <div class="d-flex gap-2 align-items-center flex-wrap w-100">
+    <div class="search-input-wrap flex-grow-1">
+      <i class="bi bi-search search-icon"></i>
+      <input type="text" class="form-control form-control-custom search-input"
+             placeholder="Search actions, details, IP addresses…"
+             value="{{ search or '' }}"/>
+    </div>
+    <select class="form-select form-control-custom w-auto">
+      <option value="">All Actions</option>
+      {% if action_types %}
+        {% for action_type in action_types %}
+        <option value="{{ action_type }}" {% if action_filter == action_type %}selected{% endif %}>
+          {{ action_type.replace('_', ' ').title() }}
+        </option>
+        {% endfor %}
+      {% endif %}
+    </select>
+    <select class="form-select form-control-custom w-auto">
+      <option value="">All Users</option>
+      <option value="super_admin">Super Admin</option>
+      <option value="admin">Admin</option>
+      <option value="system">System</option>
+    </select>
+    <button type="button" class="btn-primary-custom">
+      <i class="bi bi-funnel-fill"></i>Filter
+    </button>
+  </div>
+</div>
+
+<div class="card-panel">
+  <div class="card-panel-body p-0">
+    {% if logs %}
+    <div class="table-responsive">
+      <table class="table-custom">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Timestamp</th>
+            <th>User</th>
+            <th>Role</th>
+            <th>Action</th>
+            <th>Details</th>
+            <th>IP Address</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td class="text-muted-sm">{{ log.id }}</td>
+            <td class="text-muted-sm text-nowrap">{{ log.created_at }}</td>
+            <td>
+              <span class="fw-500">{{ log.user or 'System' }}</span>
+            </td>
+            <td>
+              <span class="badge-status badge-super" style="font-size:0.7rem;">
+                {{ log.role or 'System' }}
+              </span>
+            </td>
+            <td>
+              <span class="log-action-badge
+                {% if log.action and ('create' in log.action.lower() or 'add' in log.action.lower()) %}log-action-green
+                {% elif log.action and ('delete' in log.action.lower() or 'remove' in log.action.lower()) %}log-action-red
+                {% elif log.action and ('update' in log.action.lower() or 'edit' in log.action.lower()) %}log-action-amber
+                {% elif log.action and ('login' in log.action.lower() or 'auth' in log.action.lower()) %}log-action-blue
+                {% elif log.action and 'super' in log.action.lower() %}log-action-purple
+                {% else %}log-action-gray{% endif %}">
+                {{ log.action.replace('_', ' ') if log.action else '—' }}
+              </span>
+            </td>
+            <td>
+              <span class="text-muted-sm">
+                {{ log.details[:100] if log.details else '—' }}{% if log.details and log.details|length > 100 %}…{% endif %}
+              </span>
+            </td>
+            <td>
+              <code class="ip-code">{{ log.ip_address or '—' }}</code>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages and total_pages > 1 %}
+    <div class="pagination-wrapper">
+      <span class="pagination-info">
+        Showing {{ ((current_page - 1) * per_page) + 1 }}–{{ [current_page * per_page, total_logs] | min }} of {{ total_logs }} entries
+      </span>
+      <ul class="pagination-custom">
+        <li class="{% if current_page == 1 %}disabled{% endif %}">
+          <a href="?page={{ current_page - 1 }}"><i class="bi bi-chevron-left"></i></a>
+        </li>
+        {% for p in range(1, total_pages + 1) %}
+        <li class="{% if p == current_page %}active{% endif %}">
+          <a href="?page={{ p }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        <li class="{% if current_page == total_pages %}disabled{% endif %}">
+          <a href="?page={{ current_page + 1 }}"><i class="bi bi-chevron-right"></i></a>
+        </li>
+      </ul>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-journal-x"></i>
+      <h5>No Logs Found</h5>
+      <p>No system events have been recorded yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

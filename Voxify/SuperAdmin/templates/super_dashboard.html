@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('super_admin.static', filename='css/super_dashboard.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">Super Admin Dashboard</h2>
+    <p class="page-subheading">System-wide overview and administrative controls.</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('super_admin.manage_admins') }}" class="btn-primary-custom">
+      <i class="bi bi-person-plus-fill"></i>Add Admin
+    </a>
+  </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+  <div class="stat-card stat-card-purple">
+    <div class="stat-icon"><i class="bi bi-person-gear"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">{{ total_admins or 0 }}</span>
+      <span class="stat-label">Total Admins</span>
+      <span class="stat-sub">Across all roles</span>
+    </div>
+  </div>
+  <div class="stat-card stat-card-blue">
+    <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">{{ total_voters or 0 }}</span>
+      <span class="stat-label">Total Voters</span>
+      <span class="stat-sub">Registered accounts</span>
+    </div>
+  </div>
+  <div class="stat-card stat-card-green">
+    <div class="stat-icon"><i class="bi bi-calendar2-event-fill"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">{{ total_elections or 0 }}</span>
+      <span class="stat-label">Elections</span>
+      <span class="stat-sub">All time</span>
+    </div>
+  </div>
+  <div class="stat-card stat-card-amber">
+    <div class="stat-icon"><i class="bi bi-journal-text"></i></div>
+    <div class="stat-info">
+      <span class="stat-number">{{ total_logs or 0 }}</span>
+      <span class="stat-label">Log Entries</span>
+      <span class="stat-sub">System events</span>
+    </div>
+  </div>
+</div>
+
+<!-- Content Row -->
+<div class="row g-4 mt-1">
+  <!-- Recent Admins -->
+  <div class="col-lg-7">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-person-gear me-2"></i>Recent Admins</h5>
+        <a href="{{ url_for('super_admin.manage_admins') }}" class="btn-link-subtle">View all</a>
+      </div>
+      <div class="card-panel-body p-0">
+        {% if recent_admins %}
+        <div class="table-responsive">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Admin</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for admin in recent_admins %}
+              <tr>
+                <td>
+                  <div class="admin-cell">
+                    <div class="admin-avatar-sm">{{ admin.full_name[0] if admin.full_name else 'A' }}</div>
+                    <div>
+                      <div class="fw-600">{{ admin.full_name or admin.username }}</div>
+                      <div class="text-muted-sm">{{ admin.email }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="badge-status badge-super">{{ admin.role or 'Admin' }}</span></td>
+                <td>
+                  <span class="badge-status badge-{{ admin.status.lower() if admin.status else 'active' }}">
+                    <i class="bi bi-circle-fill me-1" style="font-size:6px"></i>
+                    {{ admin.status or 'Active' }}
+                  </span>
+                </td>
+                <td class="text-muted-sm">{{ admin.created_at }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state-sm">
+          <i class="bi bi-person-x"></i>
+          <p>No admins found. <a href="{{ url_for('super_admin.manage_admins') }}">Add one</a></p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent System Logs -->
+  <div class="col-lg-5">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-activity me-2"></i>Recent Activity</h5>
+        <a href="{{ url_for('super_admin.system_logs') }}" class="btn-link-subtle">View all</a>
+      </div>
+      <div class="card-panel-body">
+        {% if recent_logs %}
+        <div class="activity-feed">
+          {% for log in recent_logs %}
+          <div class="activity-item">
+            <div class="activity-dot activity-dot-purple"></div>
+            <div class="activity-content">
+              <span class="activity-action">{{ log.action.replace('_', ' ').title() if log.action else 'System Event' }}</span>
+              <span class="activity-detail">{{ log.details[:60] if log.details else '—' }}{% if log.details and log.details|length > 60 %}…{% endif %}</span>
+            </div>
+            <span class="activity-time">{{ log.created_at }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state-sm">
+          <i class="bi bi-journal-x"></i>
+          <p>No activity logged yet.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card-panel mt-4">
+  <div class="card-panel-header">
+    <h5 class="card-panel-title"><i class="bi bi-lightning-charge-fill me-2"></i>Quick Actions</h5>
+  </div>
+  <div class="card-panel-body">
+    <div class="quick-actions-grid">
+      <a href="{{ url_for('super_admin.manage_admins') }}" class="quick-action-btn">
+        <i class="bi bi-person-plus-fill"></i>
+        <span>Add Admin</span>
+      </a>
+      <a href="{{ url_for('super_admin.manage_admins') }}" class="quick-action-btn">
+        <i class="bi bi-person-gear"></i>
+        <span>Manage Admins</span>
+      </a>
+      <a href="{{ url_for('super_admin.system_logs') }}" class="quick-action-btn">
+        <i class="bi bi-journal-text"></i>
+        <span>System Logs</span>
+      </a>
+      <a href="{{ url_for('super_admin.system_logs') }}" class="quick-action-btn">
+        <i class="bi bi-shield-check"></i>
+        <span>Audit Trail</span>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

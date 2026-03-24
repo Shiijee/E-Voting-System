@@ -18,10 +18,12 @@ def create_app():
     from Voxify.Admin.routes import admin_bp
     from Voxify.Voter.routes import voter_bp
     from Voxify.Authentication.routes import auth_bp
+    from Voxify.SuperAdmin.routes import superadmin_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(voter_bp, url_prefix="/voter")
+    app.register_blueprint(superadmin_bp, url_prefix="/superadmin")
 
     # make db accessible in other files
     app.config["get_db_connection"] = get_db_connection
