@@ -1,11 +1,10 @@
-from flask import Flask, render_template, redirect, url_for, session
-from Voxify.__init__ import create_app
+from flask import redirect, url_for, session
+from Voxify import create_app
 
 app = create_app()
 
 @app.route('/')
 def home():
-    # If user is logged in, redirect to their dashboard
     if 'user_id' in session:
         role = session.get('role')
         if role == 'admin':
@@ -14,9 +13,7 @@ def home():
             return redirect(url_for('voter.dashboard'))
         elif role == 'superadmin':
             return redirect(url_for('super_admin.dashboard'))
-    
-    # Default: Go to VOTER login page
-    return redirect(url_for("auth.voter_login"))
+    return redirect(url_for('auth.voter_login'))
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)

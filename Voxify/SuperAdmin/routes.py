@@ -4,8 +4,9 @@ from Voxify.Authentication.routes import superadmin_required
 
 superadmin_bp = Blueprint('super_admin', __name__,
                           template_folder='templates',
-                          static_folder='static', 
+                          static_folder='static',
                           static_url_path='/superadmin/static')
+
 
 @superadmin_bp.route("/")
 @superadmin_bp.route("/dashboard")
@@ -13,27 +14,28 @@ superadmin_bp = Blueprint('super_admin', __name__,
 def dashboard():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
-    
+
     cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='admin'")
     total_admins = cursor.fetchone()['total']
-    
+
     cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter'")
     total_voters = cursor.fetchone()['total']
-    
+
     cursor.execute("SELECT COUNT(*) as total FROM elections")
     total_elections = cursor.fetchone()['total']
-    
+
     cursor.execute("SELECT COUNT(*) as total FROM votes")
     total_votes = cursor.fetchone()['total']
-    
+
     cursor.close()
     conn.close()
-    
-    return render_template('super_dashboard.html', 
-                         total_admins=total_admins,
-                         total_voters=total_voters,
-                         total_elections=total_elections,
-                         total_votes=total_votes)
+
+    return render_template('super_dashboard.html',
+                           total_admins=total_admins,
+                           total_voters=total_voters,
+                           total_elections=total_elections,
+                           total_votes=total_votes)
+
 
 @superadmin_bp.route("/manage-admins")
 @superadmin_required
@@ -46,6 +48,7 @@ def manage_admins():
     conn.close()
     return render_template('manage_admins.html', admins=admins)
 
+
 @superadmin_bp.route("/create-admin", methods=["POST"])
 @superadmin_required
 def create_admin():
@@ -53,12 +56,11 @@ def create_admin():
     surname = request.form["surname"]
     username = request.form["username"]
     password = request.form["password"]
-    
+
     hashed_password = generate_password_hash(password)
-    
+
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor()
-    
     try:
         cursor.execute(
             "INSERT INTO users (firstname, surname, username, password, role, is_approved) VALUES (%s, %s, %s, %s, 'admin', TRUE)",
@@ -71,8 +73,9 @@ def create_admin():
     finally:
         cursor.close()
         conn.close()
-    
+
     return redirect(url_for('super_admin.manage_admins'))
+
 
 @superadmin_bp.route("/delete-admin/<int:admin_id>")
 @superadmin_required
@@ -86,13 +89,14 @@ def delete_admin(admin_id):
     flash("Admin deleted!", "success")
     return redirect(url_for('super_admin.manage_admins'))
 
+
 @superadmin_bp.route("/system-logs")
 @superadmin_required
 def system_logs():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT l.*, u.firstname, u.surname, u.username 
+        SELECT l.*, u.firstname, u.surname, u.username
         FROM system_logs l
         LEFT JOIN users u ON l.user_id = u.id
         ORDER BY l.created_at DESC
