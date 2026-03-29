@@ -127,14 +127,14 @@
 </div>
 
 <!-- Add Admin Modal -->
-<div class="modal fade" id="addAdminModal" tabindex="-1">
+<div class="modal fade" id="addAdminModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-person-plus-fill me-2"></i>Add New Admin</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form method="POST" action="{{ url_for('super_admin.manage_admins') }}">
+      <form method="POST" action="{{ url_for('super_admin.create_admin') }}">
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label-custom required">Full Name</label>
