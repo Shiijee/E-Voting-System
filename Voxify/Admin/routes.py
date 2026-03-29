@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
+﻿from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
 from Voxify.Authentication.routes import admin_required
 
 admin_bp = Blueprint('admin', __name__,
@@ -303,13 +303,22 @@ def delete_candidate(candidate_id):
 @admin_bp.route("/voters")
 @admin_required
 def view_voters():
+    status = request.args.get('status', 'all')
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM users WHERE role='voter' ORDER BY created_at DESC")
+
+    base_query = "SELECT *, CASE WHEN is_approved=TRUE THEN 'Approved' ELSE 'Pending' END AS status FROM users WHERE role='voter'"
+    if status == 'pending':
+        cursor.execute(base_query + " AND is_approved=FALSE ORDER BY created_at DESC")
+    elif status == 'approved':
+        cursor.execute(base_query + " AND is_approved=TRUE ORDER BY created_at DESC")
+    else:
+        cursor.execute(base_query + " ORDER BY created_at DESC")
+
     voters = cursor.fetchall()
     cursor.close()
     conn.close()
-    return render_template('voters.html', voters=voters)
+    return render_template('voters.html', voters=voters, status=status)
 
 @admin_bp.route("/voters/<int:voter_id>/approve")
 @admin_required

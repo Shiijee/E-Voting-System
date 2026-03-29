@@ -16,11 +16,14 @@
 
 <!-- Status Tabs -->
 <div class="status-tabs mb-4">
-  <a href="{{ url_for('admin.view_voters') }}" class="status-tab active">All</a>
-  <a href="{{ url_for('admin.view_voters') }}" class="status-tab tab-pending">Pending</a>
-  <a href="{{ url_for('admin.view_voters') }}" class="status-tab tab-approved">Approved</a>
-  <a href="{{ url_for('admin.view_voters') }}" class="status-tab tab-rejected">Rejected</a>
+  <a href="{{ url_for('admin.view_voters', status='all') }}" class="status-tab {% if status == 'all' %}active{% endif %}">All</a>
+  <a href="{{ url_for('admin.view_voters', status='pending') }}" class="status-tab tab-pending {% if status == 'pending' %}active{% endif %}">Pending</a>
+  <a href="{{ url_for('admin.view_voters', status='approved') }}" class="status-tab tab-approved {% if status == 'approved' %}active{% endif %}">Approved</a>
+  <a href="{{ url_for('admin.view_voters', status='rejected') }}" class="status-tab tab-rejected">Rejected</a>
 </div>
+{% if status == 'rejected' %}
+  <div class="alert alert-info">Rejected voters are automatically removed from the system and do not appear in pending/approved lists.</div>
+{% endif %}
 
 <!-- Search Bar -->
 <div class="filter-bar mb-3">
@@ -39,6 +42,16 @@
     {% if voters %}
     <div class="table-responsive">
       <table class="table-custom">
+        <colgroup>
+          <col style="width: 4%;" />
+          <col style="width: 28%;" />
+          <col style="width: 14%;" />
+          <col style="width: 14%;" />
+          <col style="width: 11%;" />
+          <col style="width: 15%;" />
+          <col style="width: 8%;" />
+          <col style="width: 6%;" />
+        </colgroup>
         <thead>
           <tr>
             <th>#</th>
@@ -46,8 +59,8 @@
             <th>Student ID</th>
             <th>Course</th>
             <th>Year</th>
-            <th>Status</th>
             <th>Registered</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -65,25 +78,31 @@
               </div>
             </td>
             <td class="text-muted-sm">{{ voter.student_id or '—' }}</td>
-            <td class="text-muted-sm">{{ voter.course or '—' }}</td>
-            <td class="text-muted-sm">{{ voter.year_level or '—' }}</td>
+            <td class="text-muted-sm">{{ voter.course or voter.department or '—' }}</td>
+            <td class="text-muted-sm">{{ voter.year_level or voter.year or '—' }}</td>
+            <td class="text-muted-sm">{{ voter.created_at or '—' }}</td>
             <td>
               <span class="badge-status badge-{{ voter.status.lower() }}">
                 <i class="bi bi-circle-fill me-1" style="font-size:6px"></i>{{ voter.status }}
               </span>
             </td>
-            <td class="text-muted-sm">{{ voter.created_at }}</td>
             <td>
               <div class="action-buttons">
-                <button type="button" class="btn-action btn-action-success" title="Approve">
+                {% if not voter.is_approved %}
+                <a href="{{ url_for('admin.approve_voter', voter_id=voter.id) }}" class="btn-action btn-action-success" title="Approve" data-confirm data-confirm-title="Approve Voter" data-confirm-message="Are you sure you want to approve this voter?">
+                  <i class="bi bi-check-lg"></i>
+                </a>
+                <a href="{{ url_for('admin.reject_voter', voter_id=voter.id) }}" class="btn-action btn-action-warn" title="Reject" data-confirm data-confirm-title="Reject Voter" data-confirm-message="Rejecting will remove this voter from the system. Continue?">
+                  <i class="bi bi-x-lg"></i>
+                </a>
+                {% else %}
+                <button type="button" class="btn-action btn-action-success" title="Approved" disabled>
                   <i class="bi bi-check-lg"></i>
                 </button>
-                <button type="button" class="btn-action btn-action-warn" title="Reject">
-                  <i class="bi bi-x-lg"></i>
-                </button>
-                <button type="button" class="btn-action btn-action-delete" title="Delete Voter">
+                {% endif %}
+                <a href="{{ url_for('admin.delete_voter', voter_id=voter.id) }}" class="btn-action btn-action-delete" title="Delete Voter" data-confirm data-confirm-title="Delete Voter" data-confirm-message="This will permanently delete the voter account. Continue?">
                   <i class="bi bi-trash3-fill"></i>
-                </button>
+                </a>
               </div>
             </td>
           </tr>
