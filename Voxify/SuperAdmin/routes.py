@@ -52,12 +52,6 @@ def manage_admins():
 @superadmin_bp.route("/create-admin", methods=["POST"])
 @superadmin_required
 def create_admin():
-<<<<<<< HEAD
-    firstname = request.form["firstname"]
-    surname = request.form["surname"]
-    username = request.form["username"]
-    password = request.form["password"]
-=======
     full_name = request.form.get("full_name", "").strip()
     username = request.form.get("username", "").strip()
     email = request.form.get("email", "").strip()
@@ -71,16 +65,11 @@ def create_admin():
     name_parts = full_name.split()
     firstname = name_parts[0]
     surname = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
->>>>>>> 099c96667441255deeba99d51f2a0df858939746
 
     hashed_password = generate_password_hash(password)
 
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor()
-<<<<<<< HEAD
-=======
-
->>>>>>> 099c96667441255deeba99d51f2a0df858939746
     try:
         cursor.execute(
             "INSERT INTO users (firstname, surname, username, password, role, email, is_approved) VALUES (%s, %s, %s, %s, %s, %s, TRUE)",
