@@ -129,7 +129,7 @@
 
 /* ── Table ───────────────────────────── */
 .table-responsive { overflow-x: auto; }
-.table-custom { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.table-custom { width: 100%; border-collapse: collapse; }
 .table-custom th, .table-custom td {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -150,12 +150,15 @@
   padding: 13px 16px;
   border-bottom: 1px solid rgba(221,213,196,0.4);
   font-size: 0.875rem;
+  color: var(--muted);
   vertical-align: middle;
 }
+/* Voter name column should be full ink color */
+.table-custom tbody td .fw-600 { color: var(--ink); }
 .table-custom tbody tr:hover td { background: #fdf8f0; }
 .table-custom tbody tr:last-child td { border-bottom: none; }
 .fw-600 { font-weight: 600; }
-.text-muted-sm { font-size: 0.8rem; color: var(--muted); display: block; margin-top: 2px; }
+.text-muted-sm { font-size: 0.8rem; color: var(--muted); }
 
 /* ── Voter Cell ──────────────────────── */
 .voter-cell {
