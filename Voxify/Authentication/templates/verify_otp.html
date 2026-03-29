@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voxify — Verify OTP</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('auth.static', filename='css/login.css') }}">
+</head>
+
+<body>
+
+<!-- LEFT PANEL -->
+<div class="left-panel">
+
+  <div class="brand">
+    <div class="brand-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <span class="brand-name">Voxify</span>
+    </div>
+    <div class="brand-tagline">E-Voting Platform</div>
+  </div>
+
+  <div class="ballot-bg">
+    <svg viewBox="0 0 100 120">
+      <rect x="10" y="5" width="80" height="110" rx="6"/>
+      <rect x="22" y="22" width="56" height="7" rx="3"/>
+      <rect x="22" y="37" width="56" height="7" rx="3"/>
+      <rect x="22" y="52" width="38" height="7" rx="3"/>
+      <rect x="22" y="70" width="24" height="24" rx="3"/>
+      <path d="M28 82 l5 5 l10-10"/>
+    </svg>
+  </div>
+
+  <div class="hero-text">
+    <h1>Verify Your<br><em>Identity</em><br>Securely.</h1>
+    <p>Enter the 6-digit code sent to your email to complete the verification process.</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-num">6-digit</div>
+      <div class="stat-label">OTP</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">5 min</div>
+      <div class="stat-label">Expiry</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">3</div>
+      <div class="stat-label">Attempts</div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- RIGHT PANEL -->
+<div class="right-panel">
+
+  <div class="login-box">
+
+    <div class="login-header">
+      <h2>Verify OTP</h2>
+      {% if purpose == 'signup' %}
+        <p>Enter the code sent to your email to complete registration</p>
+      {% else %}
+        <p>Enter the code sent to your email to complete login</p>
+      {% endif %}
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- OTP VERIFICATION FORM -->
+    <form method="POST" action="{{ url_for('auth.verify_otp', purpose=purpose) }}">
+
+      <div class="form-group">
+        <label>One-Time Password</label>
+        <div class="input-wrap">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0110 0v4"/>
+          </svg>
+          <input type="text" name="otp" placeholder="Enter 6-digit OTP" maxlength="6" pattern="[0-9]{6}" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-login">Verify & Continue →</button>
+
+      <p class="login-link">
+        Didn't receive the code?
+        <a href="#" onclick="resendOTP()">Resend OTP</a>
+      </p>
+
+      {% if purpose == 'signup' %}
+        <p class="login-link">
+          <a href="{{ url_for('auth.signup') }}">← Back to Sign Up</a>
+        </p>
+      {% else %}
+        <p class="login-link">
+          <a href="{{ url_for('auth.voter_login') }}">← Back to Login</a>
+        </p>
+      {% endif %}
+
+    </form>
+
+    <div class="divider">secured by</div>
+
+    <div class="secure-badge">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      OTP Protected · Time-Limited Access
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// Auto-focus OTP input
+document.addEventListener('DOMContentLoaded', function() {
+    const otpInput = document.querySelector('input[name="otp"]');
+    if (otpInput) {
+        otpInput.focus();
+    }
+});
+
+// Allow only numeric input
+document.querySelector('input[name="otp"]').addEventListener('input', function(e) {
+    this.value = this.value.replace(/[^0-9]/g, '');
+});
+
+// Prevent form resubmission on page refresh
+if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+}
+
+function resendOTP() {
+    // For now, just show an alert. In production, implement resend functionality
+    alert('Resend functionality not implemented yet. Please try again later.');
+}
+</script>
+
+</body>
+</html>

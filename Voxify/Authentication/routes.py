@@ -3,34 +3,33 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
 import logging
+from ..utils.otp import (
+    generate_otp, send_otp_email, store_otp_in_session,
+    verify_otp_from_session, clear_otp_from_session,
+    set_trusted_device, check_trusted_device
+)
 
-auth_bp = Blueprint('auth', __name__, template_folder='templates', static_folder='static')
+auth_bp = Blueprint('auth', __name__, template_folder='templates', static_folder='static', static_url_path='/auth/static')
 
-# Setup logging
 logging.basicConfig(level=logging.DEBUG)
 
+# ============================================
+# DECORATORS
+# ============================================
 
-# ─────────────────────────────────────────────
-# Decorator: require a valid session
-# ─────────────────────────────────────────────
 def login_required(f):
-    """Redirect to login if no valid session exists.
-    Saves the requested URL so the user is returned there after login."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session or 'role' not in session:
-            # Clear any partial session data
             session.clear()
-            # Remember where the user was trying to go
             session['next'] = request.url
             flash("Please log in to access that page.", "warning")
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('auth.voter_login'))
         
-        # Verify user still exists in database
         try:
             conn = current_app.config["get_db_connection"]()
             cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT id, role FROM users WHERE id=%s", (session['user_id'],))
+            cursor.execute("SELECT id, role, is_approved FROM users WHERE id=%s", (session['user_id'],))
             user = cursor.fetchone()
             cursor.close()
             conn.close()
@@ -38,9 +37,13 @@ def login_required(f):
             if not user:
                 session.clear()
                 flash("Your session has expired. Please log in again.", "warning")
-                return redirect(url_for('auth.login'))
+                return redirect(url_for('auth.voter_login'))
             
-            # Update session role if changed in database
+            if user['role'] == 'voter' and not user.get('is_approved', False):
+                session.clear()
+                flash("Your account is pending approval. Please wait for admin approval.", "warning")
+                return redirect(url_for('auth.voter_login'))
+            
             if user['role'] != session.get('role'):
                 session['role'] = user['role']
                 
@@ -50,227 +53,375 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-
-# ─────────────────────────────────────────────
-# Role-specific decorators (optional helpers)
-# ─────────────────────────────────────────────
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session or 'role' not in session:
-            session['next'] = request.url
-            flash("Please log in to access that page.", "warning")
-            return redirect(url_for('auth.login'))
-        if session.get('role') != 'admin':
+        if 'user_id' not in session or session.get('role') not in ['admin', 'superadmin']:
             flash("Access denied. Admin privileges required.", "error")
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('auth.admin_login'))
         return f(*args, **kwargs)
     return decorated_function
-
 
 def voter_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session or 'role' not in session:
-            session['next'] = request.url
-            flash("Please log in to access that page.", "warning")
-            return redirect(url_for('auth.login'))
-        if session.get('role') != 'voter':
+        if 'user_id' not in session or session.get('role') != 'voter':
             flash("Access denied. Voter privileges required.", "error")
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('auth.voter_login'))
         return f(*args, **kwargs)
     return decorated_function
-
 
 def superadmin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session or 'role' not in session:
-            session['next'] = request.url
-            flash("Please log in to access that page.", "warning")
-            return redirect(url_for('auth.login'))
-        if session.get('role') != 'superadmin':
+        if 'user_id' not in session or session.get('role') != 'superadmin':
             flash("Access denied. Super Admin privileges required.", "error")
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('auth.admin_login'))
         return f(*args, **kwargs)
     return decorated_function
 
+# ============================================
+# MAIN LOGIN ROUTES
+# ============================================
 
-# ─────────────────────────────────────────────
-# Routes
-# ─────────────────────────────────────────────
-@auth_bp.route("/login", methods=["GET", "POST"])
-def login():
-    print(f"Login route - Session before: {dict(session)}")  # Debug
-    
-    # If user is already logged in, redirect to dashboard
-    if 'user_id' in session and 'role' in session:
-        role = session.get('role')
-        print(f"User already logged in as {role}")  # Debug
-        if role == 'admin':
-            return redirect(url_for('admin.dashboard'))
-        elif role == 'voter':
+@auth_bp.route("/", methods=["GET", "POST"])
+@auth_bp.route("/voter-login", methods=["GET", "POST"])
+def voter_login():
+    """Main voter login page - Default entry point"""
+    # If already logged in as voter, go to dashboard
+    if 'user_id' in session:
+        if session.get('role') == 'voter':
             return redirect(url_for('voter.dashboard'))
-        elif role == 'superadmin':
-            return redirect(url_for('super_admin.dashboard'))
+        elif session.get('role') in ['admin', 'superadmin']:
+            return redirect(url_for('admin.dashboard'))
     
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        username = request.form.get("username")
+        password = request.form.get("password")
         
-        print(f"Attempting login for: {username}")  # Debug
-
+        print(f"Login attempt - Username: {username}")  # Debug
+        
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM users WHERE username=%s", (username,))
+        cursor.execute(
+            "SELECT * FROM users WHERE username=%s AND role='voter'", 
+            (username,)
+        )
         user = cursor.fetchone()
         cursor.close()
         conn.close()
+        
+        if user:
+            print(f"User found: {user['username']}, Role: {user['role']}")  # Debug
+            print(f"Stored password hash: {user['password'][:50]}...")  # Debug
+            
+            # Check password with error handling
+            try:
+                if check_password_hash(user['password'], password):
+                    print("Password verified successfully!")
+                    
+                    if not user.get('is_approved', False):
+                        flash("Your account is pending approval. Please contact the administrator.", "error")
+                        return render_template("voter_login.html")
+                    
+                    # Check if device is trusted - skip OTP if trusted
+                    if check_trusted_device(user['id']):
+                        session.clear()
+                        session['user_id'] = user['id']
+                        session['role'] = user['role']
+                        session['username'] = user['username']
+                        session['fullname'] = f"{user['firstname']} {user['surname']}"
+                        session.permanent = True
+                        flash(f"Welcome, {user['firstname']}!", "success")
+                        return redirect(url_for('voter.dashboard'))
+                    
+                    # Not trusted - send OTP
+                    email = user.get('email')
+                    if not email or '@' not in str(email):
+                        flash("No valid email found for your account. Please contact the administrator.", "error")
+                        return render_template("voter_login.html")
+                    
+                    otp = generate_otp()
+                    store_otp_in_session(otp, 'voter_login', {
+                        'user_id': user['id'], 'role': user['role'],
+                        'username': user['username'],
+                        'fullname': f"{user['firstname']} {user['surname']}"
+                    })
+                    if send_otp_email(email, otp):
+                        flash("OTP sent to your email. Please verify to complete login.", "info")
+                        return redirect(url_for('auth.verify_otp', purpose='voter_login'))
+                    else:
+                        flash("Failed to send OTP. Please try again.", "error")
+                        return render_template("voter_login.html")
+                else:
+                    print("Password verification failed!")
+            except ValueError as e:
+                print(f"Password hash error: {e}")
+                # If hash is invalid, try plain text comparison (temporary fix)
+                if user['password'] == password:
+                    print("Plain text password match! Updating hash...")
+                    # Update to proper hash
+                    new_hash = generate_password_hash(password)
+                    conn = current_app.config["get_db_connection"]()
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE users SET password = %s WHERE id = %s", (new_hash, user['id']))
+                    conn.commit()
+                    cursor.close()
+                    conn.close()
+                    
+                    session.clear()
+                    session['user_id'] = user['id']
+                    session['role'] = user['role']
+                    session['username'] = user['username']
+                    session['fullname'] = f"{user['firstname']} {user['surname']}"
+                    session.permanent = True
+                    
+                    flash(f"Welcome, {user['firstname']}!", "success")
+                    return redirect(url_for('voter.dashboard'))
+        
+        flash("Invalid username or password.", "error")
+    
+    return render_template("voter_login.html")
 
+@auth_bp.route("/admin-login", methods=["GET", "POST"])
+def admin_login():
+    """Admin login page - Separate from voter login"""
+    # If already logged in as admin, go to dashboard
+    if 'user_id' in session:
+        if session.get('role') in ['admin', 'superadmin']:
+            if session.get('role') == 'superadmin':
+                return redirect(url_for('super_admin.dashboard'))
+            return redirect(url_for('admin.dashboard'))
+        elif session.get('role') == 'voter':
+            flash("Please use voter login page.", "info")
+            return redirect(url_for('auth.voter_login'))
+    
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        
+        conn = current_app.config["get_db_connection"]()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT * FROM users WHERE username=%s AND role IN ('admin', 'superadmin')", 
+            (username,)
+        )
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
         if user and check_password_hash(user['password'], password):
-            print(f"Login successful for: {username}")  # Debug
-            
-            # Clear any existing session data
-            session.clear()
-            
-            # Set new session data
-            session['user_id'] = user['id']
-            session['role'] = user['role']
-            session['username'] = user['username']
-            session['login_time'] = datetime.now().isoformat()
-            
-            # Make session permanent
-            session.permanent = True
-            
-            print(f"Session after login: {dict(session)}")  # Debug
-            
-            role = user['role']
+            # Check if device is trusted - skip OTP if trusted
+            if check_trusted_device(user['id']):
+                session.clear()
+                session['user_id'] = user['id']
+                session['role'] = user['role']
+                session['username'] = user['username']
+                session['fullname'] = f"{user['firstname']} {user['surname']}"
+                session.permanent = True
+                flash(f"Welcome back, {user['firstname']}!", "success")
+                if user['role'] == 'superadmin':
+                    return redirect(url_for('super_admin.dashboard'))
+                else:
+                    return redirect(url_for('admin.dashboard'))
 
-            # Redirect to the originally requested URL (if any), else role dashboard
-            next_url = session.pop('next', None)
+            # Not trusted - send OTP
+            email = user.get('email')
+            if not email or '@' not in str(email):
+                flash("No valid email found for your account. Please contact the administrator.", "error")
+                return render_template("admin_login.html")
 
-            if next_url:
-                return redirect(next_url)
+            otp = generate_otp()
+            store_otp_in_session(otp, 'admin_login', {
+                'user_id': user['id'], 'role': user['role'],
+                'username': user['username'],
+                'fullname': f"{user['firstname']} {user['surname']}"
+            })
+            if send_otp_email(email, otp):
+                flash("OTP sent to your email. Please verify to complete login.", "info")
+                return redirect(url_for('auth.verify_otp', purpose='admin_login'))
+            else:
+                flash("Failed to send OTP. Please try again.", "error")
+                return render_template("admin_login.html")
+        
+        flash("Invalid admin credentials.", "error")
+    
+    return render_template("admin_login.html")
 
-            if role == "admin":
-                return redirect(url_for("admin.dashboard"))
-            elif role == "voter":
-                return redirect(url_for("voter.dashboard"))
-            elif role == "superadmin":
-                return redirect(url_for("super_admin.dashboard"))
-
-        flash("Invalid username or password", "error")
-
-    # Add cache control headers to prevent back button issues
-    response = make_response(render_template("login.html"))
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
-
-
-@auth_bp.route("/logout", methods=["GET", "POST"])
-def logout():
-    print("=" * 50)
-    print("LOGOUT ROUTE CALLED")
-    print(f"Session before clear: {dict(session)}")
-    print("=" * 50)
-    
-    # Method 1: Clear session dictionary
-    session.clear()
-    
-    # Method 2: Pop all keys
-    for key in list(session.keys()):
-        session.pop(key, None)
-    
-    # Method 3: Set modified flag
-    session.modified = True
-    
-    # Method 4: Expire the session cookie
-    session.permanent = False
-    
-    print(f"Session after clear: {dict(session)}")
-    print("Logout complete")
-    print("=" * 50)
-    
-    flash("You have been logged out successfully.", "success")
-    
-    # Create response with multiple cache control headers
-    response = make_response(redirect(url_for('auth.login')))
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    
-    # Expire all possible session cookies
-    response.set_cookie('session', '', expires=0, max_age=0)
-    response.set_cookie('evoting_session', '', expires=0, max_age=0)
-    response.set_cookie('cookie', '', expires=0, max_age=0)
-    
-    return response
-
+# ============================================
+# VOTER SIGNUP
+# ============================================
 
 @auth_bp.route("/signup", methods=["GET", "POST"])
 def signup():
-    # Redirect logged-in users away from signup
     if 'user_id' in session:
-        return redirect(url_for('auth.login'))
-
+        return redirect(url_for('auth.voter_login'))
+    
     if request.method == "POST":
         surname = request.form["surname"]
         firstname = request.form["firstname"]
-        middlename = request.form["middlename"]
+        middlename = request.form.get("middlename", "")
         email = request.form["email"]
-        username = request.form["student_id"]
+        student_id = request.form["student_id"]
+        username = request.form["username"]
         password = request.form["password"]
         confirm_password = request.form["confirm_password"]
-
+        
         if password != confirm_password:
             flash("Passwords do not match", "error")
             return render_template("signup.html")
-
+        
+        if len(password) < 6:
+            flash("Password must be at least 6 characters", "error")
+            return render_template("signup.html")
+        
         hashed_password = generate_password_hash(password)
-
+        
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor()
-
-        cursor.execute("SELECT id FROM users WHERE username=%s", (username,))
+        
+        # Check if username or student_id exists
+        cursor.execute("SELECT id FROM users WHERE username=%s OR student_id=%s", (username, student_id))
         if cursor.fetchone():
             cursor.close()
             conn.close()
-            flash("Username already exists", "error")
+            flash("Username or Student ID already exists", "error")
             return render_template("signup.html")
+        cursor.close()
+        conn.close()
 
-        role = 'voter'
-        student_id = email
+        # Send OTP before creating account
+        otp = generate_otp()
+        store_otp_in_session(otp, 'signup', {
+            'student_id': student_id, 'firstname': firstname,
+            'middlename': middlename, 'surname': surname,
+            'username': username, 'password': hashed_password,
+            'email': email
+        })
+        if send_otp_email(email, otp):
+            flash("OTP sent to your email. Please verify to complete registration.", "info")
+            return redirect(url_for('auth.verify_otp', purpose='signup'))
+        else:
+            flash("Failed to send OTP. Please try again.", "error")
+            return render_template("signup.html")
+    
+    return render_template("signup.html")
 
+@auth_bp.route("/logout")
+def logout():
+    if 'user_id' in session:
+        log_activity(current_app.config["get_db_connection"], session['user_id'], "logout", "User logged out")
+    
+    session.clear()
+    for key in list(session.keys()):
+        session.pop(key, None)
+    session.modified = True
+    
+    flash("You have been logged out successfully.", "success")
+    
+    response = make_response(redirect(url_for('auth.voter_login')))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.set_cookie('session', '', expires=0)
+    response.set_cookie('evoting_session', '', expires=0)
+    
+    return response
+
+@auth_bp.route("/verify-otp", methods=["GET", "POST"])
+def verify_otp():
+    purpose = request.args.get('purpose')
+    if purpose not in ['signup', 'voter_login', 'admin_login']:
+        flash("Invalid verification purpose.", "error")
+        return redirect(url_for('auth.voter_login'))
+
+    if request.method == "POST":
+        otp = request.form.get('otp', '').strip()
+        if not otp:
+            flash("Please enter the OTP.", "error")
+            return render_template("verify_otp.html", purpose=purpose)
+
+        success, message = verify_otp_from_session(otp, purpose)
+
+        if success:
+            if purpose == 'signup':
+                user_data = session.get(f'user_data_{purpose}')
+                if not user_data:
+                    flash("Session expired. Please sign up again.", "error")
+                    return redirect(url_for('auth.signup'))
+                conn = current_app.config["get_db_connection"]()
+                cursor = conn.cursor()
+                try:
+                    cursor.execute(
+                        """INSERT INTO users (student_id, firstname, middlename, surname, username, password, role, email, is_approved)
+                           VALUES (%s, %s, %s, %s, %s, %s, 'voter', %s, FALSE)""",
+                        (user_data['student_id'], user_data['firstname'], user_data['middlename'],
+                         user_data['surname'], user_data['username'], user_data['password'], user_data['email'])
+                    )
+                    conn.commit()
+                    session.pop(f'user_data_{purpose}', None)
+                    flash("Registration successful! Please wait for admin approval.", "success")
+                    return redirect(url_for("auth.voter_login"))
+                except Exception as e:
+                    conn.rollback()
+                    flash("Error creating account. Please try again.", "error")
+                    return redirect(url_for('auth.signup'))
+                finally:
+                    cursor.close()
+                    conn.close()
+
+            elif purpose in ['voter_login', 'admin_login']:
+                user_data = session.get(f'user_data_{purpose}')
+                if not user_data:
+                    flash("Session expired. Please log in again.", "error")
+                    return redirect(url_for('auth.voter_login'))
+                session.clear()
+                session['user_id'] = user_data['user_id']
+                session['role'] = user_data['role']
+                session['username'] = user_data['username']
+                session['fullname'] = user_data['fullname']
+                session['login_time'] = datetime.now().isoformat()
+                session.permanent = True
+
+                response = make_response()
+                set_trusted_device(user_data['user_id'], response)
+
+                role = user_data['role']
+                if role == 'superadmin':
+                    response.headers['Location'] = url_for('super_admin.dashboard')
+                elif role == 'admin':
+                    response.headers['Location'] = url_for('admin.dashboard')
+                else:
+                    response.headers['Location'] = url_for('voter.dashboard')
+                response.status_code = 302
+                return response
+        else:
+            flash(message, "error")
+
+    return render_template("verify_otp.html", purpose=purpose)
+
+
+# ============================================
+# HELPER FUNCTIONS
+# ============================================
+
+def log_activity(get_db_connection, user_id, action, details):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO users (student_id, firstname, middlename, surname, username, password, role) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-            (student_id, firstname, middlename, surname, username, hashed_password, role)
+            "INSERT INTO system_logs (user_id, action, details) VALUES (%s, %s, %s)",
+            (user_id, action, details)
         )
         conn.commit()
         cursor.close()
         conn.close()
+    except Exception as e:
+        print(f"Logging error: {e}")
 
-        flash("Account created successfully! Please log in.", "success")
-        return redirect(url_for("auth.login"))
-
-    # Add cache control headers
-    response = make_response(render_template("signup.html"))
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
-
-
-# Debug route to check session status
 @auth_bp.route("/check-session")
 def check_session():
-    """Debug route to check current session data"""
-    session_data = dict(session)
     return {
-        'session_exists': bool(session_data),
-        'session_data': session_data,
+        'session_exists': bool(session.get('user_id')),
+        'session_data': dict(session),
         'user_id_in_session': 'user_id' in session,
         'role_in_session': 'role' in session
     }

@@ -15,8 +15,8 @@ def home():
         elif role == 'superadmin':
             return redirect(url_for('super_admin.dashboard'))
     
-    # Otherwise, go to login
-    return redirect(url_for("auth.login"))
+    # Default: Go to VOTER login page
+    return redirect(url_for("auth.voter_login"))
 
 if __name__ == "__main__":
     app.run(debug=True)
