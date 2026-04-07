@@ -53,6 +53,28 @@ if (confirmModal) {
   }
 }
 
+// ── Clean up stale modal state on any modal-trigger click ──────────
+// (handles edge cases where a previous modal closed abnormally)
+document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    // Only clean up if no modal is currently shown
+    if (!document.querySelector('.modal.show')) {
+      document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+      document.body.classList.remove('modal-open');
+    }
+  });
+});
+
+// ── Focus first input in modal when shown ──────────────────────────
+document.querySelectorAll('.modal').forEach(modal => {
+  modal.addEventListener('shown.bs.modal', () => {
+    const firstInput = modal.querySelector('input:not([type="hidden"]), select, textarea');
+    if (firstInput) {
+      firstInput.focus();
+    }
+  });
+});
+
 // Flash message auto-dismiss
 document.querySelectorAll('.alert').forEach(alert => {
   setTimeout(() => {

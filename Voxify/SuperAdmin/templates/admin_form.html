@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if action == 'edit' else 'Add' }} Admin{% endblock %}
+{% block page_title %}{{ 'Edit' if action == 'edit' else 'Add' }} Admin{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('super_admin.static', filename='css/manage_admins.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">{{ 'Edit' if action == 'edit' else 'Add' }} Admin</h2>
+    <p class="page-subheading">{{ 'Update admin information' if action == 'edit' else 'Create a new admin account' }}</p>
+  </div>
+  <div class="page-header-actions">
+    <a href="{{ url_for('super_admin.manage_admins') }}" class="btn-secondary">
+      <i class="bi bi-arrow-left"></i>Back to Admins
+    </a>
+  </div>
+</div>
+
+<div class="card-panel">
+  <div class="card-panel-body">
+    <form method="POST">
+      <div class="mb-3">
+        <label class="form-label-custom required">Full Name</label>
+        <input type="text" name="full_name" class="form-control-custom" value="{{ admin.firstname + ' ' + admin.surname if admin else '' }}" required/>
+      </div>
+      <div class="mb-3">
+        <label class="form-label-custom required">Email</label>
+        <input type="email" name="email" class="form-control-custom" value="{{ admin.email if admin else '' }}" required/>
+      </div>
+      <div class="mb-3">
+        <label class="form-label-custom required">College/Department</label>
+        <select name="college_id" class="form-select form-control-custom" required>
+          <option value="">Select a college...</option>
+          {% for college in colleges %}
+          <option value="{{ college.id }}" {{ 'selected' if admin and admin.college_id == college.id else '' }}>{{ college.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if action == 'edit' %}
+      <div class="mb-3">
+        <label class="form-label-custom">Student ID</label>
+        <input type="text" class="form-control-custom" value="{{ admin.student_id if admin else '' }}" disabled/>
+        <small class="form-text text-muted">Cannot be changed</small>
+      </div>
+      {% endif %}
+      <div class="mb-3">
+        <label class="form-label-custom required">Password {{ '(leave blank to keep current)' if action == 'edit' else '' }}</label>
+        <input type="password" name="password" class="form-control-custom" placeholder="Minimum 8 characters" {{ 'required' if not admin else '' }}/>
+      </div>
+      <div class="d-flex gap-3">
+        <button type="submit" class="btn-primary-custom">
+          <i class="bi bi-{{ 'pencil' if action == 'edit' else 'person-plus' }}"></i>
+          {{ 'Update' if action == 'edit' else 'Create' }} Admin
+        </button>
+        <a href="{{ url_for('super_admin.manage_admins') }}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

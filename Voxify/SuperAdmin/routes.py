@@ -40,13 +40,37 @@ def dashboard():
 @superadmin_bp.route("/manage-admins")
 @superadmin_required
 def manage_admins():
+    status = request.args.get('status', 'all')
+    search = request.args.get('search', '').strip()
+    
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id, firstname, surname, student_id, email, role, created_at, is_active FROM users WHERE role='admin' ORDER BY created_at DESC")
+    
+    query = "SELECT u.id, u.firstname, u.surname, u.student_id, u.email, u.role, u.created_at, u.is_active, c.name as college_name FROM users u LEFT JOIN colleges c ON u.college_id = c.id WHERE u.role='admin'"
+    params = []
+    
+    if status == 'active':
+        query += " AND is_active=TRUE"
+    elif status == 'inactive':
+        query += " AND is_active=FALSE"
+    
+    if search:
+        query += " AND (firstname LIKE %s OR surname LIKE %s OR student_id LIKE %s OR email LIKE %s)"
+        search_param = f"%{search}%"
+        params.extend([search_param, search_param, search_param, search_param])
+    
+    query += " ORDER BY created_at DESC"
+    
+    cursor.execute(query, params)
     admins = cursor.fetchall()
+    
+    # Fetch colleges for the dropdown
+    cursor.execute("SELECT id, name FROM colleges ORDER BY name")
+    colleges = cursor.fetchall()
+    
     cursor.close()
     conn.close()
-    return render_template('manage_admins.html', admins=admins)
+    return render_template('manage_admins.html', admins=admins, status=status, search=search, colleges=colleges)
 
 
 @superadmin_bp.route("/manage-colleges")
@@ -143,19 +167,22 @@ def delete_college(college_id):
 @superadmin_bp.route("/create-admin", methods=["POST"])
 @superadmin_required
 def create_admin():
-    full_name = request.form.get("full_name", "").strip()
-    username = request.form.get("username", "").strip()
+    firstname = request.form.get("firstname", "").strip()
+    middlename = request.form.get("middlename", "").strip()
+    surname = request.form.get("surname", "").strip()
     email = request.form.get("email", "").strip()
     password = request.form.get("password", "")
-    role = request.form.get("role", "admin").strip().lower()
+    confirm_password = request.form.get("confirm_password", "")
+    college_id = request.form.get("college_id", "").strip()
+    role = "admin"  # Only admin role is allowed
 
-    if not full_name or not email or not password:
-        flash("Full Name, Email, and Password are required.", "error")
+    if not firstname or not surname or not email or not password or not confirm_password or not college_id:
+        flash("All fields except middle name are required.", "error")
         return redirect(url_for('super_admin.manage_admins'))
 
-    name_parts = full_name.split()
-    firstname = name_parts[0]
-    surname = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+    if password != confirm_password:
+        flash("Passwords do not match.", "error")
+        return redirect(url_for('super_admin.manage_admins'))
 
     hashed_password = generate_password_hash(password)
 
@@ -169,8 +196,8 @@ def create_admin():
         new_student_id = f"admin-{str(count + 1).zfill(4)}"
 
         cursor.execute(
-            "INSERT INTO users (firstname, surname, student_id, password, role, email, is_approved) VALUES (%s, %s, %s, %s, %s, %s, TRUE)",
-            (firstname, surname, new_student_id, hashed_password, role, email)
+            "INSERT INTO users (firstname, middlename, surname, student_id, password, role, email, college_id, is_approved) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, TRUE)",
+            (firstname, middlename, surname, new_student_id, hashed_password, role, email, college_id)
         )
         conn.commit()
         flash("Admin account created successfully!", "success")
@@ -202,6 +229,11 @@ def edit_admin(admin_id):
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM users WHERE id=%s AND role='admin'", (admin_id,))
     admin = cursor.fetchone()
+    
+    # Fetch colleges for the dropdown
+    cursor.execute("SELECT id, name FROM colleges ORDER BY name")
+    colleges = cursor.fetchall()
+    
     cursor.close()
     conn.close()
 
@@ -210,17 +242,33 @@ def edit_admin(admin_id):
         return redirect(url_for('super_admin.manage_admins'))
 
     if request.method == "POST":
-        firstname = request.form["firstname"]
-        surname = request.form["surname"]
-        email = request.form["email"]
+        full_name = request.form.get("full_name", "").strip()
+        email = request.form.get("email", "").strip()
+        college_id = request.form.get("college_id", "").strip()
+        password = request.form.get("password", "").strip()
+
+        if not full_name or not email or not college_id:
+            flash("Full Name, Email, and College are required.", "error")
+            return redirect(request.url)
+
+        name_parts = full_name.split()
+        firstname = name_parts[0]
+        surname = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
 
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor()
         try:
-            cursor.execute(
-                "UPDATE users SET firstname=%s, surname=%s, email=%s WHERE id=%s AND role='admin'",
-                (firstname, surname, email, admin_id)
-            )
+            if password:
+                from werkzeug.security import generate_password_hash
+                cursor.execute(
+                    "UPDATE users SET firstname=%s, surname=%s, email=%s, college_id=%s, password=%s WHERE id=%s AND role='admin'",
+                    (firstname, surname, email, college_id, generate_password_hash(password), admin_id)
+                )
+            else:
+                cursor.execute(
+                    "UPDATE users SET firstname=%s, surname=%s, email=%s, college_id=%s WHERE id=%s AND role='admin'",
+                    (firstname, surname, email, college_id, admin_id)
+                )
             conn.commit()
             flash("Admin updated successfully!", "success")
             return redirect(url_for('super_admin.manage_admins'))
@@ -231,18 +279,22 @@ def edit_admin(admin_id):
             cursor.close()
             conn.close()
 
-    return render_template('admin_form.html', action='edit', admin=admin)
+    return render_template('admin_form.html', action='edit', admin=admin, colleges=colleges)
 
 @superadmin_bp.route("/archive-admin/<int:admin_id>")
 @superadmin_required
 def archive_admin(admin_id):
     conn = current_app.config["get_db_connection"]()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET is_active=FALSE WHERE id=%s AND role='admin'", (admin_id,))
-    conn.commit()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT is_active FROM users WHERE id=%s AND role='admin'", (admin_id,))
+    admin = cursor.fetchone()
+    if admin:
+        new_status = not admin['is_active']
+        cursor.execute("UPDATE users SET is_active=%s WHERE id=%s AND role='admin'", (new_status, admin_id))
+        conn.commit()
+        flash("Admin restored!" if new_status else "Admin archived!", "success" if new_status else "warning")
     cursor.close()
     conn.close()
-    flash("Admin archived!", "warning")
     return redirect(url_for('super_admin.manage_admins'))
 
 

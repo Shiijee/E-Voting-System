@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
+﻿from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
 from datetime import datetime
 from Voxify.Authentication.routes import admin_required
 
