@@ -1,55 +1,40 @@
-// Minimal admin JS placeholder
-// This file is referenced by admin templates for basic UI interactivity.
+// Admin JS — sidebar toggle + clock
 
 window.addEventListener('DOMContentLoaded', () => {
+  // ── Sidebar Toggle ──────────────────────────────────────────────────
   const sidebarToggle = document.getElementById('sidebarToggle');
-  const sidebar = document.getElementById('sidebar');
-  const mainWrapper = document.getElementById('mainWrapper');
+  const sidebar       = document.getElementById('sidebar');
+  const mainWrapper   = document.getElementById('mainWrapper');
 
   if (sidebarToggle && sidebar) {
     sidebarToggle.addEventListener('click', () => {
       sidebar.classList.toggle('collapsed');
-      mainWrapper.classList.toggle('collapsed');
+      if (mainWrapper) mainWrapper.classList.toggle('collapsed');
     });
   }
 
-  // Confirmation modal for destructive actions
-  const confirmModal = document.getElementById('confirmModal');
-  if (confirmModal) {
-    const bsModal = new bootstrap.Modal(confirmModal);
-    const confirmBtn = document.getElementById('confirmModalBtn');
-    let pendingAction = null;
-
-    document.querySelectorAll('[data-confirm]').forEach(el => {
-      el.addEventListener('click', event => {
-        event.preventDefault();
-        const title = el.dataset.confirmTitle || 'Confirm Action';
-        const message = el.dataset.confirmMessage || 'Are you sure?';
-
-        document.getElementById('confirmModalTitle').textContent = title;
-        document.getElementById('confirmModalBody').textContent = message;
-
-        pendingAction = () => {
-          if (el.tagName.toLowerCase() === 'a' && el.href) {
-            window.location.href = el.href;
-          } else if (el.tagName.toLowerCase() === 'button') {
-            const form = el.closest('form');
-            if (form) form.submit();
-          }
-        };
-
-        bsModal.show();
-      });
-    });
-
-    if (confirmBtn) {
-      confirmBtn.addEventListener('click', () => {
-        bsModal.hide();
-        if (pendingAction) {
-          pendingAction();
-          pendingAction = null;
-        }
-      });
-    }
+  // ── Live Clock ──────────────────────────────────────────────────────
+  const clockEl = document.getElementById('topbarTime');
+  if (clockEl) {
+    const tick = () => {
+      const now = new Date();
+      clockEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+    tick();
+    setInterval(tick, 1000);
   }
+
+  // ── Clean up stale modal state on any modal-trigger click ──────────
+  // (handles edge cases where a previous modal closed abnormally)
+  document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Only clean up if no modal is currently shown
+      if (!document.querySelector('.modal.show')) {
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+      }
+    });
+  });
 });

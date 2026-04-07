@@ -10,32 +10,27 @@
 <div class="page-header">
   <div>
     <h2 class="page-heading">Voter Management</h2>
-    <p class="page-subheading">Approve, reject, and manage registered voters.</p>
+    <p class="page-subheading">Create, edit, archive, and manage voters in your college.</p>
+  </div>
+  <div class="page-header-actions">
+    <button class="btn-primary-custom" type="button" onclick="openModal('addVoterModal')">
+      <i class="bi bi-person-plus-fill"></i> Add Voter
+    </button>
   </div>
 </div>
 
-<!-- Status Tabs -->
-<div class="status-tabs mb-4">
-  <a href="{{ url_for('admin.view_voters', status='all') }}" class="status-tab {% if status == 'all' %}active{% endif %}">All</a>
-  <a href="{{ url_for('admin.view_voters', status='pending') }}" class="status-tab tab-pending {% if status == 'pending' %}active{% endif %}">Pending</a>
-  <a href="{{ url_for('admin.view_voters', status='approved') }}" class="status-tab tab-approved {% if status == 'approved' %}active{% endif %}">Approved</a>
-  <a href="{{ url_for('admin.view_voters', status='rejected') }}" class="status-tab tab-rejected">Rejected</a>
-</div>
-{% if status == 'rejected' %}
-  <div class="alert alert-info">Rejected voters are automatically removed from the system and do not appear in pending/approved lists.</div>
-{% endif %}
-
-<!-- Search Bar -->
-<div class="filter-bar mb-3">
-  <div class="d-flex gap-2 w-100 flex-wrap">
-    <div class="search-input-wrap flex-grow-1">
-      <i class="bi bi-search search-icon"></i>
-      <input type="text" class="form-control form-control-custom search-input"
-             placeholder="Search by name, username, email, or student ID…"/>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-wrap">
+    {% for category, message in messages %}
+    <div class="flash-msg flash-{{ category }}">
+      {{ message }}
+      <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
     </div>
-    <button type="button" class="btn btn-primary-custom">Search</button>
+    {% endfor %}
   </div>
-</div>
+  {% endif %}
+{% endwith %}
 
 <div class="card-panel">
   <div class="card-panel-body p-0">
@@ -47,10 +42,9 @@
             <th>#</th>
             <th>Voter</th>
             <th>Student ID</th>
-            <th>Course</th>
-            <th>Year</th>
-            <th>Registered</th>
+            <th>Email</th>
             <th>Status</th>
+            <th>Registered</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -60,37 +54,39 @@
             <td class="text-muted-sm">{{ loop.index }}</td>
             <td>
               <div class="voter-cell">
-                <div class="voter-avatar-sm">{{ voter.full_name[0] if voter.full_name else '?' }}</div>
+                <div class="voter-avatar-sm">{{ voter.firstname[0] }}</div>
                 <div>
-                  <div class="fw-600">{{ voter.full_name or voter.username }}</div>
-                  <div class="text-muted-sm">{{ voter.email }}</div>
+                  <div class="fw-600">{{ voter.firstname }} {% if voter.middlename %}{{ voter.middlename }} {% endif %}{{ voter.surname }}</div>
+                  <div class="text-muted-sm">{{ voter.email or '—' }}</div>
                 </div>
               </div>
             </td>
-            <td>{{ voter.student_id or '—' }}</td>
-            <td>{{ voter.course or voter.department or '—' }}</td>
-            <td>{{ voter.year_level or voter.year or '—' }}</td>
-            <td>{{ voter.created_at or '—' }}</td>
+            <td class="text-muted-sm">{{ voter.student_id or '—' }}</td>
+            <td class="text-muted-sm">{{ voter.email or '—' }}</td>
             <td>
-              <span class="badge-status badge-{{ voter.status.lower() }}">
-                <i class="bi bi-circle-fill me-1" style="font-size:6px"></i>{{ voter.status }}
-              </span>
+              {% if not voter.is_active %}
+                <span class="badge-status badge-archived"><i class="bi bi-circle-fill" style="font-size:6px;margin-right:4px;"></i>Archived</span>
+              {% elif voter.is_approved %}
+                <span class="badge-status badge-active"><i class="bi bi-circle-fill" style="font-size:6px;margin-right:4px;"></i>Active</span>
+              {% else %}
+                <span class="badge-status badge-pending"><i class="bi bi-circle-fill" style="font-size:6px;margin-right:4px;"></i>Pending</span>
+              {% endif %}
             </td>
+            <td class="text-muted-sm">{{ voter.created_at }}</td>
             <td>
               <div class="action-buttons">
-                {% if not voter.is_approved %}
-                <a href="{{ url_for('admin.approve_voter', voter_id=voter.id) }}" class="btn-action btn-action-success" title="Approve" data-confirm data-confirm-title="Approve Voter" data-confirm-message="Are you sure you want to approve this voter?">
-                  <i class="bi bi-check-lg"></i>
-                </a>
-                <a href="{{ url_for('admin.reject_voter', voter_id=voter.id) }}" class="btn-action btn-action-warn" title="Reject" data-confirm data-confirm-title="Reject Voter" data-confirm-message="Rejecting will remove this voter from the system. Continue?">
-                  <i class="bi bi-x-lg"></i>
-                </a>
-                {% else %}
-                <button type="button" class="btn-action btn-action-success" title="Approved" disabled>
-                  <i class="bi bi-check-lg"></i>
+                <button class="btn-action btn-action-edit" title="Edit"
+                  onclick="openModal('editVoterModal{{ voter.id }}')">
+                  <i class="bi bi-pencil-fill"></i>
                 </button>
-                {% endif %}
-                <a href="{{ url_for('admin.delete_voter', voter_id=voter.id) }}" class="btn-action btn-action-delete" title="Delete Voter" data-confirm data-confirm-title="Delete Voter" data-confirm-message="This will permanently delete the voter account. Continue?">
+                <a href="{{ url_for('admin.archive_voter', voter_id=voter.id) }}"
+                   class="btn-action btn-action-warn"
+                   title="{{ 'Restore' if not voter.is_active else 'Archive' }}">
+                  <i class="bi bi-{{ 'arrow-counterclockwise' if not voter.is_active else 'archive' }}"></i>
+                </a>
+                <a href="{{ url_for('admin.delete_voter', voter_id=voter.id) }}"
+                   class="btn-action btn-action-delete" title="Delete"
+                   onclick="return confirm('Permanently delete this voter?')">
                   <i class="bi bi-trash3-fill"></i>
                 </a>
               </div>
@@ -104,9 +100,146 @@
     <div class="empty-state">
       <i class="bi bi-people"></i>
       <h5>No Voters Found</h5>
-      <p>No voters have registered yet.</p>
+      <p>Start by adding voters to your college.</p>
+      <button class="btn-primary-custom" onclick="openModal('addVoterModal')">
+        <i class="bi bi-person-plus-fill"></i> Add First Voter
+      </button>
     </div>
     {% endif %}
   </div>
 </div>
+
+<!-- ===================== ADD VOTER MODAL ===================== -->
+<div class="vmodal-overlay" id="addVoterModal" onclick="overlayClose(event, 'addVoterModal')">
+  <div class="vmodal-box">
+    <div class="vmodal-header">
+      <h5><i class="bi bi-person-plus-fill" style="margin-right:8px;"></i>Add New Voter</h5>
+      <button class="vmodal-close" onclick="closeModal('addVoterModal')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.create_voter') }}">
+      <div class="vmodal-body">
+        <div class="vform-row">
+          <div class="vform-col">
+            <label class="vform-label required">First Name</label>
+            <input type="text" name="firstname" class="vform-input" placeholder="First name" required/>
+          </div>
+          <div class="vform-col">
+            <label class="vform-label">Middle Name</label>
+            <input type="text" name="middlename" class="vform-input" placeholder="Middle name"/>
+          </div>
+          <div class="vform-col">
+            <label class="vform-label required">Surname</label>
+            <input type="text" name="surname" class="vform-input" placeholder="Surname" required/>
+          </div>
+        </div>
+        <div class="vform-row">
+          <div class="vform-col-half">
+            <label class="vform-label required">Student ID</label>
+            <div class="vform-input-group">
+              <span class="vform-input-prefix">{{ student_id_prefix }}</span>
+              <input type="number" name="student_id_seq" class="vform-input vform-input-suffix" placeholder="1" min="1" required/>
+            </div>
+            <small class="vform-hint">Type a number, e.g. 3 → {{ student_id_prefix }}0003</small>
+          </div>
+          <div class="vform-col-half">
+            <label class="vform-label required">Email</label>
+            <input type="email" name="email" class="vform-input" placeholder="student@email.com" required/>
+          </div>
+        </div>
+        <div class="vform-row">
+          <div class="vform-col-full">
+            <label class="vform-label required">Password</label>
+            <input type="password" name="password" class="vform-input" placeholder="Minimum 6 characters" required/>
+          </div>
+        </div>
+      </div>
+      <div class="vmodal-footer">
+        <button type="button" class="vbtn vbtn-secondary" onclick="closeModal('addVoterModal')">Cancel</button>
+        <button type="submit" class="vbtn vbtn-primary"><i class="bi bi-person-plus-fill"></i> Create Voter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== EDIT VOTER MODALS ===================== -->
+{% for voter in voters %}
+<div class="vmodal-overlay" id="editVoterModal{{ voter.id }}" onclick="overlayClose(event, 'editVoterModal{{ voter.id }}')">
+  <div class="vmodal-box">
+    <div class="vmodal-header">
+      <h5><i class="bi bi-pencil-fill" style="margin-right:8px;"></i>Edit Voter</h5>
+      <button class="vmodal-close" onclick="closeModal('editVoterModal{{ voter.id }}')">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('admin.edit_voter', voter_id=voter.id) }}">
+      <div class="vmodal-body">
+        <div class="vform-row">
+          <div class="vform-col">
+            <label class="vform-label required">First Name</label>
+            <input type="text" name="firstname" class="vform-input" value="{{ voter.firstname }}" required/>
+          </div>
+          <div class="vform-col">
+            <label class="vform-label">Middle Name</label>
+            <input type="text" name="middlename" class="vform-input" value="{{ voter.middlename or '' }}"/>
+          </div>
+          <div class="vform-col">
+            <label class="vform-label required">Surname</label>
+            <input type="text" name="surname" class="vform-input" value="{{ voter.surname }}" required/>
+          </div>
+        </div>
+        <div class="vform-row">
+          <div class="vform-col-half">
+            <label class="vform-label">Student ID</label>
+            <input type="text" class="vform-input vform-input-disabled" value="{{ voter.student_id }}" disabled/>
+            <small class="vform-hint">Cannot be changed</small>
+          </div>
+          <div class="vform-col-half">
+            <label class="vform-label required">Email</label>
+            <input type="email" name="email" class="vform-input" value="{{ voter.email or '' }}" required/>
+          </div>
+        </div>
+        <div class="vform-row">
+          <div class="vform-col-full">
+            <label class="vform-label">New Password <small class="vform-hint-inline">(leave blank to keep current)</small></label>
+            <input type="password" name="password" class="vform-input" placeholder="Enter new password"/>
+          </div>
+        </div>
+      </div>
+      <div class="vmodal-footer">
+        <button type="button" class="vbtn vbtn-secondary" onclick="closeModal('editVoterModal{{ voter.id }}')">Cancel</button>
+        <button type="submit" class="vbtn vbtn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+  }
+  function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  }
+  function overlayClose(e, id) {
+    if (e.target === e.currentTarget) closeModal(id);
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.vmodal-overlay').forEach(function(m) {
+        m.style.display = 'none';
+      });
+      document.body.style.overflow = '';
+    }
+  });
+</script>
 {% endblock %}

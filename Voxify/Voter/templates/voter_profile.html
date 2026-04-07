@@ -23,7 +23,7 @@
       </div>
       <div class="profile-hero-info">
         <div class="profile-hero-name">{{ voter.full_name if voter and voter.full_name else 'Voter' }}</div>
-        <div class="profile-hero-username">@{{ voter.username if voter and voter.username else 'username' }}</div>
+        <div class="profile-hero-username">{{ voter.student_id if voter and voter.student_id else '' }}</div>
         {% set status = voter.status if voter and voter.status else 'pending' %}
         <span class="profile-status-badge status-{{ status.lower() }}">
           <i class="bi bi-{{ 'check2-circle' if status == 'approved' else 'hourglass-split' if status == 'pending' else 'x-circle' }}-fill"></i>
@@ -43,10 +43,7 @@
             <div class="profile-field-label">Full Name</div>
             <div class="profile-field-value">{{ voter.full_name if voter and voter.full_name else '—' }}</div>
           </div>
-          <div class="profile-field">
-            <div class="profile-field-label">Username</div>
-            <div class="profile-field-value">{{ voter.username if voter and voter.username else '—' }}</div>
-          </div>
+
           <div class="profile-field">
             <div class="profile-field-label">Email Address</div>
             <div class="profile-field-value">{{ voter.email if voter and voter.email else '—' }}</div>

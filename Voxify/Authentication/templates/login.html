@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Voxify — Voter Login</title>
+  <title>Voxify — Sign In</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('auth.static', filename='css/login.css') }}">
@@ -64,8 +64,8 @@
   <div class="login-box">
 
     <div class="login-header">
-      <h2>Voter Access</h2>
-      <p>Sign in to cast your vote securely</p>
+      <h2>Welcome back</h2>
+      <p>Sign in to continue to your dashboard</p>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -78,16 +78,21 @@
       {% endif %}
     {% endwith %}
 
-    <form method="POST">
+    <div class="role-selector">
+      <button type="button" class="role-btn active" onclick="setRole(this,'voter')">Login</button>
+    </div>
+
+    <!-- FLASK LOGIN FORM -->
+    <form method="POST" action="{{ url_for('auth.login') }}">
 
       <div class="form-group">
-        <label>Student ID</label>
+        <label id="id-label">Username / Email</label>
         <div class="input-wrap">
           <svg viewBox="0 0 24 24">
             <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
             <circle cx="12" cy="7" r="4"/>
           </svg>
-          <input type="text" name="username" placeholder="Enter your Student ID (e.g. 241-0001)" required>
+          <input type="text" id="id-input" name="username" placeholder="Enter your username" required>
         </div>
       </div>
 
@@ -107,12 +112,17 @@
 
       <div class="form-options">
         <label class="checkbox-wrap">
-          <input type="checkbox" name="remember"> Remember me
+          <input type="checkbox"> Remember me
         </label>
         <a href="#" class="forgot-link">Forgot password?</a>
       </div>
 
-      <button type="submit" class="btn-login">Vote Now →</button>
+      <button type="submit" class="btn-login">Sign In →</button>
+
+      <p class="login-link">
+        Don't have an account?
+        <a href="{{ url_for('auth.signup') }}">Sign Up</a>
+      </p>
 
     </form>
 
@@ -122,41 +132,24 @@
       <svg viewBox="0 0 24 24">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
       </svg>
-      256-bit AES Encryption · One Voter, One Vote
-    </div>
-
-    <!-- Admin Link -->
-    <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);">
-      <p style="color: var(--muted); font-size: 0.75rem;">
-        Administrator? 
-        <a href="{{ url_for('auth.admin_login') }}" style="color: var(--navy); text-decoration: none; font-weight: 500;">
-          Admin Login →
-        </a>
-      </p>
+      256-bit AES Encryption · End-to-End Secure
     </div>
 
   </div>
 
 </div>
-
 <script>
-function togglePassword(fieldId, iconId) {
-    const field = document.getElementById(fieldId);
-    const icon = document.getElementById(iconId);
-    if (field.type === "password") {
-        field.type = "text";
-        icon.src = icon.getAttribute('data-show');
-    } else {
-        field.type = "password";
-        icon.src = icon.getAttribute('data-hide');
-    }
-}
+// Check if user is logged in when page loads
+window.addEventListener('load', function() {
+    // You can add a check here if needed
+});
 
 // Prevent form resubmission on page refresh
 if (window.history.replaceState) {
     window.history.replaceState(null, null, window.location.href);
 }
 </script>
+<script src="{{ url_for('auth.static', filename='js/login.js') }}"></script>
 
 </body>
 </html>

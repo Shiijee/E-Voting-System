@@ -368,7 +368,6 @@ img { display: block; max-width: 100%; }
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border);
-  overflow: hidden;
 }
 
 .card-panel-header {
@@ -1712,3 +1711,28 @@ textarea.form-control {
 
 /* Chart canvas */
 .chart-container canvas { max-height: 260px; }
+
+.badge-archived {
+  background: rgba(107,114,128,0.15);
+  color: #9ca3af;
+  border: 1px solid rgba(107,114,128,0.3);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+}
+.badge-pending {
+  background: rgba(245,158,11,0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+
+/* ── Vanilla modal overlay (voters page) ── */
+.vmodal-overlay { display: none; }

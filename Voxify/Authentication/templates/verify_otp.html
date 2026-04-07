@@ -65,11 +65,7 @@
 
     <div class="login-header">
       <h2>Verify OTP</h2>
-      {% if purpose == 'signup' %}
-        <p>Enter the code sent to your email to complete registration</p>
-      {% else %}
-        <p>Enter the code sent to your email to complete login</p>
-      {% endif %}
+      <p>Enter the code sent to your email to complete login</p>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -103,15 +99,9 @@
         <a href="#" onclick="resendOTP()">Resend OTP</a>
       </p>
 
-      {% if purpose == 'signup' %}
-        <p class="login-link">
-          <a href="{{ url_for('auth.signup') }}">← Back to Sign Up</a>
-        </p>
-      {% else %}
-        <p class="login-link">
-          <a href="{{ url_for('auth.voter_login') }}">← Back to Login</a>
-        </p>
-      {% endif %}
+      <p class="login-link">
+        <a href="{{ url_for('auth.voter_login') }}">← Back to Login</a>
+      </p>
 
     </form>
 

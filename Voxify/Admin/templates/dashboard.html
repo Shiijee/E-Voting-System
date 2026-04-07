@@ -24,28 +24,28 @@
   <div class="stat-card stat-card-blue">
     <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
     <div class="stat-info">
-      <span class="stat-number">0</span>
+      <span class="stat-number">{{ total_voters }}</span>
       <span class="stat-label">Total Voters</span>
     </div>
   </div>
   <div class="stat-card stat-card-green">
     <div class="stat-icon"><i class="bi bi-calendar2-event-fill"></i></div>
     <div class="stat-info">
-      <span class="stat-number">0</span>
+      <span class="stat-number">{{ total_elections }}</span>
       <span class="stat-label">Elections</span>
     </div>
   </div>
   <div class="stat-card stat-card-amber">
     <div class="stat-icon"><i class="bi bi-person-badge-fill"></i></div>
     <div class="stat-info">
-      <span class="stat-number">0</span>
+      <span class="stat-number">{{ total_candidates }}</span>
       <span class="stat-label">Candidates</span>
     </div>
   </div>
   <div class="stat-card stat-card-purple">
     <div class="stat-icon"><i class="bi bi-check2-square"></i></div>
     <div class="stat-info">
-      <span class="stat-number">0</span>
+      <span class="stat-number">{{ total_votes }}</span>
       <span class="stat-label">Votes Cast</span>
     </div>
   </div>
@@ -106,8 +106,8 @@
         <span>Add Candidate</span>
       </a>
       <a href="{{ url_for('admin.view_voters') }}" class="quick-action-btn">
-        <i class="bi bi-person-check-fill"></i>
-        <span>Approve Voters</span>
+        <i class="bi bi-people-fill"></i>
+        <span>Manage Voters</span>
       </a>
       <a href="{{ url_for('admin.view_results') }}" class="quick-action-btn">
         <i class="bi bi-bar-chart-fill"></i>

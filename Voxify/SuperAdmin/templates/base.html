@@ -31,8 +31,13 @@
     </a>
 
     <div class="nav-section-label">Administration</div>
+    <a href="{{ url_for('super_admin.manage_colleges') }}"
+       class="nav-item {% if 'college' in (request.endpoint or '') %}active{% endif %}">
+      <i class="bi bi-building"></i>
+      <span>Colleges</span>
+    </a>
     <a href="{{ url_for('super_admin.manage_admins') }}"
-       class="nav-item {% if 'admin' in (request.endpoint or '') and request.endpoint != 'super_admin.dashboard' %}active{% endif %}">
+       class="nav-item {% if 'admin' in (request.endpoint or '') and 'college' not in (request.endpoint or '') and request.endpoint != 'super_admin.dashboard' %}active{% endif %}">
       <i class="bi bi-person-gear"></i>
       <span>Manage Admins</span>
     </a>
