@@ -26,6 +26,7 @@
     <div class="stat-info">
       <span class="stat-number">{{ total_voters }}</span>
       <span class="stat-label">Total Voters</span>
+      <span class="stat-note">{{ approved_voters }} approved · {{ pending_voters }} pending</span>
     </div>
   </div>
   <div class="stat-card stat-card-green">
@@ -33,6 +34,7 @@
     <div class="stat-info">
       <span class="stat-number">{{ total_elections }}</span>
       <span class="stat-label">Elections</span>
+      <span class="stat-note">{{ active_elections }} active</span>
     </div>
   </div>
   <div class="stat-card stat-card-amber">
@@ -61,10 +63,26 @@
         <a href="{{ url_for('admin.view_elections') }}" class="btn-link-subtle">View all</a>
       </div>
       <div class="card-panel-body">
+        {% if recent_elections %}
+        <div class="recent-list">
+          {% for election in recent_elections %}
+          <div class="recent-list-item">
+            <div>
+              <h6 class="mb-1">{{ election.title }}</h6>
+              <p class="text-muted-sm mb-1">{{ election.start_date }} — {{ election.end_date }}</p>
+              <span class="badge-status badge-{{ election.status.lower() }}">
+                <i class="bi bi-circle-fill me-1" style="font-size:6px"></i>{{ election.status }}
+              </span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
         <div class="empty-state-sm">
           <i class="bi bi-calendar-x"></i>
           <p>No elections yet. <a href="{{ url_for('admin.create_election') }}">Create one</a></p>
         </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -77,10 +95,24 @@
         <a href="{{ url_for('admin.view_logs') }}" class="btn-link-subtle">View all</a>
       </div>
       <div class="card-panel-body">
+        {% if recent_logs %}
+        <div class="recent-list">
+          {% for log in recent_logs %}
+          <div class="recent-list-item">
+            <div>
+              <p class="text-muted-sm mb-1">{{ log.created_at }}</p>
+              <h6 class="mb-1">{{ log.user_name or 'System' }}</h6>
+              <p class="text-muted-sm mb-0">{{ log.action.replace('_', ' ') }}{% if log.details %}: {{ log.details[:80] }}{% if log.details|length > 80 %}…{% endif %}{% endif %}</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
         <div class="empty-state-sm">
           <i class="bi bi-journal-x"></i>
           <p>No activity yet.</p>
         </div>
+        {% endif %}
       </div>
     </div>
   </div>

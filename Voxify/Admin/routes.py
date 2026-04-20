@@ -73,45 +73,107 @@ def dashboard():
     if college_id:
         cursor.execute("SELECT name FROM colleges WHERE id=%s", (college_id,))
         college = cursor.fetchone()
-    
-    cursor.execute("SELECT COUNT(*) as total FROM elections WHERE college_id=%s", (college_id,))
-    total_elections = cursor.fetchone()['total']
-    
-    cursor.execute("SELECT COUNT(*) as total FROM elections WHERE status='active' AND college_id=%s", (college_id,))
-    active_elections = cursor.fetchone()['total']
-    
-    cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter' AND is_approved=FALSE AND college_id=%s", (college_id,))
-    pending_voters = cursor.fetchone()['total']
-    
-    cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter' AND is_approved=TRUE AND college_id=%s", (college_id,))
-    approved_voters = cursor.fetchone()['total']
-    
+
+    if college_id is not None:
+        cursor.execute("SELECT COUNT(*) as total FROM elections WHERE college_id=%s", (college_id,))
+        total_elections = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM elections WHERE status='active' AND college_id=%s", (college_id,))
+        active_elections = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter' AND college_id=%s", (college_id,))
+        total_voters = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter' AND is_approved=FALSE AND college_id=%s", (college_id,))
+        pending_voters = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter' AND is_approved=TRUE AND college_id=%s", (college_id,))
+        approved_voters = cursor.fetchone()['total']
+
+        cursor.execute("""
+            SELECT COUNT(*) as total FROM candidates c
+            JOIN positions p ON c.position_id = p.id
+            JOIN elections e ON p.election_id = e.id
+            WHERE e.college_id=%s
+        """, (college_id,))
+        total_candidates = cursor.fetchone()['total']
+
+        cursor.execute("""
+            SELECT COUNT(*) as total FROM votes v
+            JOIN elections e ON v.election_id = e.id
+            WHERE e.college_id=%s
+        """, (college_id,))
+        total_votes = cursor.fetchone()['total']
+
+        cursor.execute("""
+            SELECT id, title, status, start_date, end_date, created_at
+            FROM elections
+            WHERE college_id=%s
+            ORDER BY created_at DESC
+            LIMIT 5
+        """, (college_id,))
+        recent_elections = cursor.fetchall()
+    else:
+        cursor.execute("SELECT COUNT(*) as total FROM elections")
+        total_elections = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM elections WHERE status='active'")
+        active_elections = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter'")
+        total_voters = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter' AND is_approved=FALSE")
+        pending_voters = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter' AND is_approved=TRUE")
+        approved_voters = cursor.fetchone()['total']
+
+        cursor.execute("""
+            SELECT COUNT(*) as total FROM candidates c
+            JOIN positions p ON c.position_id = p.id
+            JOIN elections e ON p.election_id = e.id
+        """)
+        total_candidates = cursor.fetchone()['total']
+
+        cursor.execute("""
+            SELECT COUNT(*) as total FROM votes v
+            JOIN elections e ON v.election_id = e.id
+        """)
+        total_votes = cursor.fetchone()['total']
+
+        cursor.execute("""
+            SELECT id, title, status, start_date, end_date, created_at
+            FROM elections
+            ORDER BY created_at DESC
+            LIMIT 5
+        """)
+        recent_elections = cursor.fetchall()
+
     cursor.execute("""
-        SELECT COUNT(*) as total FROM candidates c
-        JOIN positions p ON c.position_id = p.id
-        JOIN elections e ON p.election_id = e.id
-        WHERE e.college_id=%s
-    """, (college_id,))
-    total_candidates = cursor.fetchone()['total']
-    
-    cursor.execute("""
-        SELECT COUNT(*) as total FROM votes v
-        JOIN elections e ON v.election_id = e.id
-        WHERE e.college_id=%s
-    """, (college_id,))
-    total_votes = cursor.fetchone()['total']
-    
+        SELECT l.id, l.action, l.details, l.created_at,
+               CONCAT(COALESCE(u.firstname, ''), ' ', COALESCE(u.surname, '')) AS user_name
+        FROM system_logs l
+        LEFT JOIN users u ON l.user_id = u.id
+        ORDER BY l.created_at DESC
+        LIMIT 5
+    """)
+    recent_logs = cursor.fetchall()
+
     cursor.close()
     conn.close()
-    
+
     return render_template("dashboard.html",
                          college=college,
                          total_elections=total_elections,
                          active_elections=active_elections,
+                         total_voters=total_voters,
                          pending_voters=pending_voters,
                          approved_voters=approved_voters,
                          total_candidates=total_candidates,
-                         total_votes=total_votes)
+                         total_votes=total_votes,
+                         recent_elections=recent_elections,
+                         recent_logs=recent_logs)
 
 # ============================================
 # ELECTION MANAGEMENT
@@ -123,8 +185,10 @@ def view_elections():
     college_id = get_admin_college_id()
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
+    
+    # Show elections for this college or elections with no college assigned
     if college_id is not None:
-        cursor.execute("SELECT * FROM elections WHERE college_id=%s ORDER BY created_at DESC", (college_id,))
+        cursor.execute("SELECT * FROM elections WHERE college_id=%s OR college_id IS NULL ORDER BY created_at DESC", (college_id,))
     else:
         cursor.execute("SELECT * FROM elections ORDER BY created_at DESC")
     elections = cursor.fetchall()
@@ -145,7 +209,7 @@ def view_elections():
             FROM positions p
             LEFT JOIN candidates c ON c.position_id = p.id
             JOIN elections e ON p.election_id = e.id
-            WHERE e.college_id=%s
+            WHERE e.college_id=%s OR e.college_id IS NULL
             ORDER BY e.created_at DESC, p.display_order, p.title, c.surname
         """, (college_id,))
     else:
@@ -225,9 +289,9 @@ def election_positions(election_id):
     
     # Get election details
     if college_id is not None:
-        cursor.execute("SELECT * FROM elections WHERE id=%s AND college_id=%s", (election_id, college_id))
+        cursor.execute("SELECT * FROM elections WHERE id=%s AND (college_id=%s OR college_id IS NULL)", (election_id, college_id))
     else:
-        cursor.execute("SELECT * FROM elections WHERE id=%s AND college_id IS NULL", (election_id,))
+        cursor.execute("SELECT * FROM elections WHERE id=%s", (election_id,))
     election = cursor.fetchone()
     
     if not election:
@@ -322,9 +386,9 @@ def edit_election(election_id):
         return redirect(url_for('admin.view_elections'))
     
     if college_id is not None:
-        cursor.execute("SELECT * FROM elections WHERE id=%s AND college_id=%s", (election_id, college_id))
+        cursor.execute("SELECT * FROM elections WHERE id=%s AND (college_id=%s OR college_id IS NULL)", (election_id, college_id))
     else:
-        cursor.execute("SELECT * FROM elections WHERE id=%s AND college_id IS NULL", (election_id,))
+        cursor.execute("SELECT * FROM elections WHERE id=%s", (election_id,))
     election = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -856,7 +920,10 @@ def view_results():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     
-    cursor.execute("SELECT id, title FROM elections WHERE college_id=%s ORDER BY created_at DESC", (college_id,))
+    if college_id is not None:
+        cursor.execute("SELECT id, title FROM elections WHERE college_id=%s OR college_id IS NULL ORDER BY created_at DESC", (college_id,))
+    else:
+        cursor.execute("SELECT id, title FROM elections ORDER BY created_at DESC")
     elections = cursor.fetchall()
     
     selected_election = None
@@ -864,7 +931,10 @@ def view_results():
     total_votes = 0
     
     if election_id:
-        cursor.execute("SELECT * FROM elections WHERE id=%s AND college_id=%s", (election_id, college_id))
+        if college_id is not None:
+            cursor.execute("SELECT * FROM elections WHERE id=%s AND (college_id=%s OR college_id IS NULL)", (election_id, college_id))
+        else:
+            cursor.execute("SELECT * FROM elections WHERE id=%s", (election_id,))
         selected_election = cursor.fetchone()
         
         if selected_election:
@@ -894,12 +964,44 @@ def view_results():
 @admin_bp.route("/logs")
 @admin_required
 def view_logs():
+    search = request.args.get('search', '').strip()
+    action_filter = request.args.get('action_filter', '').strip() or None
+    action_types = ['login', 'logout', 'vote', 'create_election', 'create_position', 'edit_election', 'delete_election']
+
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+        SELECT l.id, l.action, l.details, l.created_at, l.ip_address,
+               CONCAT(COALESCE(u.firstname, ''), ' ', COALESCE(u.surname, '')) AS user_name
+        FROM system_logs l
+        LEFT JOIN users u ON l.user_id = u.id
+        WHERE 1=1
+    """
+    params = []
+
+    if action_filter:
+        query += " AND l.action = %s"
+        params.append(action_filter)
+
+    if search:
+        query += " AND (l.action LIKE %s OR l.details LIKE %s OR u.firstname LIKE %s OR u.surname LIKE %s OR l.ip_address LIKE %s)"
+        like_search = f"%{search}%"
+        params.extend([like_search] * 5)
+
+    query += " ORDER BY l.created_at DESC LIMIT 100"
+    cursor.execute(query, params)
+    logs = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
     return render_template(
         'logs.html',
-        logs=[],
-        search='',
-        action_filter=None,
-        action_types=['login', 'logout', 'vote', 'create_election']
+        logs=logs,
+        search=search,
+        action_filter=action_filter,
+        action_types=action_types
     )
 
 # ============================================
