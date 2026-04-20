@@ -37,22 +37,7 @@
       <span class="stat-sub">College administrators</span>
     </div>
   </div>
-  <div class="stat-card stat-card-green">
-    <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
-    <div class="stat-info">
-      <span class="stat-number">{{ total_voters or 0 }}</span>
-      <span class="stat-label">Total Voters</span>
-      <span class="stat-sub">Active student accounts</span>
-    </div>
-  </div>
-  <div class="stat-card stat-card-amber">
-    <div class="stat-icon"><i class="bi bi-calendar2-event-fill"></i></div>
-    <div class="stat-info">
-      <span class="stat-number">{{ total_elections or 0 }}</span>
-      <span class="stat-label">Elections</span>
-      <span class="stat-sub">All time</span>
-    </div>
-  </div>
+
 </div>
 
 <!-- Content Row -->
@@ -99,7 +84,7 @@
                   {% if admin.is_active %}
                     <span class="badge-status badge-active"><i class="bi bi-circle-fill me-1" style="font-size:6px"></i>Active</span>
                   {% else %}
-                    <span class="badge-status badge-archived"><i class="bi bi-circle-fill me-1" style="font-size:6px"></i>Archived</span>
+                    <span class="badge-status badge-warning"><i class="bi bi-circle-fill me-1" style="font-size:6px"></i>Inactive</span>
                   {% endif %}
                 </td>
                 <td class="text-muted-sm">{{ admin.created_at }}</td>
@@ -134,7 +119,7 @@
             <div class="activity-content">
               <span class="activity-action">{{ log.action.replace('_', ' ').title() if log.action else 'System Event' }}</span>
               <span class="activity-detail">
-                {% if log.firstname %}{{ log.firstname }} {{ log.surname }}{% else %}—{% endif %}
+                {% if log.firstname %}{{ log.firstname }} {{ log.surname }}{% if log.role %} · {{ log.role.title() }}{% endif %}{% else %}—{% endif %}
               </span>
             </div>
             <span class="activity-time">{{ log.created_at }}</span>
