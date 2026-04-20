@@ -24,77 +24,95 @@
         <h5 class="card-panel-title"><i class="bi bi-person-badge-fill me-2"></i>Candidate Information</h5>
       </div>
       <div class="card-panel-body">
-        <div class="row g-3 mb-4">
-          <div class="col-md-6">
+        <form method="POST" action="{{ url_for('admin.edit_candidate', candidate_id=candidate.id) if action == 'edit' else url_for('admin.create_candidate') }}" enctype="multipart/form-data">
+          <div class="mb-3">
             <label class="form-label-custom">Election</label>
-            <select class="form-select form-control-custom">
+            <select id="electionSelect" class="form-select form-control-custom">
               <option value="">Select election…</option>
               {% for election in elections %}
-              <option value="{{ election.id }}">{{ election.title }}</option>
+              <option value="{{ election.id }}" {% if candidate and candidate.election_id == election.id %}selected{% endif %}>
+                {{ election.title }}
+              </option>
               {% endfor %}
             </select>
           </div>
-          <div class="col-md-6">
+
+          <div class="mb-3">
             <label class="form-label-custom">Position</label>
-            <select class="form-select form-control-custom">
+            <select id="positionSelect" name="position_id" class="form-select form-control-custom" required>
               <option value="">Select position…</option>
               {% for position in positions %}
-              <option value="{{ position.id }}">{{ position.title }}</option>
+              <option value="{{ position.position_id }}" data-election-id="{{ position.election_id }}" {% if candidate and candidate.position_id == position.position_id %}selected{% endif %}>
+                {{ position.position_title }} ({{ position.election_title }})
+              </option>
               {% endfor %}
             </select>
           </div>
-        </div>
 
-        <div class="mb-4">
-          <label class="form-label-custom">Full Name</label>
-          <input type="text" class="form-control form-control-custom"
-                 placeholder="Candidate's full name" maxlength="255"
-                 value="{{ candidate.full_name if candidate and candidate.full_name else '' }}"/>
-        </div>
-
-        <div class="mb-4">
-          <label class="form-label-custom">Partylist / Affiliation</label>
-          <input type="text" class="form-control form-control-custom"
-                 placeholder="e.g. Unity Party, Progressive Alliance" maxlength="255"
-                 value="{{ candidate.partylist if candidate and candidate.partylist else '' }}"/>
-        </div>
-
-        <div class="mb-4">
-          <label class="form-label-custom">Biography</label>
-          <textarea class="form-control form-control-custom" rows="4"
-                    placeholder="Candidate's background, achievements, and advocacy…">{{ candidate.biography if candidate and candidate.biography else '' }}</textarea>
-        </div>
-
-        <!-- Photo Upload -->
-        <div class="mb-4">
-          <label class="form-label-custom">Photo</label>
-          <div class="upload-area" id="uploadArea">
-            <input type="file" id="photoInput" accept="image/*" class="upload-input"
-                   onchange="previewPhoto(this)"/>
-            <div class="upload-placeholder" id="uploadPlaceholder">
-              <i class="bi bi-cloud-arrow-up-fill"></i>
-              <p>Click to upload or drag & drop</p>
-              <small>PNG, JPG, GIF, WEBP up to 5MB</small>
-            </div>
-            <img id="photoPreview" class="photo-preview-img d-none" alt="Preview"/>
+          <div class="mb-3">
+            <label class="form-label-custom">Student</label>
+            <select name="student_id" class="form-select form-control-custom" required>
+              <option value="">Select student…</option>
+              {% for voter in voters %}
+              <option value="{{ voter.student_id }}" {% if candidate and candidate.student_id == voter.student_id %}selected{% endif %}>
+                {{ voter.firstname }} {{ voter.middlename }} {{ voter.surname }} ({{ voter.student_id }})
+              </option>
+              {% endfor %}
+            </select>
           </div>
-        </div>
 
-        <div class="mb-4">
-          <label class="form-label-custom">Display Order</label>
-          <input type="number" class="form-control form-control-custom"
-                 value="{{ candidate.display_order if candidate and candidate.display_order else 0 }}"
-                 min="0" style="max-width:120px"/>
-          <div class="form-hint">Lower numbers appear first on the ballot.</div>
-        </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label-custom">First Name</label>
+              <input type="text" name="firstname" class="form-control form-control-custom"
+                     value="{{ candidate.firstname if candidate else '' }}" required/>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label-custom">Middle Name</label>
+              <input type="text" name="middlename" class="form-control form-control-custom"
+                     value="{{ candidate.middlename if candidate else '' }}"/>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label-custom">Last Name</label>
+              <input type="text" name="surname" class="form-control form-control-custom"
+                     value="{{ candidate.surname if candidate else '' }}" required/>
+            </div>
+          </div>
 
-        <div class="form-actions">
-          <a href="{{ url_for('admin.view_candidates') }}" class="btn btn-outline-custom">Cancel</a>
-          <button type="button" class="btn btn-primary-custom">
-            <i class="bi bi-{{ 'save' if action == 'edit' else 'person-plus-fill' }} me-2"></i>
-            {{ 'Save Changes' if action == 'edit' else 'Add Candidate' }}
-          </button>
-        </div>
+          <div class="mb-4">
+            <label class="form-label-custom">Platform / Campaign Statement</label>
+            <textarea name="platform" class="form-control form-control-custom" rows="4"
+                      placeholder="Candidate's platform, goals, and advocacy…">{{ candidate.platform if candidate else '' }}</textarea>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label-custom">Candidate Photo</label>
+            <div id="uploadArea" class="card border-dashed p-4 text-center upload-area" style="cursor: pointer; border: 2px dashed #dee2e6; border-radius: 8px;">
+              <div id="uploadPlaceholder">
+                <i class="bi bi-cloud-upload" style="font-size: 2rem; color: #6c757d;"></i>
+                <p class="mt-3 mb-1 text-muted">Drag and drop your photo here</p>
+                <p class="text-muted" style="font-size: 0.9rem;">or click to select a file</p>
+                <small class="text-muted">PNG, JPG, JPEG, GIF - Max 5MB</small>
+              </div>
+              <img id="photoPreview" src="" alt="Photo Preview" class="d-none" style="max-width: 200px; max-height: 200px; border-radius: 8px;"/>
+              <input type="file" id="photoInput" name="photo" class="d-none" accept="image/*"/>
+            </div>
+            {% if action == 'edit' and candidate.photo %}
+            <div class="mt-3">
+              <p class="text-muted small">Current photo:</p>
+              <img src="{{ url_for('admin.static', filename='uploads/candidates/' + candidate.photo) }}" alt="Current Photo" style="max-width: 150px; border-radius: 8px;"/>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="form-actions">
+            <a href="{{ url_for('admin.view_candidates') }}" class="btn btn-outline-custom">Cancel</a>
+            <button type="submit" class="btn btn-primary-custom">
+              <i class="bi bi-{{ 'save' if action == 'edit' else 'person-plus-fill' }} me-2"></i>
+              {{ 'Save Changes' if action == 'edit' else 'Add Candidate' }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -140,17 +158,71 @@ function previewPhoto(input) {
   }
 }
 
-const uploadArea = document.getElementById('uploadArea');
-uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
-uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
-uploadArea.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadArea.classList.remove('drag-over');
-  const files = e.dataTransfer.files;
-  if (files.length) {
-    document.getElementById('photoInput').files = files;
-    previewPhoto(document.getElementById('photoInput'));
+document.addEventListener('DOMContentLoaded', function() {
+  const uploadArea = document.getElementById('uploadArea');
+  const photoInput = document.getElementById('photoInput');
+  const electionSelect = document.getElementById('electionSelect');
+  const positionSelect = document.getElementById('positionSelect');
+
+  function filterPositions() {
+    const electionId = electionSelect.value;
+    Array.from(positionSelect.options).forEach(option => {
+      if (!option.value) {
+        option.hidden = false;
+        option.disabled = false;
+        return;
+      }
+      const optionElectionId = option.dataset.electionId || '';
+      const show = !electionId || optionElectionId === electionId;
+      option.hidden = !show;
+      option.disabled = !show;
+    });
+
+    if (electionSelect.value) {
+      const firstVisible = Array.from(positionSelect.options).find(o => !o.disabled && o.value);
+      if (firstVisible) {
+        positionSelect.value = firstVisible.value;
+      } else {
+        positionSelect.value = '';
+      }
+    }
   }
+
+  electionSelect.addEventListener('change', filterPositions);
+  filterPositions();
+
+  // Click to upload
+  uploadArea.addEventListener('click', () => photoInput.click());
+
+  // File selected
+  photoInput.addEventListener('change', function() {
+    previewPhoto(this);
+  });
+
+  // Drag over
+  uploadArea.addEventListener('dragover', e => { 
+    e.preventDefault(); 
+    uploadArea.classList.add('drag-over');
+    uploadArea.style.backgroundColor = '#f8f9fa';
+  });
+
+  // Drag leave
+  uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('drag-over');
+    uploadArea.style.backgroundColor = '';
+  });
+
+  // Drop
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.classList.remove('drag-over');
+    uploadArea.style.backgroundColor = '';
+    const files = e.dataTransfer.files;
+    if (files.length) {
+      photoInput.files = files;
+      previewPhoto(photoInput);
+    }
+  });
 });
 </script>
 {% endblock %}

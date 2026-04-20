@@ -21,14 +21,21 @@
 
 <!-- Filter -->
 <div class="filter-bar mb-3">
-  <div class="d-flex gap-2 align-items-center flex-wrap">
-    <select class="form-select form-control-custom w-auto">
-      <option value="">All Elections</option>
-      {% for election in elections %}
-      <option value="{{ election.id }}">{{ election.title }}</option>
-      {% endfor %}
-    </select>
-  </div>
+  <form method="GET" class="d-flex gap-2 align-items-center flex-wrap">
+    <div class="w-auto">
+      <select name="election_id" class="form-select form-control-custom" onchange="this.form.submit()">
+        <option value="">All Elections</option>
+        {% for election in elections %}
+        <option value="{{ election.id }}" {% if election.id|string == selected_election_id %}selected{% endif %}>
+          {{ election.title }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <button type="submit" class="btn btn-outline-primary">Filter</button>
+    </div>
+  </form>
 </div>
 
 <div class="card-panel">
@@ -41,7 +48,7 @@
             <th>Photo</th>
             <th>Name</th>
             <th>Position</th>
-            <th>Partylist</th>
+            <th>Election</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -49,20 +56,27 @@
           {% for candidate in candidates %}
           <tr>
             <td>
+              {% if candidate.photo %}
+              <img src="{{ url_for('admin.static', filename='uploads/candidates/' + candidate.photo) }}" 
+                   alt="{{ candidate.firstname }} {{ candidate.surname }}" 
+                   class="candidate-photo" 
+                   style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;"/>
+              {% else %}
               <div class="candidate-avatar">
                 <div class="candidate-avatar-placeholder">
-                  {{ candidate.full_name[0] if candidate.full_name else '?' }}
+                  {{ (candidate.firstname + ' ' + candidate.surname)[0] if candidate.firstname else '?' }}
                 </div>
               </div>
+              {% endif %}
             </td>
             <td>
-              <div class="fw-600">{{ candidate.full_name }}</div>
-              {% if candidate.biography %}
-              <div class="text-muted-sm">{{ candidate.biography[:60] }}{% if candidate.biography|length > 60 %}…{% endif %}</div>
+              <div class="fw-600">{{ candidate.firstname }} {{ candidate.middlename }} {{ candidate.surname }}</div>
+              {% if candidate.platform %}
+              <div class="text-muted-sm">{{ candidate.platform[:60] }}{% if candidate.platform|length > 60 %}…{% endif %}</div>
               {% endif %}
             </td>
             <td><span class="badge-position">{{ candidate.position_title or '—' }}</span></td>
-            <td class="text-muted-sm">{{ candidate.partylist or '—' }}</td>
+            <td class="text-muted-sm">{{ candidate.election_title or '—' }}</td>
             <td>
               <div class="action-buttons">
                 <a href="{{ url_for('admin.edit_candidate', candidate_id=candidate.id) }}"

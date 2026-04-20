@@ -40,6 +40,27 @@ def create_trusted_devices_table():
             cursor.close()
             conn.close()
 
+def add_candidate_photo_column():
+    """Add photo column to candidates table if it doesn't exist"""
+    conn = get_db_connection()
+    if conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SHOW COLUMNS FROM candidates LIKE 'photo'")
+            result = cursor.fetchone()
+            
+            if not result:
+                cursor.execute("ALTER TABLE candidates ADD COLUMN photo VARCHAR(255) NULL DEFAULT NULL")
+                conn.commit()
+                print("Photo column added to candidates table")
+            else:
+                print("Photo column already exists in candidates table")
+        except Error as e:
+            print(f"Error adding photo column: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+
 def create_app():
     app = Flask(__name__, static_folder=None)
     
@@ -76,5 +97,6 @@ def create_app():
     # Create trusted_devices table on startup
     with app.app_context():
         create_trusted_devices_table()
+        add_candidate_photo_column()
 
     return app

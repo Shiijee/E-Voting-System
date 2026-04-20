@@ -97,6 +97,24 @@
   color: var(--navy);
 }
 
+.election-positions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.badge-position {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #334155;
+  font-size: 0.78rem;
+  border: 1px solid rgba(148,163,184,0.18);
+}
+
 /* ── Action Buttons ──────────────────── */
 .action-buttons {
   display: flex;
