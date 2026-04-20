@@ -457,11 +457,11 @@ def view_positions():
             SELECT p.*, e.title as election_title 
             FROM positions p 
             JOIN elections e ON p.election_id = e.id 
-            WHERE e.college_id=%s
+            WHERE e.college_id=%s OR e.college_id IS NULL
             ORDER BY e.created_at DESC, p.display_order
         """, (college_id,))
         positions = cursor.fetchall()
-        cursor.execute("SELECT id, title FROM elections WHERE status != 'completed' AND college_id=%s", (college_id,))
+        cursor.execute("SELECT id, title FROM elections WHERE status != 'completed' AND (college_id=%s OR college_id IS NULL)", (college_id,))
     else:
         cursor.execute("""
             SELECT p.*, e.title as election_title 
@@ -502,7 +502,7 @@ def create_position():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     if college_id is not None:
-        cursor.execute("SELECT id, title FROM elections WHERE status != 'completed' AND college_id=%s", (college_id,))
+        cursor.execute("SELECT id, title FROM elections WHERE status != 'completed' AND (college_id=%s OR college_id IS NULL)", (college_id,))
     else:
         cursor.execute("SELECT id, title FROM elections WHERE status != 'completed'")
     elections = cursor.fetchall()
@@ -601,7 +601,7 @@ def create_candidate():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     if college_id is not None:
-        cursor.execute("SELECT id, title FROM elections WHERE college_id=%s ORDER BY created_at DESC", (college_id,))
+        cursor.execute("SELECT id, title FROM elections WHERE college_id=%s OR college_id IS NULL ORDER BY created_at DESC", (college_id,))
     else:
         cursor.execute("SELECT id, title FROM elections ORDER BY created_at DESC")
     elections = cursor.fetchall()
@@ -611,7 +611,7 @@ def create_candidate():
             SELECT p.id as position_id, p.title as position_title, p.election_id, e.title as election_title 
             FROM positions p 
             JOIN elections e ON p.election_id = e.id 
-            WHERE e.status != 'completed' AND e.college_id=%s
+            WHERE e.status != 'completed' AND (e.college_id=%s OR e.college_id IS NULL)
         """, (college_id,))
     else:
         cursor.execute("""
@@ -744,7 +744,7 @@ def edit_candidate(candidate_id):
 
     # Load all elections for the dropdown filter
     if college_id is not None:
-        cursor.execute("SELECT id, title FROM elections WHERE college_id=%s ORDER BY created_at DESC", (college_id,))
+        cursor.execute("SELECT id, title FROM elections WHERE college_id=%s OR college_id IS NULL ORDER BY created_at DESC", (college_id,))
     else:
         cursor.execute("SELECT id, title FROM elections ORDER BY created_at DESC")
     elections = cursor.fetchall()

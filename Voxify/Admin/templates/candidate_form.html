@@ -49,18 +49,6 @@
             </select>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label-custom">Student</label>
-            <select name="student_id" class="form-select form-control-custom" required>
-              <option value="">Select student…</option>
-              {% for voter in voters %}
-              <option value="{{ voter.student_id }}" {% if candidate and candidate.student_id == voter.student_id %}selected{% endif %}>
-                {{ voter.firstname }} {{ voter.middlename }} {{ voter.surname }} ({{ voter.student_id }})
-              </option>
-              {% endfor %}
-            </select>
-          </div>
-
           <div class="row g-3 mb-3">
             <div class="col-md-4">
               <label class="form-label-custom">First Name</label>
