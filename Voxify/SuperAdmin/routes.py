@@ -18,23 +18,33 @@ def dashboard():
     cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='admin'")
     total_admins = cursor.fetchone()['total']
 
-    cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter'")
-    total_voters = cursor.fetchone()['total']
+    cursor.execute("SELECT COUNT(*) as total FROM colleges")
+    total_colleges = cursor.fetchone()['total']
 
-    cursor.execute("SELECT COUNT(*) as total FROM elections")
-    total_elections = cursor.fetchone()['total']
+    cursor.execute("""
+        SELECT u.id, u.firstname, u.surname, u.email, u.student_id, u.created_at, u.is_active,
+               c.name as college_name
+        FROM users u LEFT JOIN colleges c ON u.college_id = c.id
+        WHERE u.role='admin' ORDER BY u.created_at DESC LIMIT 5
+    """)
+    recent_admins = cursor.fetchall()
 
-    cursor.execute("SELECT COUNT(*) as total FROM votes")
-    total_votes = cursor.fetchone()['total']
+    cursor.execute("""
+        SELECT l.id, l.action, l.created_at, u.firstname, u.surname, u.role
+        FROM system_logs l
+        LEFT JOIN users u ON l.user_id = u.id
+        ORDER BY l.created_at DESC LIMIT 10
+    """)
+    recent_logs = cursor.fetchall()
 
     cursor.close()
     conn.close()
 
     return render_template('super_dashboard.html',
                            total_admins=total_admins,
-                           total_voters=total_voters,
-                           total_elections=total_elections,
-                           total_votes=total_votes)
+                           total_colleges=total_colleges,
+                           recent_admins=recent_admins,
+                           recent_logs=recent_logs)
 
 
 @superadmin_bp.route("/manage-admins")
@@ -42,24 +52,46 @@ def dashboard():
 def manage_admins():
     status = request.args.get('status', 'all')
     search = request.args.get('search', '').strip()
+    college_filter = request.args.get('college_filter', '').strip()
     
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     
-    query = "SELECT u.id, u.firstname, u.surname, u.student_id, u.email, u.role, u.created_at, u.is_active, c.name as college_name FROM users u LEFT JOIN colleges c ON u.college_id = c.id WHERE u.role='admin'"
+    cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='admin'")
+    total_admins = cursor.fetchone()['total']
+    cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='admin' AND is_active=TRUE AND COALESCE(is_archived, FALSE)=FALSE")
+    active_admins = cursor.fetchone()['total']
+    cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='admin' AND is_active=FALSE AND COALESCE(is_archived, FALSE)=FALSE")
+    inactive_admins = cursor.fetchone()['total']
+    cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='admin' AND COALESCE(is_archived, FALSE)=TRUE")
+    archived_admins = cursor.fetchone()['total']
+    status_counts = {
+        'all': total_admins,
+        'active': active_admins,
+        'inactive': inactive_admins,
+        'archived': archived_admins
+    }
+    
+    query = "SELECT u.id, u.firstname, u.surname, u.student_id, u.email, u.role, u.created_at, u.is_active, COALESCE(u.is_archived, FALSE) AS is_archived, c.name as college_name FROM users u LEFT JOIN colleges c ON u.college_id = c.id WHERE u.role='admin'"
     params = []
     
     if status == 'active':
-        query += " AND is_active=TRUE"
+        query += " AND u.is_active=TRUE AND COALESCE(u.is_archived, FALSE)=FALSE"
     elif status == 'inactive':
-        query += " AND is_active=FALSE"
+        query += " AND u.is_active=FALSE AND COALESCE(u.is_archived, FALSE)=FALSE"
+    elif status == 'archived':
+        query += " AND COALESCE(u.is_archived, FALSE)=TRUE"
+    
+    if college_filter:
+        query += " AND u.college_id=%s"
+        params.append(college_filter)
     
     if search:
-        query += " AND (firstname LIKE %s OR surname LIKE %s OR student_id LIKE %s OR email LIKE %s)"
+        query += " AND (u.firstname LIKE %s OR u.surname LIKE %s OR u.student_id LIKE %s OR u.email LIKE %s)"
         search_param = f"%{search}%"
         params.extend([search_param, search_param, search_param, search_param])
     
-    query += " ORDER BY created_at DESC"
+    query += " ORDER BY u.created_at DESC"
     
     cursor.execute(query, params)
     admins = cursor.fetchall()
@@ -70,7 +102,7 @@ def manage_admins():
     
     cursor.close()
     conn.close()
-    return render_template('manage_admins.html', admins=admins, status=status, search=search, colleges=colleges)
+    return render_template('manage_admins.html', admins=admins, status=status, search=search, college_filter=college_filter, colleges=colleges, status_counts=status_counts)
 
 
 @superadmin_bp.route("/manage-colleges")
@@ -213,6 +245,7 @@ def create_admin():
 @superadmin_bp.route("/delete-admin/<int:admin_id>")
 @superadmin_required
 def delete_admin(admin_id):
+    status = request.args.get('status', 'all')
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM users WHERE id=%s AND role='admin'", (admin_id,))
@@ -220,7 +253,7 @@ def delete_admin(admin_id):
     cursor.close()
     conn.close()
     flash("Admin deleted!", "success")
-    return redirect(url_for('super_admin.manage_admins'))
+    return redirect(url_for('super_admin.manage_admins', status=status if status != 'all' else None))
 
 @superadmin_bp.route("/edit-admin/<int:admin_id>", methods=["GET", "POST"])
 @superadmin_required
@@ -284,18 +317,62 @@ def edit_admin(admin_id):
 @superadmin_bp.route("/archive-admin/<int:admin_id>")
 @superadmin_required
 def archive_admin(admin_id):
+    status = request.args.get('status', 'all')
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT is_active, COALESCE(is_archived, FALSE) AS is_archived FROM users WHERE id=%s AND role='admin'", (admin_id,))
+    admin = cursor.fetchone()
+    if admin:
+        if admin['is_archived']:
+            cursor.execute("UPDATE users SET is_active=TRUE, is_archived=FALSE WHERE id=%s AND role='admin'", (admin_id,))
+            conn.commit()
+            flash("Admin restored!", "success")
+        else:
+            cursor.execute("UPDATE users SET is_active=FALSE, is_archived=TRUE WHERE id=%s AND role='admin'", (admin_id,))
+            conn.commit()
+            flash("Admin archived!", "warning")
+    cursor.close()
+    conn.close()
+    return redirect(url_for('super_admin.manage_admins', status=status if status != 'all' else None))
+
+
+@superadmin_bp.route("/toggle-admin-status/<int:admin_id>")
+@superadmin_required
+def toggle_admin_status(admin_id):
+    action = request.args.get('action', 'toggle')
+    status = request.args.get('status', 'all')
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT is_active FROM users WHERE id=%s AND role='admin'", (admin_id,))
     admin = cursor.fetchone()
     if admin:
-        new_status = not admin['is_active']
-        cursor.execute("UPDATE users SET is_active=%s WHERE id=%s AND role='admin'", (new_status, admin_id))
+        if action == 'activate':
+            new_status = True
+            archive_status = False
+            flash_text = "Admin restored!"
+            flash_category = "success"
+        elif action == 'deactivate':
+            new_status = False
+            archive_status = False
+            flash_text = "Admin deactivated!"
+            flash_category = "warning"
+        else:
+            new_status = not admin['is_active']
+            archive_status = False
+            flash_text = "Admin restored!" if new_status else "Admin deactivated!"
+            flash_category = "success" if new_status else "warning"
+        cursor.execute("UPDATE users SET is_active=%s, is_archived=%s WHERE id=%s AND role='admin'", (new_status, archive_status, admin_id))
         conn.commit()
-        flash("Admin restored!" if new_status else "Admin archived!", "success" if new_status else "warning")
+        flash(flash_text, flash_category)
     cursor.close()
     conn.close()
-    return redirect(url_for('super_admin.manage_admins'))
+    if action == 'deactivate':
+        redirect_status = 'inactive'
+    elif action == 'activate':
+        redirect_status = 'active'
+    else:
+        redirect_status = status if status != 'all' else None
+    return redirect(url_for('super_admin.manage_admins', status=redirect_status))
 
 
 @superadmin_bp.route("/system-logs")

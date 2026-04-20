@@ -326,8 +326,9 @@ img { display: block; max-width: 100%; }
 .text-nowrap { white-space: nowrap; }
 .text-super { color: var(--super) !important; }
 .text-muted { color: var(--muted) !important; }
-.text-muted-sm { font-size: 0.8rem; color: var(--muted); display: block; }
-td .text-muted-sm { display: block; margin-top: 2px; }
+.text-muted-sm { font-size: 0.8rem; color: var(--muted); }
+td.text-muted-sm { display: table-cell !important; }
+td .text-muted-sm { display: inline; margin-top: 0; }
 
 /* ── Grid helpers ──────────────────────────────────── */
 .row { display: flex; flex-wrap: wrap; margin: 0 -10px; }
@@ -367,4 +368,3 @@ td .text-muted-sm { display: block; margin-top: 2px; }
   color: #f59e0b;
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
-

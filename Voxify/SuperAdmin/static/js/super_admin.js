@@ -31,7 +31,8 @@ if (confirmModal) {
   let pendingCallback = null;
 
   document.querySelectorAll('[data-confirm]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
       const title   = btn.dataset.confirmTitle   || 'Confirm Action';
       const message = btn.dataset.confirmMessage || 'Are you sure?';
       document.getElementById('confirmModalTitle').textContent = title;
@@ -40,6 +41,7 @@ if (confirmModal) {
         const form = btn.closest('form');
         if (form) form.submit();
         else if (btn.dataset.href) window.location.href = btn.dataset.href;
+        else if (btn.tagName === 'A' && btn.href && btn.href !== '#') window.location.href = btn.href;
       };
       bsModal.show();
     });

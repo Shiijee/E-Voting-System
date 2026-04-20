@@ -92,10 +92,15 @@
 .btn-action-warn:hover   { background: var(--gold); color: var(--ink); }
 
 /* ── Table ─────────────────────────────────────────── */
-.table-responsive { overflow-x: auto; }
-.table-custom { width: 100%; border-collapse: collapse; }
+.table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-custom {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  min-width: 1040px;
+}
 .table-custom thead th {
-  padding: 12px 18px;
+  padding: 12px 16px;
   font-size: 0.67rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -104,16 +109,82 @@
   background: #fdfaf6;
   border-bottom: 1.5px solid var(--border);
   white-space: nowrap;
+  overflow: hidden;
+  vertical-align: middle;
 }
 .table-custom tbody td {
-  padding: 14px 18px;
-  border-bottom: 1px solid rgba(221,213,196,0.45);
-  font-size: 0.875rem;
-  color: var(--ink);
-  vertical-align: middle;
+  padding: 14px 16px !important;
+  border-bottom: 1px solid rgba(221,213,196,0.45) !important;
+  font-size: 0.875rem !important;
+  color: var(--ink) !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .table-custom tbody tr:hover td { background: #fdf8f0; }
 .table-custom tbody tr:last-child td { border-bottom: none; }
+
+/* ── Table column widths & alignment ───────────────── */
+/* Total = 50+230+185+120+90+105+165+115 = 1060px  */
+.table-custom .col-num           { width: 50px;   text-align: center; }
+.table-custom .col-administrator { width: 230px;  text-align: left; }
+.table-custom .col-college       { width: 185px;  text-align: left; }
+.table-custom .col-username      { width: 120px;  text-align: left; }
+.table-custom .col-role          { width: 90px;   text-align: center; }
+.table-custom .col-status        { width: 105px;  text-align: center; }
+.table-custom .col-created       { width: 165px;  text-align: left; }
+.table-custom .col-actions       { width: 115px;  text-align: center; }
+
+/* header alignment mirrors body */
+.table-custom thead th.col-num,
+.table-custom thead th.col-role,
+.table-custom thead th.col-status,
+.table-custom thead th.col-actions { text-align: center; }
+
+/* center badge & action columns in body */
+.table-custom tbody td.col-num,
+.table-custom tbody td.col-role,
+.table-custom tbody td.col-status,
+.table-custom tbody td.col-actions {
+  text-align: center;
+  overflow: visible; /* badges/buttons must not clip */
+}
+
+.table-custom tbody td.col-actions .action-buttons { justify-content: center; }
+
+/* administrator cell — flex inside fixed-width td */
+.table-custom td.col-administrator {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.admin-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+.admin-info {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.admin-info .fw-600 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.875rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+.admin-info .text-muted-sm {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
 
 /* ── Badges ────────────────────────────────────────── */
 .badge-status {
@@ -218,6 +289,7 @@
   border-bottom: none;
   margin-bottom: -2px;
   cursor: pointer;
+  text-decoration: none;
 }
 .status-tab:hover { color: var(--super); background: var(--paper); }
 .status-tab.active {
@@ -242,8 +314,7 @@
 }
 .status-tab.active .tab-count { background: var(--super); color: var(--gold); border-color: var(--super); }
 
-/* ── Admin cell & avatar ───────────────────────────── */
-.admin-cell { display: flex; align-items: center; gap: 10px; }
+/* ── Admin avatar ───────────────────────────────────── */
 .admin-avatar-sm {
   width: 34px; height: 34px;
   border-radius: 50%;
