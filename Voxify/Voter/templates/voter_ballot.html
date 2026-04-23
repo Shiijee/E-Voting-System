@@ -17,6 +17,7 @@
 </div>
 
 {% if positions %}
+<form method="POST" id="ballotForm">
 {% for position in positions %}
 <div class="position-section">
   <div class="position-label">
@@ -29,13 +30,14 @@
 
   <div class="candidates-grid">
     {% for candidate in position.candidates %}
-    <div class="candidate-card" data-group="pos-{{ position.id }}" data-candidate="{{ candidate.id }}">
+    <div class="candidate-card" data-group="pos-{{ position.id }}" data-candidate="{{ candidate.id }}" onclick="selectCandidate(this, {{ position.id }}, {{ candidate.id }})">
+      <input type="hidden" name="position_{{ position.id }}" class="position-input" value="">
       <div class="candidate-check"><i class="bi bi-check2"></i></div>
       <div class="candidate-photo-wrap">
         {% if candidate.photo %}
-        <img src="{{ candidate.photo }}" alt="{{ candidate.full_name }}"/>
+        <img src="{{ url_for('admin.static', filename='uploads/candidates/' + candidate.photo) }}" alt="{{ candidate.full_name }}"/>
         {% else %}
-        {{ candidate.full_name[0] if candidate.full_name else '?' }}
+        <div class="candidate-initial">{{ candidate.full_name[0] if candidate.full_name else '?' }}</div>
         {% endif %}
       </div>
       <div class="candidate-name">{{ candidate.full_name }}</div>
@@ -55,14 +57,15 @@
   </div>
   <div class="confirm-actions">
     <button type="button" class="btn-ghost-white"
-            onclick="document.querySelectorAll('.candidate-card.selected').forEach(c=>c.classList.remove('selected')); document.getElementById('voteConfirmBar').style.display='none';">
+            onclick="clearAllSelections()">
       <i class="bi bi-x-lg"></i> Clear
     </button>
-    <button type="button" class="btn-gold" onclick="alert('Ballot submission coming soon.')">
+    <button type="submit" class="btn-gold">
       <i class="bi bi-check2-square me-2"></i>Submit Ballot
     </button>
   </div>
 </div>
+</form>
 
 {% else %}
 <div class="card-panel">

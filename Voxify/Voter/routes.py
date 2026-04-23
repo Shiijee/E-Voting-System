@@ -163,7 +163,16 @@ def ballot(election_id):
             WHERE position_id = %s AND status = 'approved'
             ORDER BY surname
         """, (position['id'],))
-        position['candidates'] = cursor.fetchall()
+        candidates = cursor.fetchall()
+        # Construct full_name for each candidate
+        for candidate in candidates:
+            full_name = ' '.join(filter(None, [
+                candidate.get('firstname', ''),
+                candidate.get('middlename', ''),
+                candidate.get('surname', '')
+            ])).strip()
+            candidate['full_name'] = full_name or 'Unknown'
+        position['candidates'] = candidates
     
     cursor.close()
     conn.close()

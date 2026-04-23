@@ -32,26 +32,57 @@ updateClock();
 setInterval(updateClock, 1000);
 
 // ── Candidate selection (ballot page) ────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  const cards = document.querySelectorAll('.candidate-card');
-  cards.forEach(card => {
-    card.addEventListener('click', () => {
-      const group = card.dataset.group;
-      if (group) {
-        document.querySelectorAll(`.candidate-card[data-group="${group}"]`)
-          .forEach(c => c.classList.remove('selected'));
-      }
-      card.classList.toggle('selected');
-      updateConfirmBar();
-    });
-  });
+function selectCandidate(cardElement, positionId, candidateId) {
+  const group = cardElement.dataset.group;
+  if (group) {
+    // Remove selected from other candidates in same position
+    document.querySelectorAll(`.candidate-card[data-group="${group}"]`)
+      .forEach(c => c.classList.remove('selected'));
+  }
+  // Mark this card as selected
+  cardElement.classList.add('selected');
+  
+  // Set the form input value
+  const input = cardElement.querySelector(`input[name="position_${positionId}"]`);
+  if (input) {
+    input.value = candidateId;
+  }
+  
+  updateConfirmBar();
+}
 
-  function updateConfirmBar() {
-    const bar   = document.getElementById('voteConfirmBar');
-    const count = document.getElementById('selectedCount');
-    if (!bar || !count) return;
-    const selected = document.querySelectorAll('.candidate-card.selected').length;
-    count.textContent = selected;
-    bar.style.display = selected > 0 ? 'flex' : 'none';
+function clearAllSelections() {
+  document.querySelectorAll('.candidate-card.selected').forEach(c => {
+    c.classList.remove('selected');
+    // Clear form inputs
+    const inputs = c.querySelectorAll('input[name^="position_"]');
+    inputs.forEach(input => input.value = '');
+  });
+  document.getElementById('voteConfirmBar').style.display = 'none';
+}
+
+function updateConfirmBar() {
+  const bar   = document.getElementById('voteConfirmBar');
+  const count = document.getElementById('selectedCount');
+  if (!bar || !count) return;
+  const selected = document.querySelectorAll('.candidate-card.selected').length;
+  count.textContent = selected;
+  bar.style.display = selected > 0 ? 'flex' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Form submission handler
+  const ballotForm = document.getElementById('ballotForm');
+  if (ballotForm) {
+    ballotForm.addEventListener('submit', (e) => {
+      // Collect selected candidates
+      const selected = document.querySelectorAll('.candidate-card.selected');
+      if (selected.length === 0) {
+        e.preventDefault();
+        alert('Please select at least one candidate before submitting.');
+        return;
+      }
+      // Form will submit normally with the selected candidates
+    });
   }
 });
