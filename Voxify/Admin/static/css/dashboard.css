@@ -34,7 +34,7 @@
 /* ── Stats Grid ──────────────────────── */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 18px;
   margin-bottom: 28px;
 }
@@ -283,3 +283,52 @@
   .quick-actions-grid { grid-template-columns: repeat(3,1fr); }
   .page-header { flex-direction: column; }
 }
+
+/* ── Missing utility classes ─────────────────────── */
+.mt-1 { margin-top: 4px !important; }
+.mb-1 { margin-bottom: 4px !important; }
+.mb-0 { margin-bottom: 0 !important; }
+.mt-4 { margin-top: 24px !important; }
+.me-1 { margin-right: 4px !important; }
+.me-2 { margin-right: 8px !important; }
+h6.mb-1 { font-size: 0.9rem; font-weight: 600; color: var(--ink); }
+p.mb-1 { font-size: 0.8rem; }
+
+/* ── Recent List ─────────────────────────────────── */
+.recent-list {
+  display: flex;
+  flex-direction: column;
+}
+.recent-list-item {
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(221,213,196,0.4);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.recent-list-item:last-child { border-bottom: none; }
+.recent-list-item h6 {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 3px;
+}
+.recent-list-item p {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ── Stat Note (sub-info on stat cards) ───────────── */
+.stat-note {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.55);
+  font-weight: 400;
+  display: block;
+  margin-top: 1px;
+}
+
+/* ── Additional badge variants ────────────────────── */
+.badge-upcoming  { background: #fef9c3; color: #713f12; }
+.badge-completed { background: #f3f4f6; color: #374151; }

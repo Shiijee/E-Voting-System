@@ -15,34 +15,38 @@
 </div>
 
 {% if votes %}
-{% set current_election = namespace(name='') %}
+{% set ns = namespace(current_election='', open_card=false) %}
 {% for vote in votes %}
-{% if vote.election_title != current_election.name %}
-{% set current_election.name = vote.election_title %}
+  {% if vote.election_title != ns.current_election %}
+    {% if ns.open_card %}
+    </div></div>
+    {% endif %}
+    {% set ns.current_election = vote.election_title %}
+    {% set ns.open_card = true %}
 <div class="card-panel mb-4">
   <div class="card-panel-header">
     <h5 class="card-panel-title">
       <i class="bi bi-calendar2-event-fill me-2 text-amber"></i>
       <span class="votes-election-heading">{{ vote.election_title }}</span>
     </h5>
-    <span class="badge-status badge-voted"><i class="bi bi-check2 me-1"></i>Voted</span>
+    <span class="badge-status badge-voted"><i class="bi bi-check2" style="margin-right:4px;"></i>Voted</span>
   </div>
   <div class="card-panel-body">
-{% endif %}
+  {% endif %}
     <div class="vote-record">
       <div class="vote-record-icon"><i class="bi bi-check2-circle"></i></div>
       <div class="vote-record-info">
         <div class="vote-record-position">{{ vote.position_title }}</div>
-        <div class="vote-record-candidate">{{ vote.candidate_name }}</div>
-        {% if vote.candidate_party %}
-        <div class="vote-record-party">{{ vote.candidate_party }}</div>
+        <div class="vote-record-candidate">{{ vote.firstname }} {{ vote.surname }}</div>
+        {% if vote.student_id %}
+        <div class="vote-record-party">ID: {{ vote.student_id }}</div>
         {% endif %}
       </div>
       <div class="vote-record-meta">
-        <div class="vote-record-time">{{ vote.voted_at }}</div>
+        <div class="vote-record-time">{{ vote.cast_at }}</div>
       </div>
     </div>
-{% if loop.last or votes[loop.index].election_title != current_election.name %}
+{% if loop.last %}
   </div>
 </div>
 {% endif %}
@@ -56,7 +60,7 @@
       <h5>No Votes Yet</h5>
       <p>You haven't cast any votes yet. Head to Active Elections to participate.</p>
       <a href="{{ url_for('voter.elections') }}" class="btn-primary-custom" style="margin-top:16px;">
-        <i class="bi bi-calendar2-event-fill me-2"></i>View Elections
+        <i class="bi bi-calendar2-event-fill" style="margin-right:8px;"></i>View Elections
       </a>
     </div>
   </div>

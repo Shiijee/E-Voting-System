@@ -39,13 +39,12 @@
       <table class="table-custom">
         <thead>
           <tr>
-            <th>#</th>
+            <th style="width:44px;">#</th>
             <th>Voter</th>
             <th>Student ID</th>
-            <th>Email</th>
-            <th>Status</th>
+                        <th>Status</th>
             <th>Registered</th>
-            <th>Actions</th>
+            <th style="width:120px;">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -54,7 +53,7 @@
             <td class="text-muted-sm">{{ loop.index }}</td>
             <td>
               <div class="voter-cell">
-                <div class="voter-avatar-sm">{{ voter.firstname[0] }}</div>
+                <div class="voter-avatar-sm">{{ voter.firstname[0]|upper }}</div>
                 <div>
                   <div class="fw-600">{{ voter.firstname }} {% if voter.middlename %}{{ voter.middlename }} {% endif %}{{ voter.surname }}</div>
                   <div class="text-muted-sm">{{ voter.email or '—' }}</div>
@@ -62,7 +61,6 @@
               </div>
             </td>
             <td class="text-muted-sm">{{ voter.student_id or '—' }}</td>
-            <td class="text-muted-sm">{{ voter.email or '—' }}</td>
             <td>
               {% if not voter.is_active %}
                 <span class="badge-status badge-archived"><i class="bi bi-circle-fill" style="font-size:6px;margin-right:4px;"></i>Archived</span>

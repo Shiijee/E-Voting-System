@@ -60,9 +60,9 @@
   </nav>
 
   <div class="sidebar-footer">
-    <div class="voter-avatar-nav">V</div>
+    <div class="voter-avatar-nav">{{ session.get('fullname', 'V')[0]|upper }}</div>
     <div class="admin-info">
-      <span class="admin-name">Voter</span>
+      <span class="admin-name">{{ session.get('fullname', 'Voter') }}</span>
       <span class="admin-role">Registered Voter</span>
     </div>
   </div>
@@ -78,8 +78,8 @@
     <div class="topbar-right">
       <span class="topbar-time" id="topbarTime"></span>
       <div class="topbar-admin">
-        <div class="topbar-avatar">V</div>
-        <span class="topbar-name d-none d-md-inline">Voter</span>
+        <div class="topbar-avatar">{{ session.get('fullname', 'V')[0]|upper }}</div>
+        <span class="topbar-name d-none d-md-inline">{{ session.get('fullname', 'Voter') }}</span>
       </div>
     </div>
   </header>

@@ -51,6 +51,25 @@ def dashboard():
     """, (session['user_id'], college_id))
     past_elections = cursor.fetchall()
 
+    # Get recent votes with candidate info
+    cursor.execute("""
+        SELECT v.cast_at, e.title as election_title, e.id as election_id,
+               p.title as position_title,
+               c.firstname, c.surname
+        FROM votes v
+        JOIN elections e ON v.election_id = e.id
+        JOIN positions p ON v.position_id = p.id
+        JOIN candidates c ON v.candidate_id = c.id
+        WHERE v.voter_id = %s
+        ORDER BY v.cast_at DESC
+        LIMIT 6
+    """, (session['user_id'],))
+    recent_votes = cursor.fetchall()
+
+    # Total votes cast by this voter
+    cursor.execute("SELECT COUNT(*) as total FROM votes WHERE voter_id=%s", (session['user_id'],))
+    total_votes_cast = cursor.fetchone()['total']
+
     # Get college name
     college = None
     if college_id:
@@ -64,6 +83,8 @@ def dashboard():
                          active_elections=active_elections,
                          upcoming_elections=upcoming_elections,
                          past_elections=past_elections,
+                         recent_votes=recent_votes,
+                         total_votes_cast=total_votes_cast,
                          college=college)
 
 @voter_bp.route("/elections")
@@ -73,8 +94,9 @@ def elections():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT e.*, 
-               (SELECT COUNT(*) FROM votes v WHERE v.election_id = e.id AND v.voter_id = %s) as has_voted
+        SELECT e.*,
+               (SELECT COUNT(*) FROM votes v WHERE v.election_id = e.id AND v.voter_id = %s) as has_voted,
+               (SELECT COUNT(*) FROM positions p WHERE p.election_id = e.id) as position_count
         FROM elections e
         WHERE e.college_id = %s
         ORDER BY e.created_at DESC
@@ -197,21 +219,49 @@ def results():
             cursor.execute("SELECT COUNT(*) as voted FROM votes WHERE election_id=%s AND voter_id=%s", 
                           (election_id, session['user_id']))
             user_voted = cursor.fetchone()['voted'] > 0
-            
+
             cursor.execute("""
-                SELECT 
-                    p.title as position_title,
-                    c.firstname, c.surname, c.student_id,
-                    COUNT(v.id) as vote_count
+                SELECT
+                    p.id AS position_id,
+                    p.title AS position_title,
+                    c.id AS candidate_id,
+                    c.firstname, c.middlename, c.surname, c.student_id,
+                    COALESCE(c.photo, '') AS photo,
+                    COUNT(v.id) AS vote_count
                 FROM positions p
                 LEFT JOIN candidates c ON c.position_id = p.id
                 LEFT JOIN votes v ON v.candidate_id = c.id AND v.election_id = %s
                 WHERE p.election_id = %s
-                GROUP BY c.id, p.title
+                GROUP BY p.id, p.title, c.id, c.firstname, c.middlename, c.surname, c.student_id, c.photo
                 ORDER BY p.display_order, vote_count DESC
             """, (election_id, election_id))
-            results = cursor.fetchall()
-            
+            rows = cursor.fetchall()
+
+            positions = {}
+            for row in rows:
+                pos = positions.setdefault(row['position_id'], {
+                    'position': {'title': row['position_title']},
+                    'candidates': [],
+                    'total_votes': 0
+                })
+                if row['candidate_id'] is not None:
+                    full_name = ' '.join(filter(None, [row['firstname'], row['middlename'], row['surname']])).strip()
+                    pos['candidates'].append({
+                        'vote_count': row['vote_count'] or 0,
+                        'candidate': {
+                            'full_name': full_name or 'Unknown',
+                            'student_id': row['student_id'],
+                            'photo': row['photo']
+                        }
+                    })
+                    pos['total_votes'] += row['vote_count'] or 0
+
+            for pos in positions.values():
+                for cand in pos['candidates']:
+                    cand['percentage'] = round((cand['vote_count'] / pos['total_votes']) * 100, 1) if pos['total_votes'] > 0 else 0.0
+
+            results = list(positions.values())
+
             cursor.execute("SELECT COUNT(DISTINCT voter_id) as total FROM votes WHERE election_id=%s", (election_id,))
             total_votes = cursor.fetchone()['total'] or 0
     
@@ -228,13 +278,27 @@ def profile():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT u.id, u.student_id, u.firstname, u.middlename, u.surname, 
-               u.email, u.created_at, c.name as college_name
+        SELECT u.id, u.student_id, u.firstname, u.middlename, u.surname,
+               u.email, u.created_at, u.is_approved, u.is_active,
+               c.name as college_name
         FROM users u
         LEFT JOIN colleges c ON u.college_id = c.id
         WHERE u.id=%s
     """, (session['user_id'],))
     voter = cursor.fetchone()
+
+    # Compute full name and counts
+    if voter:
+        voter['full_name'] = ' '.join(filter(None, [voter['firstname'], voter['middlename'], voter['surname']])).strip()
+
+    cursor.execute("SELECT COUNT(*) as total FROM votes WHERE voter_id=%s", (session['user_id'],))
+    total_votes = cursor.fetchone()['total']
+
+    cursor.execute("SELECT COUNT(DISTINCT election_id) as total FROM votes WHERE voter_id=%s", (session['user_id'],))
+    elections_participated = cursor.fetchone()['total']
+
     cursor.close()
     conn.close()
-    return render_template("voter_profile.html", voter=voter)
+    return render_template("voter_profile.html", voter=voter,
+                           total_votes=total_votes,
+                           elections_participated=elections_participated)

@@ -122,3 +122,7 @@
   height: 36px;
   background: var(--border);
 }
+
+/* ── Utilities ──────────────────── */
+.mb-4 { margin-bottom: 24px !important; }
+.text-amber { color: var(--gold); }

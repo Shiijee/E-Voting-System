@@ -9,78 +9,139 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <h2 class="page-heading">Welcome back!</h2>
-    <p class="page-subheading">Here's a summary of your voting activity.</p>
+    <h2 class="page-heading">Welcome back, {{ session.get('fullname', 'Voter').split()[0] }}!</h2>
+    <p class="page-subheading">
+      {% if college %}{{ college.name }} &mdash; {% endif %}Here's a summary of your voting activity.
+    </p>
   </div>
   <a href="{{ url_for('voter.elections') }}" class="btn-primary-custom">
     <i class="bi bi-calendar2-event-fill me-2"></i>View Elections
   </a>
 </div>
 
+<!-- Stats Grid -->
 <div class="stats-grid">
   <div class="stat-card stat-card-blue">
     <div class="stat-icon"><i class="bi bi-calendar2-event-fill"></i></div>
     <div class="stat-info">
-      <span class="stat-number">0</span>
+      <span class="stat-number">{{ active_elections|length }}</span>
       <span class="stat-label">Active Elections</span>
     </div>
   </div>
   <div class="stat-card stat-card-green">
     <div class="stat-icon"><i class="bi bi-check2-square"></i></div>
     <div class="stat-info">
-      <span class="stat-number">0</span>
+      <span class="stat-number">{{ total_votes_cast }}</span>
       <span class="stat-label">Votes Cast</span>
     </div>
   </div>
   <div class="stat-card stat-card-amber">
     <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
     <div class="stat-info">
-      <span class="stat-number">0</span>
-      <span class="stat-label">Pending Elections</span>
+      <span class="stat-number">{{ upcoming_elections|length }}</span>
+      <span class="stat-label">Upcoming Elections</span>
     </div>
   </div>
   <div class="stat-card stat-card-purple">
     <div class="stat-icon"><i class="bi bi-bar-chart-fill"></i></div>
     <div class="stat-info">
-      <span class="stat-number">0</span>
+      <span class="stat-number">{{ past_elections|length }}</span>
       <span class="stat-label">Results Available</span>
     </div>
   </div>
 </div>
 
-<div class="row g-4">
-  <div class="col-lg-7">
-    <div class="card-panel">
-      <div class="card-panel-header">
-        <h5 class="card-panel-title"><i class="bi bi-calendar2-event-fill me-2"></i>Active Elections</h5>
-        <a href="{{ url_for('voter.elections') }}" class="btn-link-subtle">View all</a>
-      </div>
-      <div class="card-panel-body">
-        <div class="empty-state">
-          <i class="bi bi-calendar-x"></i>
-          <h5>No Active Elections</h5>
-          <p>There are no active elections right now. Check back later.</p>
+<!-- Main Content Grid -->
+<div class="dashboard-grid">
+  <!-- Active Elections -->
+  <div class="card-panel">
+    <div class="card-panel-header">
+      <h5 class="card-panel-title"><i class="bi bi-calendar2-event-fill me-2"></i>Active Elections</h5>
+      <a href="{{ url_for('voter.elections') }}" class="btn-link-subtle">View all</a>
+    </div>
+    <div class="card-panel-body">
+      {% if active_elections %}
+      <div class="dashboard-recent-elections">
+        {% for election in active_elections %}
+        <div class="election-mini-row">
+          <div style="flex:1;min-width:0;">
+            <div class="election-mini-title">{{ election.title }}</div>
+            <div class="election-mini-sub">Ends {{ election.end_date }}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+            {% if election.has_voted %}
+              <span class="badge-status badge-voted"><i class="bi bi-check2-circle" style="margin-right:4px;"></i>Voted</span>
+            {% else %}
+              <a href="{{ url_for('voter.ballot', election_id=election.id) }}" class="btn-primary-custom" style="padding:6px 14px;font-size:0.8rem;">
+                <i class="bi bi-pencil-square" style="margin-right:4px;"></i>Vote
+              </a>
+            {% endif %}
+          </div>
         </div>
+        {% endfor %}
       </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-calendar-x"></i>
+        <h5>No Active Elections</h5>
+        <p>There are no active elections right now. Check back later.</p>
+      </div>
+      {% endif %}
     </div>
   </div>
 
-  <div class="col-lg-5">
-    <div class="card-panel">
-      <div class="card-panel-header">
-        <h5 class="card-panel-title"><i class="bi bi-check2-circle me-2"></i>My Recent Votes</h5>
-        <a href="{{ url_for('voter.my_votes') }}" class="btn-link-subtle">View all</a>
-      </div>
-      <div class="card-panel-body">
-        <div class="empty-state">
-          <i class="bi bi-journal-x"></i>
-          <p>You haven't cast any votes yet.</p>
+  <!-- My Recent Votes -->
+  <div class="card-panel">
+    <div class="card-panel-header">
+      <h5 class="card-panel-title"><i class="bi bi-check2-circle me-2"></i>My Recent Votes</h5>
+      <a href="{{ url_for('voter.my_votes') }}" class="btn-link-subtle">View all</a>
+    </div>
+    <div class="card-panel-body">
+      {% if recent_votes %}
+      <div>
+        {% for vote in recent_votes %}
+        <div class="vote-mini-row">
+          <div class="vote-mini-dot"></div>
+          <div class="vote-mini-info">
+            <div class="vote-mini-candidate">{{ vote.firstname }} {{ vote.surname }}</div>
+            <div class="vote-mini-position">{{ vote.position_title }} &mdash; {{ vote.election_title }}</div>
+          </div>
+          <a href="{{ url_for('voter.results', election_id=vote.election_id) }}" class="btn-link-subtle" style="font-size:0.75rem;flex-shrink:0;">Results</a>
         </div>
+        {% endfor %}
       </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-journal-x"></i>
+        <p>You haven't cast any votes yet.</p>
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>
 
+{% if upcoming_elections %}
+<div class="card-panel mt-4">
+  <div class="card-panel-header">
+    <h5 class="card-panel-title"><i class="bi bi-hourglass-split me-2"></i>Upcoming Elections</h5>
+  </div>
+  <div class="card-panel-body">
+    <div class="dashboard-recent-elections">
+      {% for election in upcoming_elections %}
+      <div class="election-mini-row">
+        <div style="flex:1;min-width:0;">
+          <div class="election-mini-title">{{ election.title }}</div>
+          <div class="election-mini-sub">Starts {{ election.start_date }}</div>
+        </div>
+        <span class="badge-status badge-upcoming"><i class="bi bi-clock" style="margin-right:4px;"></i>Upcoming</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
 <div class="card-panel mt-4">
   <div class="card-panel-header">
     <h5 class="card-panel-title"><i class="bi bi-lightning-charge-fill me-2"></i>Quick Actions</h5>

@@ -202,3 +202,25 @@
   align-items: center;
   gap: 8px;
 }
+
+/* ── Results select styled input ───────────────────── */
+.results-select {
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  background: var(--paper);
+  color: var(--ink);
+  outline: none;
+  transition: border-color var(--ease), box-shadow var(--ease);
+  min-width: 240px;
+}
+.results-select:focus {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(26, 58, 92, 0.1);
+  background: #fff;
+}
+
+/* ── mb-4 utility ────────────────────────────────── */
+.mb-4 { margin-bottom: 24px !important; }

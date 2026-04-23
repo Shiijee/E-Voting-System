@@ -17,9 +17,9 @@
 <!-- Election Selector -->
 <div class="card-panel mb-4">
   <div class="card-panel-body">
-    <div class="d-flex gap-3 align-items-center flex-wrap">
+    <form method="get" action="{{ url_for('admin.view_results') }}" class="d-flex gap-3 align-items-center flex-wrap">
       <label class="form-label-custom mb-0">Select Election:</label>
-      <select class="form-select form-control-custom w-auto">
+      <select name="election_id" class="form-select form-control-custom w-auto" onchange="this.form.submit()">
         <option value="">Choose an election…</option>
         {% for election in elections %}
         <option value="{{ election.id }}" {% if election_id == election.id %}selected{% endif %}>
@@ -27,7 +27,7 @@
         </option>
         {% endfor %}
       </select>
-    </div>
+    </form>
   </div>
 </div>
 

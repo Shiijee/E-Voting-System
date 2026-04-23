@@ -489,6 +489,17 @@ def create_position():
         
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor()
+        if college_id is not None:
+            cursor.execute(
+                "SELECT id FROM elections WHERE id=%s AND college_id=%s",
+                (election_id, college_id)
+            )
+            if cursor.fetchone() is None:
+                cursor.close()
+                conn.close()
+                flash("Selected election not found for your college.", "error")
+                return redirect(url_for('admin.view_positions'))
+        
         cursor.execute(
             "INSERT INTO positions (election_id, title, description, max_votes, display_order, college_id) VALUES (%s, %s, %s, %s, %s, %s)",
             (election_id, title, description, max_votes, display_order, college_id)
@@ -513,9 +524,16 @@ def create_position():
 @admin_bp.route("/positions/<int:position_id>/delete")
 @admin_required
 def delete_position(position_id):
+    college_id = get_admin_college_id()
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM positions WHERE id=%s", (position_id,))
+    if college_id is not None:
+        cursor.execute(
+            "DELETE p FROM positions p JOIN elections e ON p.election_id = e.id WHERE p.id=%s AND e.college_id=%s",
+            (position_id, college_id)
+        )
+    else:
+        cursor.execute("DELETE FROM positions WHERE id=%s", (position_id,))
     conn.commit()
     cursor.close()
     conn.close()
@@ -580,13 +598,34 @@ def create_candidate():
         surname = request.form["surname"]
         platform = request.form.get("platform", "")
         
+        conn = current_app.config["get_db_connection"]()
+        cursor = conn.cursor(dictionary=True)
+        if college_id is not None:
+            cursor.execute(
+                "SELECT p.id FROM positions p JOIN elections e ON p.election_id = e.id WHERE p.id=%s AND e.college_id=%s",
+                (position_id, college_id)
+            )
+            if cursor.fetchone() is None:
+                cursor.close()
+                conn.close()
+                flash("Selected position does not belong to your college.", "error")
+                return redirect(url_for('admin.view_candidates'))
+            
+            cursor.execute(
+                "SELECT id FROM users WHERE student_id=%s AND role='voter' AND college_id=%s AND is_approved=TRUE",
+                (student_id, college_id)
+            )
+            if cursor.fetchone() is None:
+                cursor.close()
+                conn.close()
+                flash("Selected voter is not approved or does not belong to your college.", "error")
+                return redirect(url_for('admin.view_candidates'))
+        
         # Handle photo upload
         photo_filename = None
         if 'photo' in request.files and request.files['photo'].filename != '':
             photo_filename = save_candidate_photo(request.files['photo'])
         
-        conn = current_app.config["get_db_connection"]()
-        cursor = conn.cursor()
         cursor.execute(
             """INSERT INTO candidates (position_id, student_id, firstname, middlename, surname, platform, status, college_id, photo) 
                VALUES (%s, %s, %s, %s, %s, %s, 'approved', %s, %s)""",
@@ -756,16 +795,23 @@ def edit_candidate(candidate_id):
 @admin_bp.route("/candidates/<int:candidate_id>/delete")
 @admin_required
 def delete_candidate(candidate_id):
+    college_id = get_admin_college_id()
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT photo FROM candidates WHERE id=%s", (candidate_id,))
+    if college_id is not None:
+        cursor.execute("SELECT photo FROM candidates WHERE id=%s AND college_id=%s", (candidate_id, college_id))
+    else:
+        cursor.execute("SELECT photo FROM candidates WHERE id=%s", (candidate_id,))
     candidate = cursor.fetchone()
     
     # Delete photo if it exists
     if candidate and candidate.get('photo'):
         delete_candidate_photo(candidate['photo'])
     
-    cursor.execute("DELETE FROM candidates WHERE id=%s", (candidate_id,))
+    if college_id is not None:
+        cursor.execute("DELETE FROM candidates WHERE id=%s AND college_id=%s", (candidate_id, college_id))
+    else:
+        cursor.execute("DELETE FROM candidates WHERE id=%s", (candidate_id,))
     conn.commit()
     cursor.close()
     conn.close()
@@ -929,6 +975,7 @@ def view_results():
     selected_election = None
     results = []
     total_votes = 0
+    total_voters_voted = 0
     
     if election_id:
         if college_id is not None:
@@ -940,26 +987,65 @@ def view_results():
         if selected_election:
             cursor.execute("""
                 SELECT 
-                    p.title as position_title,
-                    c.firstname, c.surname, c.student_id,
-                    COUNT(v.id) as vote_count
+                    p.id AS position_id,
+                    p.title AS position_title,
+                    c.id AS candidate_id,
+                    c.firstname,
+                    c.middlename,
+                    c.surname,
+                    c.student_id,
+                    COALESCE(c.platform, '') AS platform,
+                    COALESCE(c.photo, '') AS photo,
+                    COUNT(v.id) AS vote_count
                 FROM positions p
                 LEFT JOIN candidates c ON c.position_id = p.id
                 LEFT JOIN votes v ON v.candidate_id = c.id AND v.election_id = %s
                 WHERE p.election_id = %s
-                GROUP BY c.id, p.title
+                GROUP BY p.id, p.title, c.id, c.firstname, c.middlename, c.surname, c.student_id, c.platform, c.photo
                 ORDER BY p.display_order, vote_count DESC
             """, (election_id, election_id))
-            results = cursor.fetchall()
-            
+            rows = cursor.fetchall()
+
+            positions = {}
+            for row in rows:
+                position_data = positions.setdefault(row['position_id'], {
+                    'position': {'title': row['position_title']},
+                    'candidates': [],
+                    'total_votes': 0
+                })
+
+                if row['candidate_id'] is not None:
+                    full_name = ' '.join(filter(None, [row['firstname'], row['middlename'], row['surname']])).strip()
+                    position_data['candidates'].append({
+                        'vote_count': row['vote_count'],
+                        'candidate': {
+                            'full_name': full_name or 'Unknown Candidate',
+                            'partylist': None,
+                            'student_id': row['student_id'],
+                            'photo': row['photo']
+                        }
+                    })
+                    position_data['total_votes'] += row['vote_count'] or 0
+
+            for position in positions.values():
+                if position['total_votes'] > 0:
+                    for candidate in position['candidates']:
+                        candidate['percentage'] = round((candidate['vote_count'] / position['total_votes']) * 100, 1)
+                else:
+                    for candidate in position['candidates']:
+                        candidate['percentage'] = 0.0
+
+            results = list(positions.values())
+            total_votes = sum(p['total_votes'] for p in results)
             cursor.execute("SELECT COUNT(DISTINCT voter_id) as total FROM votes WHERE election_id=%s", (election_id,))
-            total_votes = cursor.fetchone()['total'] or 0
+            total_voters_voted = cursor.fetchone()['total'] or 0
     
     cursor.close()
     conn.close()
     
     return render_template('results.html', elections=elections, election_id=election_id,
-                         selected_election=selected_election, results=results, total_votes=total_votes)
+                         selected_election=selected_election, results=results,
+                         total_votes=total_votes, total_voters_voted=total_voters_voted)
 
 @admin_bp.route("/logs")
 @admin_required

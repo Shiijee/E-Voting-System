@@ -6,7 +6,7 @@
   <title>{% block title %}Admin Panel{% endblock %} — SecureVote</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <link href="{{ url_for('admin.static', filename='css/admin.css') }}" rel="stylesheet"/>
   {% block extra_css %}{% endblock %}
 </head>
@@ -17,7 +17,7 @@
   <div class="sidebar-brand">
     <div class="brand-icon"><i class="bi bi-shield-lock-fill"></i></div>
     <div class="brand-text">
-      <span class="brand-name">Voxify</span>
+      <span class="brand-name">SecureVote</span>
       <span class="brand-sub">Admin Panel</span>
     </div>
   </div>
@@ -65,18 +65,19 @@
     </a>
 
     <div class="nav-section-label">Account</div>
-   <a href="{{ url_for('auth.logout') }}" 
-   class="btn btn-danger" 
-   onclick="return confirm('Are you sure you want to logout?');">
-   Logout
-</a>
+   <a href="{{ url_for('auth.logout') }}"
+      class="nav-item nav-item-danger"
+      onclick="return confirm('Are you sure you want to logout?');">
+      <i class="bi bi-box-arrow-left"></i>
+      <span>Logout</span>
+   </a>
   </nav>
 
   <div class="sidebar-footer">
-    <div class="admin-avatar">A</div>
+    <div class="admin-avatar">{{ session.get('fullname', 'A')[0]|upper }}</div>
     <div class="admin-info">
-      <span class="admin-name">Administrator</span>
-      <span class="admin-role">Administrator</span>
+      <span class="admin-name">{{ session.get('fullname', 'Administrator') }}</span>
+      <span class="admin-role">{{ 'Super Admin' if session.get('role') == 'superadmin' else 'Administrator' }}</span>
     </div>
   </div>
 </div>
@@ -92,8 +93,8 @@
     <div class="topbar-right">
       <span class="topbar-time" id="topbarTime"></span>
       <div class="topbar-admin">
-        <div class="topbar-avatar">A</div>
-        <span class="topbar-name d-none d-md-inline">Administrator</span>
+        <div class="topbar-avatar">{{ session.get('fullname', 'A')[0]|upper }}</div>
+        <span class="topbar-name d-none d-md-inline">{{ session.get('fullname', 'Administrator') }}</span>
       </div>
     </div>
   </header>

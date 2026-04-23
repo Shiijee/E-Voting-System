@@ -10,33 +10,38 @@
 <div class="page-header">
   <div>
     <h2 class="page-heading">Election Results</h2>
-    <p class="page-subheading">View vote counts and candidate standings for closed elections.</p>
+    <p class="page-subheading">View vote counts and candidate standings.</p>
   </div>
 </div>
 
+<!-- Election Selector -->
 <div class="card-panel mb-4">
   <div class="card-panel-body">
     <div class="results-selector">
       <label class="results-selector-label">Select Election:</label>
-      <select>
-        <option value="">Choose an election…</option>
-        {% for election in elections %}
-        <option value="{{ election.id }}" {% if election_id == election.id %}selected{% endif %}>
-          {{ election.title }}
-        </option>
-        {% endfor %}
-      </select>
+      <form method="GET" action="{{ url_for('voter.results') }}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <select name="election_id" class="results-select" onchange="this.form.submit()">
+          <option value="">Choose an election…</option>
+          {% for election in elections %}
+          <option value="{{ election.id }}" {% if election_id == election.id %}selected{% endif %}>
+            {{ election.title }}
+          </option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn-primary-custom" style="padding:8px 18px;font-size:0.85rem;">View Results</button>
+      </form>
     </div>
   </div>
 </div>
 
 {% if selected_election %}
+<!-- Summary Stats -->
 <div class="results-stats-row">
   <div class="results-stat-card">
     <i class="bi bi-check2-square text-blue"></i>
     <div>
       <span class="results-stat-num">{{ total_votes }}</span>
-      <span class="results-stat-label">Total Votes Cast</span>
+      <span class="results-stat-label">Voters Participated</span>
     </div>
   </div>
   <div class="results-stat-card">
@@ -46,6 +51,15 @@
       <span class="results-stat-label">Positions on Ballot</span>
     </div>
   </div>
+  {% if user_voted %}
+  <div class="results-stat-card">
+    <i class="bi bi-check2-circle" style="color:#16a34a;font-size:1.6rem;"></i>
+    <div>
+      <span class="results-stat-num" style="color:#16a34a;">✓</span>
+      <span class="results-stat-label">You Voted</span>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 {% if results %}
@@ -54,16 +68,17 @@
   <div class="card-panel-header">
     <div class="result-position-header">
       <div class="result-position-title">
-        <i class="bi bi-trophy-fill text-amber"></i>
+        <i class="bi bi-trophy-fill text-amber" style="margin-right:8px;"></i>
         <h5 class="card-panel-title">{{ result.position.title }}</h5>
       </div>
-      <span class="text-muted-sm">{{ result.total_votes }} vote{{ 's' if result.total_votes != 1 }}</span>
+      <span class="text-muted-sm">{{ result.total_votes }} vote{{ 's' if result.total_votes != 1 else '' }}</span>
     </div>
   </div>
   <div class="card-panel-body">
     <div class="results-list">
+      {% if result.candidates %}
       {% for item in result.candidates %}
-      <div class="result-row {{ 'result-row-winner' if loop.first and result.total_votes > 0 }}">
+      <div class="result-row {% if loop.first and result.total_votes > 0 %}result-row-winner{% endif %}">
         <div class="result-rank">
           {% if loop.first and result.total_votes > 0 %}
           <i class="bi bi-trophy-fill text-amber"></i>
@@ -72,10 +87,10 @@
           {% endif %}
         </div>
         <div class="result-candidate">
-          <div class="result-avatar">{{ item.candidate.full_name[0] }}</div>
+          <div class="result-avatar">{{ item.candidate.full_name[0] if item.candidate.full_name else '?' }}</div>
           <div>
             <span class="result-candidate-name">{{ item.candidate.full_name }}</span>
-            <span class="result-candidate-party">{{ item.candidate.partylist or 'Independent' }}</span>
+            <span class="result-candidate-party">ID: {{ item.candidate.student_id or '—' }}</span>
           </div>
         </div>
         <div class="result-votes">
@@ -86,9 +101,10 @@
           <div class="result-bar" style="width:{{ item.percentage }}%"></div>
         </div>
       </div>
-      {% else %}
-      <div class="text-muted-sm" style="text-align:center;padding:16px 0;">No candidates for this position.</div>
       {% endfor %}
+      {% else %}
+      <div class="text-muted-sm" style="text-align:center;padding:20px 0;">No candidates registered for this position.</div>
+      {% endif %}
     </div>
   </div>
 </div>

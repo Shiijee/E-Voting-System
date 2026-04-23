@@ -189,3 +189,8 @@
     display: none;
   }
 }
+
+/* ── Missing utilities ─────────────────────────────── */
+.status-archived { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
+.mb-4 { margin-bottom: 24px !important; }
+.w-100 { width: 100% !important; }
