@@ -32,34 +32,34 @@
 
     <div class="nav-section-label">Management</div>
     <a href="{{ url_for('admin.view_elections') }}"
-       class="nav-item {% if 'election' in (request.endpoint or '') %}active{% endif %}">
+       class="nav-item {% if request.endpoint in ['admin.view_elections', 'admin.create_election', 'admin.edit_election', 'admin.election_positions'] %}active{% endif %}">
       <i class="bi bi-calendar2-event-fill"></i>
       <span>Elections</span>
     </a>
     <a href="{{ url_for('admin.view_positions') }}"
-       class="nav-item {% if 'position' in (request.endpoint or '') %}active{% endif %}">
+       class="nav-item {% if request.endpoint in ['admin.view_positions', 'admin.create_position', 'admin.edit_position'] %}active{% endif %}">
       <i class="bi bi-layout-three-columns"></i>
       <span>Positions</span>
     </a>
     <a href="{{ url_for('admin.view_candidates') }}"
-       class="nav-item {% if 'candidate' in (request.endpoint or '') %}active{% endif %}">
+       class="nav-item {% if request.endpoint in ['admin.view_candidates', 'admin.create_candidate', 'admin.edit_candidate'] %}active{% endif %}">
       <i class="bi bi-person-badge-fill"></i>
       <span>Candidates</span>
     </a>
     <a href="{{ url_for('admin.view_voters') }}"
-       class="nav-item {% if 'voter' in (request.endpoint or '') %}active{% endif %}">
+       class="nav-item {% if request.endpoint in ['admin.view_voters', 'admin.create_voter', 'admin.edit_voter'] %}active{% endif %}">
       <i class="bi bi-people-fill"></i>
       <span>Voters</span>
     </a>
 
     <div class="nav-section-label">Reports</div>
     <a href="{{ url_for('admin.view_results') }}"
-       class="nav-item {% if 'result' in (request.endpoint or '') %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'admin.view_results' %}active{% endif %}">
       <i class="bi bi-bar-chart-fill"></i>
       <span>Results</span>
     </a>
     <a href="{{ url_for('admin.view_logs') }}"
-       class="nav-item {% if 'log' in (request.endpoint or '') %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'admin.view_logs' %}active{% endif %}">
       <i class="bi bi-journal-text"></i>
       <span>Audit Logs</span>
     </a>
