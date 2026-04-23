@@ -510,30 +510,43 @@ img { display: block; max-width: 100%; }
 .table-custom {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
-.table-custom thead th {
-  padding: 12px 18px;
-  font-size: 0.67rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--muted);
-  background: #fdfaf6;
-  border-bottom: 1.5px solid var(--border);
+.table-custom thead tr th {
+  padding: 12px 18px !important;
+  font-size: 0.67rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.5px !important;
+  color: var(--muted) !important;
+  background: #fdfaf6 !important;
+  border-bottom: 1.5px solid var(--border) !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
+  border-top: none !important;
+}
+
+.table-custom tbody tr td {
+  padding: 14px 18px !important;
+  border-bottom: 1px solid rgba(221,213,196,0.45) !important;
+  font-size: 0.875rem !important;
+  color: var(--ink) !important;
+  vertical-align: middle !important;
+  border-top: none !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.table-custom tbody td {
-  padding: 14px 18px;
-  border-bottom: 1px solid rgba(221,213,196,0.45);
-  font-size: 0.875rem;
-  color: var(--ink);
-  vertical-align: middle;
+/* Allow wrapping in specific cells like Voter name/election title */
+.table-custom tbody tr td.td-wrap {
+  white-space: normal !important;
+  overflow: visible !important;
 }
 
-.table-custom tbody tr:hover td { background: #fdf8f0; }
-.table-custom tbody tr:last-child td { border-bottom: none; }
+.table-custom tbody tr:hover td { background: #fdf8f0 !important; }
+.table-custom tbody tr:last-child td { border-bottom: none !important; }
 
 .fw-500 { font-weight: 500; }
 .fw-600 { font-weight: 600; }
@@ -542,10 +555,11 @@ img { display: block; max-width: 100%; }
 .text-muted-sm {
   font-size: 0.8rem;
   color: var(--muted);
-  display: block;
 }
 
+/* Only force block display when text-muted-sm is a child element inside a td, not when it IS the td */
 td .text-muted-sm { display: block; margin-top: 2px; }
+td.text-muted-sm  { display: table-cell; }
 
 /* ════════════════════════════════════════════════════
    BADGES  (status, count, position)
@@ -1263,7 +1277,6 @@ textarea.form-control {
   margin-top: 3px;
 }
 
-/* Result rows */
 .results-table {
   display: flex;
   flex-direction: column;
@@ -1360,7 +1373,7 @@ textarea.form-control {
 }
 
 /* ════════════════════════════════════════════════════
-   MODALS  (shared + voters reset password)
+   MODALS
 ════════════════════════════════════════════════════ */
 .modal-content,
 .modal-dark {
@@ -1428,7 +1441,7 @@ textarea.form-control {
 .btn-danger:hover { background: #a52d22; color: #fff; }
 
 /* ════════════════════════════════════════════════════
-   ADMIN LOGIN PAGE  (login.html standalone)
+   ADMIN LOGIN PAGE
 ════════════════════════════════════════════════════ */
 .login-body {
   background: var(--ink);
@@ -1453,23 +1466,9 @@ textarea.form-control {
   filter: blur(80px);
 }
 
-.login-orb-1 {
-  width: 400px; height: 400px;
-  background: rgba(26,58,92,0.6);
-  top: -100px; left: -100px;
-}
-
-.login-orb-2 {
-  width: 300px; height: 300px;
-  background: rgba(212,168,67,0.2);
-  top: 30%; right: 10%;
-}
-
-.login-orb-3 {
-  width: 350px; height: 350px;
-  background: rgba(200,57,43,0.1);
-  bottom: -80px; left: 40%;
-}
+.login-orb-1 { width: 400px; height: 400px; background: rgba(26,58,92,0.6); top: -100px; left: -100px; }
+.login-orb-2 { width: 300px; height: 300px; background: rgba(212,168,67,0.2); top: 30%; right: 10%; }
+.login-orb-3 { width: 350px; height: 350px; background: rgba(200,57,43,0.1); bottom: -80px; left: 40%; }
 
 .login-wrapper {
   position: relative;
@@ -1501,10 +1500,7 @@ textarea.form-control {
   background: linear-gradient(90deg, var(--accent), var(--gold), var(--navy));
 }
 
-.login-logo {
-  text-align: center;
-  margin-bottom: 32px;
-}
+.login-logo { text-align: center; margin-bottom: 32px; }
 
 .login-logo-icon {
   width: 54px; height: 54px;
@@ -1535,9 +1531,7 @@ textarea.form-control {
   margin: 0;
 }
 
-.form-group-login {
-  margin-bottom: 20px;
-}
+.form-group-login { margin-bottom: 20px; }
 
 .form-label-login {
   display: block;
@@ -1549,9 +1543,7 @@ textarea.form-control {
   margin-bottom: 8px;
 }
 
-.input-icon-wrap {
-  position: relative;
-}
+.input-icon-wrap { position: relative; }
 
 .input-icon {
   position: absolute;
@@ -1686,7 +1678,6 @@ textarea.form-control {
 .align-items-center { align-items: center !important; }
 .justify-content-space-between { justify-content: space-between !important; }
 
-/* Row grid helper */
 .row   { display: flex; flex-wrap: wrap; margin: 0 -10px; }
 .row.g-3 > * { padding: 0 10px; margin-bottom: 20px; }
 .row.g-4 > * { padding: 0 12px; margin-bottom: 24px; }
@@ -1708,8 +1699,6 @@ textarea.form-control {
 }
 
 .sticky-top { position: sticky; }
-
-/* Chart canvas */
 .chart-container canvas { max-height: 260px; }
 
 .badge-archived {
@@ -1732,7 +1721,6 @@ textarea.form-control {
   display: inline-flex;
   align-items: center;
 }
-
 
 /* ── Vanilla modal overlay (voters page) ── */
 .vmodal-overlay { display: none; }

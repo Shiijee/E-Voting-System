@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════
-   election_form.css  —  Create / Edit Election
+   elections.css  —  Elections List
 ═══════════════════════════════════════ */
 
 /* ── Page Header ─────────────────────── */
@@ -19,13 +19,13 @@
   line-height: 1.15;
   margin: 0 0 4px;
 }
-.page-subheading { font-size: 0.87rem; color: var(--muted); font-weight: 300; margin: 0; }
-
-/* ── Layout ──────────────────────────── */
-.row   { display: flex; flex-wrap: wrap; margin: 0 -12px; }
-.col-lg-8 { width: 66.666%; padding: 0 12px; }
-.col-lg-4 { width: 33.333%; padding: 0 12px; }
-@media (max-width:992px) { .col-lg-8, .col-lg-4 { width: 100%; margin-bottom: 20px; } }
+.page-subheading {
+  font-size: 0.87rem;
+  color: var(--muted);
+  font-weight: 300;
+  margin: 0;
+}
+.page-header-actions { display: flex; align-items: center; gap: 10px; }
 
 /* ── Card Panel ──────────────────────── */
 .card-panel {
@@ -35,96 +35,129 @@
   border: 1px solid var(--border);
   overflow: hidden;
 }
-.card-panel-header {
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.card-panel-title {
-  font-family: 'Playfair Display', serif !important;
-  font-size: 1rem !important;
-  font-weight: 700 !important;
-  color: var(--ink) !important;
-  margin: 0 !important;
-  display: flex; align-items: center;
-}
 .card-panel-body { padding: 24px; }
+.card-panel-body.p-0 { padding: 0; }
 
-/* ── Form Controls ───────────────────── */
-.form-label-custom {
-  display: block;
+/* ── Table ───────────────────────────── */
+.table-responsive { overflow-x: auto; }
+
+/* Column widths: #, Title, Status, Start Time, End Time, Actions */
+.table-custom thead th:nth-child(1) { width: 44px; }
+.table-custom thead th:nth-child(2) { width: auto; }
+.table-custom thead th:nth-child(3) { width: 120px; }
+.table-custom thead th:nth-child(4) { width: 175px; }
+.table-custom thead th:nth-child(5) { width: 175px; }
+.table-custom thead th:nth-child(6) { width: 110px; }
+
+.fw-600 { font-weight: 600; }
+.text-muted-sm { font-size: 0.8rem; color: var(--muted); }
+
+/* ── Status Badges ───────────────────── */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 11px;
+  border-radius: 20px;
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--ink);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  margin-bottom: 8px;
+  white-space: nowrap;
 }
-.form-label-custom.required::after { content: ' *'; color: var(--accent); }
+.badge-active    { background: #dcfce7; color: #166534; }
+.badge-upcoming  { background: #f3f4f6; color: #6b7280; }
+.badge-draft     { background: #f3f4f6; color: #6b7280; }
+.badge-closed    { background: #fee2e2; color: #991b1b; }
 
-.form-control-custom,
-.form-control,
-.form-select {
-  width: 100%;
-  padding: 11px 14px;
+/* ── Count Badge ─────────────────────── */
+.badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 2px 8px;
+  border-radius: 12px;
   background: var(--paper);
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.9rem;
-  color: var(--ink);
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--navy);
 }
-.form-control-custom:focus,
-.form-control:focus,
-.form-select:focus {
-  border-color: var(--navy);
-  box-shadow: 0 0 0 3px rgba(26,58,92,0.1);
-  background: #fff;
-  outline: none;
+
+.election-positions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
 }
-.form-control-custom::placeholder { color: #bbb0a0; }
-textarea.form-control-custom,
-textarea.form-control { resize: vertical; min-height: 90px; }
 
-.mb-4 { margin-bottom: 22px; }
+.badge-position {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #334155;
+  font-size: 0.78rem;
+  border: 1px solid rgba(148,163,184,0.18);
+}
 
-.row.g-3 { margin: 0 -8px; }
-.row.g-3 > * { padding: 0 8px; }
-.col-md-6 { width: 50%; }
-@media (max-width:768px) { .col-md-6 { width: 100%; margin-bottom: 14px; } }
-
-/* ── Form Actions ────────────────────── */
-.form-actions {
+/* ── Action Buttons ──────────────────── */
+.action-buttons {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-  margin-top: 8px;
+  gap: 6px;
 }
 
-/* ── Tips Sidebar ────────────────────── */
-.tips-list { display: flex; flex-direction: column; gap: 18px; }
-.tip-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+.btn-action {
+  width: 32px; height: 32px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
-.tip-item i { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
-.tip-item p {
-  font-size: 0.84rem;
+
+.btn-action-edit    { background: rgba(26,58,92,0.1);   color: var(--navy); }
+.btn-action-delete  { background: rgba(200,57,43,0.1);   color: var(--accent); }
+.btn-action-success { background: rgba(34,197,94,0.12);  color: #16a34a; }
+.btn-action-warn    { background: rgba(212,168,67,0.15); color: #a37a10; }
+
+.btn-action-edit:hover    { background: var(--navy); color: #fff; }
+.btn-action-delete:hover  { background: var(--accent); color: #fff; }
+.btn-action-success:hover { background: #16a34a; color: #fff; }
+.btn-action-warn:hover    { background: var(--gold); color: var(--ink); }
+
+.d-inline { display: inline !important; }
+
+/* ── Empty State ─────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 64px 24px;
+  gap: 12px;
   color: var(--muted);
-  line-height: 1.6;
+}
+.empty-state i {
+  font-size: 3.2rem;
+  color: var(--border);
+  margin-bottom: 4px;
+}
+.empty-state h5 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink);
   margin: 0;
 }
-.tip-item strong { color: var(--ink); }
-
-.text-amber  { color: var(--gold) !important; }
-.text-green  { color: #22c55e !important; }
-.text-red    { color: var(--accent) !important; }
-.text-danger { color: var(--accent) !important; }
+.empty-state p {
+  font-size: 0.87rem;
+  max-width: 280px;
+  margin: 0;
+}

@@ -38,7 +38,7 @@
           {% for election in elections %}
           <tr>
             <td class="text-muted-sm">{{ loop.index }}</td>
-            <td>
+            <td class="td-wrap">
               <div class="fw-600">{{ election.title }}</div>
               {% if election.description %}
               <div class="text-muted-sm">{{ election.description[:80] }}{% if election.description|length > 80 %}…{% endif %}</div>
