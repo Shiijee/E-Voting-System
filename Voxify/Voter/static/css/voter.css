@@ -49,12 +49,12 @@ img { display: block; max-width: 100%; }
 ════════════════════════════════════════════════════ */
 .sidebar {
   width: var(--sidebar-w);
-  min-height: 100vh;
+  height: 100vh;
   background: var(--navy);
   display: flex;
   flex-direction: column;
   position: fixed;
-  top: 0; left: 0;
+  top: 0; left: 0; bottom: 0;
   z-index: 200;
   transition: transform var(--ease);
   box-shadow: 4px 0 24px rgba(13,17,23,0.25);
@@ -174,6 +174,7 @@ img { display: block; max-width: 100%; }
   border-top: 1px solid rgba(255,255,255,0.07);
   position: relative;
   z-index: 2;
+  margin-top: auto;
 }
 
 .voter-avatar-nav {
@@ -249,15 +250,29 @@ img { display: block; max-width: 100%; }
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--ink);
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
-.topbar-right { display: flex; align-items: center; gap: 18px; }
+.topbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.topbar-time,
+.topbar-admin {
+  align-self: center;
+}
 
 .topbar-time {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.8rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 .topbar-admin { display: flex; align-items: center; gap: 10px; }
@@ -273,7 +288,12 @@ img { display: block; max-width: 100%; }
   color: var(--gold);
 }
 
-.topbar-name { font-size: 0.85rem; font-weight: 500; color: var(--ink); }
+.topbar-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+}
 
 /* ════════════════════════════════════════════════════
    PAGE CONTENT
@@ -1135,12 +1155,18 @@ img { display: block; max-width: 100%; }
    RESPONSIVE
 ════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
-  .sidebar { transform: translateX(calc(-1 * var(--sidebar-w))); }
+  .sidebar {
+    transform: translateX(-100%);
+    top: var(--topbar-h);
+    height: calc(100vh - var(--topbar-h));
+  }
   .sidebar.open { transform: translateX(0); }
   .main-wrapper { margin-left: 0; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .page-content { padding: 20px 16px; }
-  .topbar { padding: 0 16px; }
+  .page-content { padding: 20px 16px 16px; }
+  .topbar { position: sticky; top: 0; left: 0; right: 0; z-index: 300; padding: 0 16px; min-height: var(--topbar-h); }
+  .topbar-right { width: 100%; justify-content: space-between; }
+  .topbar-admin { margin-left: auto; }
   .elections-grid { grid-template-columns: 1fr; }
   .candidates-grid { grid-template-columns: repeat(2, 1fr); }
 }

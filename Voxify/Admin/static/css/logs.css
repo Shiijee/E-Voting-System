@@ -219,3 +219,57 @@
 .empty-state i  { font-size: 3.2rem; color: var(--border); margin-bottom: 4px; }
 .empty-state h5 { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--ink); margin:0; }
 .empty-state p  { font-size: 0.87rem; max-width: 280px; margin: 0; }
+
+/* ── Responsive Design ───────────────── */
+@media (max-width: 900px) {
+  .filter-bar { gap: 8px; }
+  .form-control-custom,
+  .form-control,
+  .form-select { padding: 9px 12px; font-size: 0.85rem; }
+  .search-input { padding-left: 36px !important; }
+  .search-icon { left: 12px; font-size: 0.85rem; }
+  .table-custom thead th:nth-child(2) { width: 140px; }
+  .table-custom thead th:nth-child(3) { width: 120px; }
+  .table-custom thead th:nth-child(4) { width: 100px; }
+  .log-action-badge { font-size: 0.7rem; padding: 2px 8px; }
+  .sev-badge { font-size: 0.7rem; padding: 3px 8px; }
+  .log-summary-chips { gap: 6px; }
+  .log-chip { padding: 5px 12px; font-size: 0.75rem; }
+}
+
+@media (max-width: 600px) {
+  .page-header {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .page-heading { font-size: 1.4rem; }
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .search-input-wrap { width: 100%; }
+  .form-control-custom,
+  .form-control,
+  .form-select { width: 100%; }
+  .card-panel-body { padding: 16px; }
+  .table-responsive { font-size: 0.85rem; }
+  .voter-cell { gap: 6px; }
+  .voter-avatar-sm { width: 24px; height: 24px; font-size: 0.7rem; }
+  .log-action-badge { font-size: 0.68rem; padding: 2px 6px; }
+  .sev-badge { font-size: 0.68rem; padding: 2px 6px; gap: 3px; }
+  .log-summary-chips { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .log-chip { padding: 4px 10px; font-size: 0.72rem; }
+  .pagination-wrapper { flex-direction: column; align-items: stretch; gap: 16px; }
+  .pagination-info { text-align: center; }
+  .pagination-custom { justify-content: center; }
+  .empty-state { padding: 48px 16px; }
+  .empty-state i { font-size: 2.8rem; }
+  .empty-state h5 { font-size: 1rem; }
+  .empty-state p { font-size: 0.85rem; max-width: 100%; }
+}
+
+@media (max-width: 520px) {
+  .table-custom thead th:nth-child(5) { display: none; }
+  .table-custom tbody td:nth-child(5) { display: none; }
+}

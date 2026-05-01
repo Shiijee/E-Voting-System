@@ -7,9 +7,49 @@ window.addEventListener('DOMContentLoaded', () => {
   const mainWrapper   = document.getElementById('mainWrapper');
 
   if (sidebarToggle && sidebar) {
+    let backdrop = null;
     sidebarToggle.addEventListener('click', () => {
-      sidebar.classList.toggle('collapsed');
-      if (mainWrapper) mainWrapper.classList.toggle('collapsed');
+      const isOpen = sidebar.classList.toggle('open');
+      if (mainWrapper) mainWrapper.classList.toggle('open');
+      
+      if (window.innerWidth <= 768) {
+        if (isOpen) {
+          document.body.style.overflow = 'hidden';
+          backdrop = document.createElement('div');
+          backdrop.className = 'sidebar-backdrop';
+          backdrop.style.cssText = `
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 199;
+          `;
+          backdrop.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            if (mainWrapper) mainWrapper.classList.remove('open');
+            document.body.style.overflow = '';
+            if (backdrop) {
+              document.body.removeChild(backdrop);
+              backdrop = null;
+            }
+          });
+          document.body.appendChild(backdrop);
+        } else {
+          document.body.style.overflow = '';
+          if (backdrop) {
+            document.body.removeChild(backdrop);
+            backdrop = null;
+          }
+        }
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768 && backdrop) {
+        sidebar.classList.remove('open');
+        if (mainWrapper) mainWrapper.classList.remove('open');
+        document.body.removeChild(backdrop);
+        backdrop = null;
+      }
     });
   }
 

@@ -224,3 +224,49 @@
 
 /* ── mb-4 utility ────────────────────────────────── */
 .mb-4 { margin-bottom: 24px !important; }
+
+/* ── Responsive Design ───────────────── */
+@media (max-width: 900px) {
+  .results-selector { gap: 12px; }
+  .results-selector select,
+  .results-select { min-width: 200px; padding: 8px 12px; font-size: 0.85rem; }
+  .results-stats-row { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .results-stat-card { padding: 16px 18px; gap: 12px; }
+  .results-stat-card i { font-size: 1.4rem; }
+  .results-stat-num { font-size: 1.4rem; }
+  .results-stat-label { font-size: 0.7rem; }
+  .result-row { padding: 12px 14px; column-gap: 10px; }
+  .result-rank { font-size: 0.8rem; }
+  .result-avatar { width: 30px; height: 30px; font-size: 0.8rem; }
+  .result-candidate-name { font-size: 0.85rem; }
+  .result-candidate-party { font-size: 0.72rem; }
+  .result-count { font-size: 1.05rem; }
+  .result-pct { font-size: 0.7rem; }
+  .result-bar-wrap { height: 5px; }
+}
+
+@media (max-width: 600px) {
+  .results-selector {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .results-selector select,
+  .results-select { width: 100%; min-width: auto; }
+  .results-stats-row { grid-template-columns: 1fr; gap: 12px; }
+  .results-stat-card { padding: 14px 16px; }
+  .results-stat-card i { font-size: 1.3rem; }
+  .results-stat-num { font-size: 1.3rem; }
+  .results-stat-label { font-size: 0.68rem; }
+  .result-row {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+    row-gap: 8px;
+    padding: 16px;
+  }
+  .result-rank { grid-row: 1; justify-self: start; }
+  .result-candidate { grid-row: 2; }
+  .result-votes { grid-row: 3; text-align: left; }
+  .result-bar-wrap { grid-row: 4; grid-column: 1; }
+  .result-position-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+}

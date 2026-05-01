@@ -149,3 +149,45 @@
 .empty-state i    { font-size: 3.2rem; color: var(--border); margin-bottom: 4px; }
 .empty-state h5   { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--ink); margin:0; }
 .empty-state p    { font-size: 0.87rem; max-width: 280px; margin: 0; }
+
+/* ── Responsive Design ───────────────── */
+@media (max-width: 992px) {
+  .page-header {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .page-heading { font-size: 1.5rem; }
+  .filter-bar { gap: 8px; }
+  .form-control-custom,
+  .form-select { padding: 8px 12px; font-size: 0.85rem; }
+  .card-panel-body { padding: 20px; }
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .page-heading { font-size: 1.4rem; }
+  .page-header-actions { justify-content: center; }
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .form-control-custom,
+  .form-select { width: 100%; }
+  .card-panel-body { padding: 16px; }
+  .candidate-avatar { width: 36px; height: 36px; }
+  .candidate-photo,
+  .candidate-avatar-placeholder { width: 36px; height: 36px; }
+  .badge-position { font-size: 0.75rem; padding: 2px 8px; }
+  .badge-count { font-size: 0.75rem; padding: 1px 6px; }
+  .btn-action { width: 28px; height: 28px; font-size: 0.75rem; }
+  .action-buttons { gap: 4px; }
+  .empty-state { padding: 48px 16px; }
+  .empty-state i { font-size: 2.8rem; }
+  .empty-state h5 { font-size: 1rem; }
+  .empty-state p { font-size: 0.85rem; max-width: 100%; }
+}

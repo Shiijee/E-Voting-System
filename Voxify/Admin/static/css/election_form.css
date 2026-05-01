@@ -161,3 +161,34 @@
   max-width: 280px;
   margin: 0;
 }
+
+/* ── Responsive Design ───────────────── */
+@media (max-width: 992px) {
+  .page-header {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .page-heading { font-size: 1.5rem; }
+  .card-panel-body { padding: 20px; }
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .page-heading { font-size: 1.4rem; }
+  .page-header-actions { justify-content: center; }
+  .card-panel-body { padding: 16px; }
+  .badge-status { font-size: 0.7rem; padding: 3px 9px; }
+  .badge-count { font-size: 0.75rem; padding: 1px 6px; }
+  .btn-action { width: 28px; height: 28px; font-size: 0.75rem; }
+  .action-buttons { gap: 4px; }
+  .election-positions { gap: 6px; margin-top: 8px; }
+  .badge-position { font-size: 0.75rem; padding: 4px 8px; }
+  .empty-state { padding: 48px 16px; }
+  .empty-state i { font-size: 2.8rem; }
+  .empty-state h5 { font-size: 1rem; }
+  .empty-state p { font-size: 0.85rem; max-width: 100%; }
+}

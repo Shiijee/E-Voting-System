@@ -457,3 +457,60 @@ body {
   from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Responsive Design ───────────────── */
+@media (max-width: 768px) {
+  body { flex-direction: column; overflow: auto; }
+  .left-panel {
+    width: 100%;
+    padding: 40px 30px;
+    min-height: auto;
+  }
+  .left-panel::before,
+  .left-panel::after { display: none; }
+  .brand-logo { margin-bottom: 12px; }
+  .logo-icon { width: 40px; height: 40px; }
+  .logo-icon svg { width: 20px; height: 20px; }
+  .brand-name { font-size: 1.6rem; }
+  .brand-tagline { font-size: 0.65rem; margin-left: 54px; }
+  .ballot-bg { display: none; }
+  .hero-text h1 { font-size: 2.8rem; margin-bottom: 16px; }
+  .hero-text p { font-size: 0.9rem; max-width: 100%; }
+  .stats-row { gap: 30px; flex-wrap: wrap; justify-content: center; }
+  .stat-num { font-size: 1.5rem; }
+  .stat-label { font-size: 0.68rem; }
+  .right-panel { padding: 20px; height: auto; overflow: visible; }
+  .login-box { max-width: none; height: auto; }
+  .login-header h2 { font-size: 1.8rem; }
+  .login-header p { font-size: 0.85rem; }
+  .role-selector { margin-bottom: 16px; }
+  .role-btn { font-size: 0.8rem; padding: 8px; }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { font-size: 0.7rem; }
+  .name-row { flex-direction: column; gap: 10px; }
+  .form-row { gap: 10px; }
+  .form-row .form-group { min-width: auto; }
+  .form-group input { padding: 12px 40px; font-size: 0.87rem; }
+  .input-wrap svg { width: 14px; height: 14px; left: 13px; }
+  .password-wrap .toggle-btn { right: 11px; }
+  .password-wrap .toggle-btn img { width: 16px; height: 16px; }
+  .form-options { margin-bottom: 24px; font-size: 0.8rem; }
+  .btn-login { padding: 13px; font-size: 0.87rem; }
+  .divider { margin: 20px 0; font-size: 0.7rem; }
+  .secure-badge { font-size: 0.72rem; }
+  .secure-badge svg { width: 12px; height: 12px; }
+}
+
+@media (max-width: 480px) {
+  .left-panel { padding: 30px 20px; }
+  .brand-name { font-size: 1.4rem; }
+  .brand-tagline { margin-left: 48px; }
+  .hero-text h1 { font-size: 2.4rem; }
+  .hero-text p { font-size: 0.87rem; }
+  .stats-row { gap: 20px; }
+  .stat-num { font-size: 1.3rem; }
+  .right-panel { padding: 15px; }
+  .login-header h2 { font-size: 1.6rem; }
+  .login-header p { font-size: 0.82rem; }
+  .form-group input { padding: 11px 38px; font-size: 0.85rem; }
+}
