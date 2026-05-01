@@ -8,47 +8,49 @@ window.addEventListener('DOMContentLoaded', () => {
 
   if (sidebarToggle && sidebar) {
     let backdrop = null;
+
+    function isMobile() { return window.innerWidth <= 768; }
+
+    function closeBackdrop() {
+      document.body.style.overflow = '';
+      if (backdrop) {
+        backdrop.remove();
+        backdrop = null;
+      }
+    }
+
     sidebarToggle.addEventListener('click', () => {
-      const isOpen = sidebar.classList.toggle('open');
-      if (mainWrapper) mainWrapper.classList.toggle('open');
-      
-      if (window.innerWidth <= 768) {
+      if (isMobile()) {
+        const isOpen = sidebar.classList.toggle('open');
+        if (mainWrapper) mainWrapper.classList.toggle('open', isOpen);
+
         if (isOpen) {
           document.body.style.overflow = 'hidden';
           backdrop = document.createElement('div');
           backdrop.className = 'sidebar-backdrop';
-          backdrop.style.cssText = `
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 199;
-          `;
           backdrop.addEventListener('click', () => {
             sidebar.classList.remove('open');
             if (mainWrapper) mainWrapper.classList.remove('open');
-            document.body.style.overflow = '';
-            if (backdrop) {
-              document.body.removeChild(backdrop);
-              backdrop = null;
-            }
+            closeBackdrop();
           });
           document.body.appendChild(backdrop);
         } else {
-          document.body.style.overflow = '';
-          if (backdrop) {
-            document.body.removeChild(backdrop);
-            backdrop = null;
-          }
+          closeBackdrop();
         }
+      } else {
+        const isCollapsed = sidebar.classList.toggle('collapsed');
+        if (mainWrapper) mainWrapper.classList.toggle('sidebar-collapsed', isCollapsed);
       }
     });
 
     window.addEventListener('resize', () => {
-      if (window.innerWidth > 768 && backdrop) {
+      if (!isMobile()) {
         sidebar.classList.remove('open');
         if (mainWrapper) mainWrapper.classList.remove('open');
-        document.body.removeChild(backdrop);
-        backdrop = null;
+        closeBackdrop();
+      } else {
+        sidebar.classList.remove('collapsed');
+        if (mainWrapper) mainWrapper.classList.remove('sidebar-collapsed');
       }
     });
   }
@@ -65,10 +67,8 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── Clean up stale modal state on any modal-trigger click ──────────
-  // (handles edge cases where a previous modal closed abnormally)
   document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => {
     btn.addEventListener('click', () => {
-      // Only clean up if no modal is currently shown
       if (!document.querySelector('.modal.show')) {
         document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
         document.body.classList.remove('modal-open');

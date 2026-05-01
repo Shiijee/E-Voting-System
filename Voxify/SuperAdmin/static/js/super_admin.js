@@ -1,13 +1,29 @@
 /* ─── Voxify Super Admin JS ───────────────────────── */
 
 // Sidebar toggle
-const sidebar      = document.getElementById('sidebar');
+const sidebar       = document.getElementById('sidebar');
 const sidebarToggle = document.getElementById('sidebarToggle');
+const mainWrapper   = document.getElementById('mainWrapper');
 if (sidebarToggle && sidebar) {
-  sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+  sidebarToggle.addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      sidebar.classList.toggle('open');
+    } else {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      if (mainWrapper) mainWrapper.classList.toggle('sidebar-collapsed', isCollapsed);
+    }
+  });
   document.addEventListener('click', e => {
     if (window.innerWidth <= 900 && !sidebar.contains(e.target) && e.target !== sidebarToggle) {
       sidebar.classList.remove('open');
+    }
+  });
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 900) {
+      sidebar.classList.remove('open');
+    } else {
+      sidebar.classList.remove('collapsed');
+      if (mainWrapper) mainWrapper.classList.remove('sidebar-collapsed');
     }
   });
 }
@@ -56,10 +72,8 @@ if (confirmModal) {
 }
 
 // ── Clean up stale modal state on any modal-trigger click ──────────
-// (handles edge cases where a previous modal closed abnormally)
 document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => {
   btn.addEventListener('click', () => {
-    // Only clean up if no modal is currently shown
     if (!document.querySelector('.modal.show')) {
       document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
       document.body.classList.remove('modal-open');
@@ -71,9 +85,7 @@ document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => {
 document.querySelectorAll('.modal').forEach(modal => {
   modal.addEventListener('shown.bs.modal', () => {
     const firstInput = modal.querySelector('input:not([type="hidden"]), select, textarea');
-    if (firstInput) {
-      firstInput.focus();
-    }
+    if (firstInput) firstInput.focus();
   });
 });
 

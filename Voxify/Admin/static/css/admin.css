@@ -229,7 +229,7 @@ img { display: block; max-width: 100%; }
   align-items: center;
   gap: 20px;
   padding: 0 28px;
-  position: sticky; top: 0; z-index: 100;
+  position: sticky; top: 0; z-index: 210;
   box-shadow: var(--shadow-sm);
 }
 
@@ -251,6 +251,14 @@ img { display: block; max-width: 100%; }
   flex-shrink: 0;
 }
 .sidebar-toggle:hover { background: var(--paper); color: var(--navy); }
+
+/* ── Desktop sidebar collapse ───────────────────────────────────────── */
+.sidebar.collapsed {
+  transform: translateX(-100%);
+}
+.main-wrapper.sidebar-collapsed {
+  margin-left: 0;
+}
 
 .topbar-title {
   font-family: 'Playfair Display', serif;
