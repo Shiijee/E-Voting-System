@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('super_admin.static', filename='css/profile.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-wrap">
+    {% for category, message in messages %}
+    <div class="flash-msg flash-{{ category }}">
+      {{ message }}
+      <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<div class="profile-layout">
+
+  <!-- ── Left: Avatar card ── -->
+  <div class="profile-sidebar">
+    <div class="profile-avatar-card">
+      <div class="profile-avatar-ring">
+        <div class="profile-avatar-letter">{{ admin.firstname[0]|upper if admin and admin.firstname else 'S' }}</div>
+      </div>
+      <div class="profile-avatar-name">{{ admin.firstname }} {{ admin.surname }}</div>
+      <div class="profile-avatar-role">
+        <i class="bi bi-shield-fill-exclamation me-1"></i>Super Administrator
+      </div>
+      <div class="profile-avatar-divider"></div>
+      <div class="profile-meta-row">
+        <i class="bi bi-envelope-fill"></i>
+        <span>{{ admin.email if admin and admin.email else '—' }}</span>
+      </div>
+      <div class="profile-meta-row">
+        <i class="bi bi-person-badge-fill"></i>
+        <span>{{ admin.student_id if admin and admin.student_id else '—' }}</span>
+      </div>
+      <div class="profile-meta-row">
+        <i class="bi bi-calendar3"></i>
+        <span>Joined {{ admin.created_at.strftime('%b %d, %Y') if admin and admin.created_at else '—' }}</span>
+      </div>
+      <div class="profile-avatar-divider"></div>
+      <div class="profile-stats-row">
+        <div class="profile-stat-item">
+          <span class="profile-stat-num">{{ total_admins or 0 }}</span>
+          <span class="profile-stat-lbl">Admins</span>
+        </div>
+        <div class="profile-stat-divider"></div>
+        <div class="profile-stat-item">
+          <span class="profile-stat-num">{{ total_colleges or 0 }}</span>
+          <span class="profile-stat-lbl">Colleges</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Right: Forms ── -->
+  <div class="profile-main">
+
+    <!-- Personal Info -->
+    <div class="card-panel profile-card">
+      <div class="profile-card-header">
+        <div class="profile-card-title"><i class="bi bi-person-fill me-2"></i>Personal Information</div>
+        <div class="profile-card-subtitle">Update your name and email address.</div>
+      </div>
+      <form method="POST" action="{{ url_for('super_admin.update_profile') }}" class="profile-form">
+        <input type="hidden" name="form_type" value="info"/>
+        <div class="pform-row">
+          <div class="pform-group">
+            <label class="pform-label">First Name</label>
+            <input type="text" name="firstname" class="pform-input" value="{{ admin.firstname or '' }}" required/>
+          </div>
+          <div class="pform-group">
+            <label class="pform-label">Middle Name <span class="pform-optional">(optional)</span></label>
+            <input type="text" name="middlename" class="pform-input" value="{{ admin.middlename or '' }}"/>
+          </div>
+          <div class="pform-group">
+            <label class="pform-label">Surname</label>
+            <input type="text" name="surname" class="pform-input" value="{{ admin.surname or '' }}" required/>
+          </div>
+        </div>
+        <div class="pform-row">
+          <div class="pform-group pform-group-wide">
+            <label class="pform-label">Email Address</label>
+            <input type="email" name="email" class="pform-input" value="{{ admin.email or '' }}" required/>
+          </div>
+        </div>
+        <div class="pform-actions">
+          <button type="submit" class="btn-primary-custom">
+            <i class="bi bi-check-lg me-2"></i>Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Change Password -->
+    <div class="card-panel profile-card">
+      <div class="profile-card-header">
+        <div class="profile-card-title"><i class="bi bi-lock-fill me-2"></i>Change Password</div>
+        <div class="profile-card-subtitle">Use a strong password you don't use elsewhere.</div>
+      </div>
+      <form method="POST" action="{{ url_for('super_admin.update_profile') }}" class="profile-form" id="pwForm">
+        <input type="hidden" name="form_type" value="password"/>
+        <div class="pform-row">
+          <div class="pform-group">
+            <label class="pform-label">Current Password</label>
+            <div class="pform-pw-wrap">
+              <input type="password" name="current_password" id="cur_pw" class="pform-input" placeholder="Enter current password"/>
+              <button type="button" class="pform-pw-eye" onclick="togglePw('cur_pw','eye0')"><i class="bi bi-eye-fill" id="eye0"></i></button>
+            </div>
+          </div>
+          <div class="pform-group">
+            <label class="pform-label">New Password</label>
+            <div class="pform-pw-wrap">
+              <input type="password" name="new_password" id="new_pw" class="pform-input" placeholder="Min. 6 characters"/>
+              <button type="button" class="pform-pw-eye" onclick="togglePw('new_pw','eye1')"><i class="bi bi-eye-fill" id="eye1"></i></button>
+            </div>
+          </div>
+          <div class="pform-group">
+            <label class="pform-label">Confirm New Password</label>
+            <div class="pform-pw-wrap">
+              <input type="password" name="confirm_password" id="conf_pw" class="pform-input" placeholder="Repeat new password"/>
+              <button type="button" class="pform-pw-eye" onclick="togglePw('conf_pw','eye2')"><i class="bi bi-eye-fill" id="eye2"></i></button>
+            </div>
+          </div>
+        </div>
+        <div class="pform-actions">
+          <button type="submit" class="btn-primary-custom">
+            <i class="bi bi-shield-lock-fill me-2"></i>Update Password
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Account Details (read-only) -->
+    <div class="card-panel profile-card">
+      <div class="profile-card-header">
+        <div class="profile-card-title"><i class="bi bi-info-circle-fill me-2"></i>Account Details</div>
+        <div class="profile-card-subtitle">Your system account information — read only.</div>
+      </div>
+      <div class="profile-details-grid">
+        <div class="profile-detail-item">
+          <div class="profile-detail-label">Admin ID</div>
+          <div class="profile-detail-value">{{ admin.student_id if admin else '—' }}</div>
+        </div>
+        <div class="profile-detail-item">
+          <div class="profile-detail-label">Role</div>
+          <div class="profile-detail-value">
+            <span class="role-badge"><i class="bi bi-shield-fill-exclamation me-1"></i>Super Administrator</span>
+          </div>
+        </div>
+        <div class="profile-detail-item">
+          <div class="profile-detail-label">Account Status</div>
+          <div class="profile-detail-value">
+            <span class="status-active"><i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Active</span>
+          </div>
+        </div>
+        <div class="profile-detail-item">
+          <div class="profile-detail-label">Total Colleges</div>
+          <div class="profile-detail-value">{{ total_colleges or 0 }}</div>
+        </div>
+        <div class="profile-detail-item">
+          <div class="profile-detail-label">Total Admins</div>
+          <div class="profile-detail-value">{{ total_admins or 0 }}</div>
+        </div>
+        <div class="profile-detail-item">
+          <div class="profile-detail-label">Date Joined</div>
+          <div class="profile-detail-value">{{ admin.created_at.strftime('%B %d, %Y') if admin and admin.created_at else '—' }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePw(inputId, iconId) {
+  var inp = document.getElementById(inputId);
+  var ico = document.getElementById(iconId);
+  if (!inp) return;
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    if (ico) { ico.classList.remove('bi-eye-fill'); ico.classList.add('bi-eye-slash-fill'); }
+  } else {
+    inp.type = 'password';
+    if (ico) { ico.classList.remove('bi-eye-slash-fill'); ico.classList.add('bi-eye-fill'); }
+  }
+}
+document.getElementById('pwForm').addEventListener('submit', function(e) {
+  var np  = document.getElementById('new_pw').value;
+  var cp  = document.getElementById('conf_pw').value;
+  var cur = document.getElementById('cur_pw').value;
+  if (!cur) { e.preventDefault(); alert('Please enter your current password.'); return; }
+  if (np.length < 6) { e.preventDefault(); alert('New password must be at least 6 characters.'); return; }
+  if (np !== cp) { e.preventDefault(); alert('New passwords do not match.'); return; }
+});
+</script>
+{% endblock %}

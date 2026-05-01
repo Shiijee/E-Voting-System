@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, session
 from werkzeug.security import generate_password_hash
 from Voxify.Authentication.routes import superadmin_required
 from Voxify.utils.otp import send_account_email
@@ -34,6 +34,7 @@ def dashboard():
         SELECT l.id, l.action, l.created_at, u.firstname, u.surname, u.role
         FROM system_logs l
         LEFT JOIN users u ON l.user_id = u.id
+        WHERE u.role IN ('admin', 'superadmin')
         ORDER BY l.created_at DESC LIMIT 10
     """)
     recent_logs = cursor.fetchall()
@@ -229,7 +230,7 @@ def create_admin():
         new_student_id = f"admin-{str(count + 1).zfill(4)}"
 
         cursor.execute(
-            "INSERT INTO users (firstname, middlename, surname, student_id, password, role, email, college_id, is_approved) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, TRUE)",
+            "INSERT INTO users (firstname, middlename, surname, student_id, password, role, email, college_id, is_approved, is_active) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, TRUE, TRUE)",
             (firstname, middlename, surname, new_student_id, hashed_password, role, email, college_id)
         )
         conn.commit()
@@ -394,9 +395,10 @@ def system_logs():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT l.*, u.firstname, u.surname, u.student_id
+        SELECT l.*, u.firstname, u.surname, u.student_id, u.role
         FROM system_logs l
         LEFT JOIN users u ON l.user_id = u.id
+        WHERE u.role IN ('admin', 'superadmin')
         ORDER BY l.created_at DESC
         LIMIT 100
     """)
@@ -404,3 +406,102 @@ def system_logs():
     cursor.close()
     conn.close()
     return render_template('system_logs.html', logs=logs)
+
+@superadmin_bp.route("/profile")
+@superadmin_required
+def profile():
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session["user_id"],))
+    admin = cursor.fetchone()
+
+    cursor.execute("SELECT COUNT(*) AS cnt FROM users WHERE role = 'admin'")
+    total_admins = (cursor.fetchone() or {}).get("cnt", 0)
+
+    cursor.execute("SELECT COUNT(*) AS cnt FROM colleges")
+    total_colleges = (cursor.fetchone() or {}).get("cnt", 0)
+
+    cursor.close()
+    conn.close()
+    return render_template(
+        "sa_profile.html",
+        admin=admin,
+        total_admins=total_admins,
+        total_colleges=total_colleges
+    )
+
+
+@superadmin_bp.route("/profile/update", methods=["POST"])
+@superadmin_required
+def update_profile():
+    form_type = request.form.get("form_type")
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+
+    if form_type == "info":
+        firstname  = request.form.get("firstname",  "").strip()
+        middlename = request.form.get("middlename", "").strip()
+        surname    = request.form.get("surname",    "").strip()
+        email      = request.form.get("email",      "").strip()
+
+        if not firstname or not surname or not email:
+            flash("First name, surname, and email are required.", "danger")
+            cursor.close(); conn.close()
+            return redirect(url_for("super_admin.profile"))
+
+        cursor.execute(
+            "SELECT id FROM users WHERE email = %s AND id != %s",
+            (email, session["user_id"])
+        )
+        if cursor.fetchone():
+            flash("That email address is already in use.", "danger")
+            cursor.close(); conn.close()
+            return redirect(url_for("super_admin.profile"))
+
+        cursor.execute(
+            """UPDATE users SET firstname=%s, middlename=%s, surname=%s, email=%s
+               WHERE id=%s""",
+            (firstname, middlename or None, surname, email, session["user_id"])
+        )
+        conn.commit()
+        session["fullname"] = " ".join(filter(None, [firstname, middlename, surname])).strip()
+        flash("Profile updated successfully.", "success")
+
+    elif form_type == "password":
+        from werkzeug.security import check_password_hash, generate_password_hash
+        current_password  = request.form.get("current_password",  "")
+        new_password      = request.form.get("new_password",      "")
+        confirm_password  = request.form.get("confirm_password",  "")
+
+        cursor.execute("SELECT password FROM users WHERE id = %s", (session["user_id"],))
+        row = cursor.fetchone()
+
+        if not row or not check_password_hash(row["password"], current_password):
+            flash("Current password is incorrect.", "danger")
+            cursor.close(); conn.close()
+            return redirect(url_for("super_admin.profile"))
+
+        if len(new_password) < 6:
+            flash("New password must be at least 6 characters.", "danger")
+            cursor.close(); conn.close()
+            return redirect(url_for("super_admin.profile"))
+
+        if new_password != confirm_password:
+            flash("New passwords do not match.", "danger")
+            cursor.close(); conn.close()
+            return redirect(url_for("super_admin.profile"))
+
+        cursor.execute(
+            "UPDATE users SET password = %s WHERE id = %s",
+            (generate_password_hash(new_password), session["user_id"])
+        )
+        conn.commit()
+        flash("Password updated successfully.", "success")
+
+    else:
+        flash("Invalid request.", "danger")
+
+    cursor.close()
+    conn.close()
+    return redirect(url_for("super_admin.profile"))

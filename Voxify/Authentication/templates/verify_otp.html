@@ -7,9 +7,10 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('auth.static', filename='css/login.css') }}">
+  <link rel="stylesheet" href="{{ url_for('auth.static', filename='css/verify_otp.css') }}">
 </head>
 
-<body>
+<body class="otp-page">
 
 <!-- LEFT PANEL -->
 <div class="left-panel">
@@ -37,23 +38,9 @@
 
   <div class="hero-text">
     <h1>Verify Your<br><em>Identity</em><br>Securely.</h1>
-    <p>Enter the 6-digit code sent to your email to complete the verification process.</p>
   </div>
 
-  <div class="stats-row">
-    <div class="stat">
-      <div class="stat-num">6-digit</div>
-      <div class="stat-label">OTP</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num">5 min</div>
-      <div class="stat-label">Expiry</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num">3</div>
-      <div class="stat-label">Attempts</div>
-    </div>
-  </div>
+  <div class="stats-row"></div>
 
 </div>
 
@@ -78,8 +65,18 @@
       {% endif %}
     {% endwith %}
 
+    <!-- OTP EXPIRY TIMER -->
+    <div class="otp-timer" id="otp-timer-box">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <span>Code expires in <span id="countdown">05:00</span></span>
+    </div>
+
     <!-- OTP VERIFICATION FORM -->
     <form method="POST" action="{{ url_for('auth.verify_otp', purpose=purpose) }}">
+      <input type="hidden" id="otp-expiry" value="{{ otp_expiry or '' }}">
 
       <div class="form-group">
         <label>One-Time Password</label>
@@ -92,11 +89,12 @@
         </div>
       </div>
 
-      <button type="submit" class="btn-login">Verify & Continue →</button>
+      <button type="submit" class="btn-login" id="verify-btn">Verify & Continue →</button>
 
       <p class="login-link">
         Didn't receive the code?
-        <a href="#" onclick="resendOTP()">Resend OTP</a>
+        <a href="#" id="resend-link" class="resend-link" data-resend-url="{{ url_for('auth.resend_otp', purpose=purpose) }}" onclick="resendOTP(event)">Resend OTP</a>
+        <span id="resend-cooldown"></span>
       </p>
 
       <p class="login-link">
@@ -105,43 +103,11 @@
 
     </form>
 
-    <div class="divider">secured by</div>
-
-    <div class="secure-badge">
-      <svg viewBox="0 0 24 24">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
-      OTP Protected · Time-Limited Access
-    </div>
-
   </div>
 
 </div>
 
-<script>
-// Auto-focus OTP input
-document.addEventListener('DOMContentLoaded', function() {
-    const otpInput = document.querySelector('input[name="otp"]');
-    if (otpInput) {
-        otpInput.focus();
-    }
-});
-
-// Allow only numeric input
-document.querySelector('input[name="otp"]').addEventListener('input', function(e) {
-    this.value = this.value.replace(/[^0-9]/g, '');
-});
-
-// Prevent form resubmission on page refresh
-if (window.history.replaceState) {
-    window.history.replaceState(null, null, window.location.href);
-}
-
-function resendOTP() {
-    // For now, just show an alert. In production, implement resend functionality
-    alert('Resend functionality not implemented yet. Please try again later.');
-}
-</script>
+<script src="{{ url_for('auth.static', filename='js/verify_otp.js') }}"></script>
 
 </body>
 </html>

@@ -11,8 +11,8 @@ conn = mysql.connector.connect(
 cursor = conn.cursor()
 
 # Change student_id and new_password to whichever account you're locked out of
-student_id = "admin-0003"   # <-- change this to your student_id
-new_password = "Admin@123" # <-- change this to your new password
+student_id = "241-1-0003"   # <-- change this to your student_id
+new_password = "Voter@123" # <-- change this to your new password
 
 hashed_password = generate_password_hash(new_password)
 cursor.execute(

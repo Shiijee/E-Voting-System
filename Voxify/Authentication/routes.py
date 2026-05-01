@@ -5,7 +5,7 @@ from datetime import datetime
 import logging
 from ..utils.otp import (
     generate_otp, send_otp_email, store_otp_in_session,
-    verify_otp_from_session, clear_otp_from_session,
+    verify_otp_from_session, clear_otp_from_session, is_otp_valid,
     set_trusted_device, check_trusted_device
 )
 
@@ -144,19 +144,27 @@ def voter_login():
                     if not email or '@' not in str(email):
                         flash("No valid email found for your account. Please contact the administrator.", "error")
                         return render_template("voter_login.html")
-                    
+
+                    if session.get('user_data_voter_login', {}).get('user_id') == user['id'] and is_otp_valid('voter_login'):
+                        flash("An OTP has already been sent. Please check your email and verify.", "info")
+                        return redirect(url_for('auth.verify_otp', purpose='voter_login'))
+
+                    clear_otp_from_session('voter_login')
                     otp = generate_otp()
                     store_otp_in_session(otp, 'voter_login', {
                         'user_id': user['id'], 'role': user['role'],
                         'username': user['student_id'],
-                        'fullname': f"{user['firstname']} {user['surname']}"
+                        'fullname': f"{user['firstname']} {user['surname']}",
+                        'email': email
                     })
-                    if send_otp_email(email, otp):
-                        flash("OTP sent to your email. Please verify to complete login.", "info")
-                        return redirect(url_for('auth.verify_otp', purpose='voter_login'))
+                    send_otp_email(email, otp)
+                    fallback_otp = session.pop('_otp_fallback', None)
+                    session.modified = True
+                    if fallback_otp:
+                        flash(f"Could not send OTP email. Your OTP is: {fallback_otp} (check server logs too)", "warning")
                     else:
-                        flash("Failed to send OTP. Please try again.", "error")
-                        return render_template("voter_login.html")
+                        flash("OTP sent to your email. Please verify to complete login.", "info")
+                    return redirect(url_for('auth.verify_otp', purpose='voter_login'))
                 else:
                     print("Password verification failed!")
             except ValueError as e:
@@ -239,18 +247,29 @@ def admin_login():
                 flash("No valid email found for your account. Please contact the administrator.", "error")
                 return render_template("admin_login.html")
 
+            if session.get('user_data_admin_login', {}).get('user_id') == user['id'] and is_otp_valid('admin_login'):
+                flash("An OTP has already been sent. Please check your email and verify.", "info")
+                return redirect(url_for('auth.verify_otp', purpose='admin_login'))
+
+            clear_otp_from_session('admin_login')
             otp = generate_otp()
             store_otp_in_session(otp, 'admin_login', {
                 'user_id': user['id'], 'role': user['role'],
                 'username': user['student_id'],
-                'fullname': f"{user['firstname']} {user['surname']}"
+                'fullname': f"{user['firstname']} {user['surname']}",
+                'email': email
             })
-            if send_otp_email(email, otp):
-                flash("OTP sent to your email. Please verify to complete login.", "info")
-                return redirect(url_for('auth.verify_otp', purpose='admin_login'))
+            print(f"[DEBUG] Admin login OTP generation - user_id: {user['id']}, email: {email}, otp: {otp[:3]}***")
+            send_otp_email(email, otp)
+            fallback_otp = session.pop('_otp_fallback', None)
+            session.modified = True
+            if fallback_otp:
+                flash(f"Could not send OTP email. Your OTP is: {fallback_otp} (check server logs too)", "warning")
+                print(f"[DEBUG] OTP shown on screen for admin {user['id']}")
             else:
-                flash("Failed to send OTP. Please try again.", "error")
-                return render_template("admin_login.html")
+                flash("OTP sent to your email. Please verify to complete login.", "info")
+                print(f"[DEBUG] OTP sent successfully for admin {user['id']}")
+            return redirect(url_for('auth.verify_otp', purpose='admin_login'))
         
         flash("Invalid admin credentials.", "error")
     
@@ -294,11 +313,28 @@ def verify_otp():
         flash("Invalid verification purpose.", "error")
         return redirect(url_for('auth.voter_login'))
 
+    user_data_key = f'user_data_{purpose}'
+    if user_data_key not in session:
+        flash("Session expired. Please log in again.", "warning")
+        return redirect(url_for('auth.voter_login'))
+
+    def render_verify_template():
+        response = make_response(render_template("verify_otp.html", purpose=purpose, otp_expiry=otp_expiry))
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
+
+    otp_key = f'otp_{purpose}'
+    otp_expiry = None
+    if otp_key in session:
+        otp_expiry = session[otp_key].get('expiry')
+
     if request.method == "POST":
         otp = request.form.get('otp', '').strip()
         if not otp:
             flash("Please enter the OTP.", "error")
-            return render_template("verify_otp.html", purpose=purpose)
+            return render_verify_template()
 
         success, message = verify_otp_from_session(otp, purpose)
 
@@ -358,7 +394,37 @@ def verify_otp():
         else:
             flash(message, "error")
 
-    return render_template("verify_otp.html", purpose=purpose)
+    return render_verify_template()
+
+
+@auth_bp.route("/resend-otp")
+def resend_otp():
+    purpose = request.args.get('purpose')
+    if purpose not in ['signup', 'voter_login', 'admin_login']:
+        flash("Invalid OTP resend request.", "error")
+        return redirect(url_for('auth.voter_login'))
+
+    user_data = session.get(f'user_data_{purpose}')
+    if not user_data:
+        flash("Session expired. Please log in again.", "warning")
+        return redirect(url_for('auth.voter_login'))
+
+    email = user_data.get('email')
+    if not email or '@' not in str(email):
+        flash("No valid email found for your account. Please contact the administrator.", "error")
+        return redirect(url_for('auth.verify_otp', purpose=purpose))
+
+    otp = generate_otp()
+    store_otp_in_session(otp, purpose, user_data)
+    send_otp_email(email, otp)
+    fallback_otp = session.pop('_otp_fallback', None)
+    session.modified = True
+    if fallback_otp:
+        flash(f"Could not send OTP email. Your OTP is: {fallback_otp}", "warning")
+    else:
+        flash("A new OTP has been sent to your email. Please verify to continue.", "info")
+
+    return redirect(url_for('auth.verify_otp', purpose=purpose))
 
 
 # ============================================

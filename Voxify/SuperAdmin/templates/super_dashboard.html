@@ -137,30 +137,5 @@
   </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="card-panel mt-4">
-  <div class="card-panel-header">
-    <h5 class="card-panel-title"><i class="bi bi-lightning-charge-fill me-2"></i>Quick Actions</h5>
-  </div>
-  <div class="card-panel-body">
-    <div class="quick-actions-grid">
-      <a href="{{ url_for('super_admin.manage_colleges') }}" class="quick-action-btn">
-        <i class="bi bi-building-add"></i>
-        <span>Manage Colleges</span>
-      </a>
-      <a href="{{ url_for('super_admin.manage_admins') }}" class="quick-action-btn">
-        <i class="bi bi-person-plus-fill"></i>
-        <span>Add Admin</span>
-      </a>
-      <a href="{{ url_for('super_admin.manage_admins') }}" class="quick-action-btn">
-        <i class="bi bi-person-gear"></i>
-        <span>Manage Admins</span>
-      </a>
-      <a href="{{ url_for('super_admin.system_logs') }}" class="quick-action-btn">
-        <i class="bi bi-journal-text"></i>
-        <span>System Logs</span>
-      </a>
-    </div>
-  </div>
-</div>
+
 {% endblock %}

@@ -163,14 +163,15 @@ def dashboard():
         """)
         recent_elections = cursor.fetchall()
 
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT l.id, l.action, l.details, l.created_at,
                CONCAT(COALESCE(u.firstname, ''), ' ', COALESCE(u.surname, '')) AS user_name
         FROM system_logs l
         LEFT JOIN users u ON l.user_id = u.id
+        WHERE u.role='voter' AND u.college_id=%s
         ORDER BY l.created_at DESC
         LIMIT 5
-    """)
+    """, (college_id,))
     recent_logs = cursor.fetchall()
 
     cursor.close()
@@ -1079,6 +1080,7 @@ def view_results():
 @admin_bp.route("/logs")
 @admin_required
 def view_logs():
+    college_id = get_admin_college_id()
     search = request.args.get('search', '').strip()
     action_filter = request.args.get('action_filter', '').strip() or None
     action_types = ['login', 'logout', 'vote', 'create_election', 'create_position', 'edit_election', 'delete_election']
@@ -1091,9 +1093,9 @@ def view_logs():
                CONCAT(COALESCE(u.firstname, ''), ' ', COALESCE(u.surname, '')) AS user_name
         FROM system_logs l
         LEFT JOIN users u ON l.user_id = u.id
-        WHERE 1=1
+        WHERE u.role='voter' AND u.college_id=%s
     """
-    params = []
+    params = [college_id]
 
     if action_filter:
         query += " AND l.action = %s"
@@ -1130,7 +1132,8 @@ import math
 @admin_bp.route("/api/notifications")
 @admin_required
 def api_notifications():
-    """Return recent important system log events as notifications."""
+    """Return recent important system log events as notifications for the admin's college voters."""
+    college_id = get_admin_college_id()
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
 
@@ -1139,9 +1142,10 @@ def api_notifications():
                CONCAT(COALESCE(u.firstname, ''), ' ', COALESCE(u.surname, '')) AS user_name
         FROM system_logs l
         LEFT JOIN users u ON l.user_id = u.id
+        WHERE u.role='voter' AND u.college_id=%s
         ORDER BY l.created_at DESC
         LIMIT 15
-    """)
+    """, (college_id,))
     rows = cursor.fetchall()
     cursor.close()
     conn.close()

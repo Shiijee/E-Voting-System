@@ -50,6 +50,11 @@
     </a>
 
     <div class="nav-section-label">Account</div>
+    <a href="{{ url_for('super_admin.profile') }}"
+       class="nav-item {% if request.endpoint == 'super_admin.profile' %}active{% endif %}">
+      <i class="bi bi-person-fill"></i>
+      <span>My Profile</span>
+    </a>
     <a href="#" class="nav-item nav-item-danger" id="logoutBtn"
        data-confirm
        data-confirm-title="Confirm Logout"
@@ -79,10 +84,10 @@
     <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
     <div class="topbar-right">
       <span class="topbar-time" id="topbarTime"></span>
-      <div class="topbar-admin">
+      <a href="{{ url_for('super_admin.profile') }}" class="topbar-admin topbar-admin-link">
         <div class="topbar-avatar">{{ session.get('fullname', 'S')[0]|upper }}</div>
         <span class="topbar-name d-none d-md-inline">{{ session.get('fullname', 'Super Admin') }}</span>
-      </div>
+      </a>
     </div>
   </header>
 
