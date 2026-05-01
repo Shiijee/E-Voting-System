@@ -241,21 +241,29 @@ textarea.form-control { resize: vertical; min-height: 66px; }
 .empty-state h5 { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--ink); margin:0; }
 .empty-state p  { font-size: 0.87rem; max-width: 260px; margin: 0; }
 
-/* ── Edit Modal ──────────────────────── */
+/* ── Modal ───────────────────────────── */
 .modal-overlay {
   position: fixed; inset: 0;
   background: rgba(13,17,23,0.55);
   backdrop-filter: blur(4px);
-  z-index: 1000;
-  display: flex; align-items: center; justify-content: center;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 .modal-box {
   background: #fff; border-radius: 14px;
   width: 100%; max-width: 480px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  margin: auto;
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border);
   animation: modalIn 0.2s ease;
+  flex-shrink: 0;
 }
 @keyframes modalIn {
   from { opacity: 0; transform: translateY(-10px) scale(0.98); }
@@ -283,6 +291,7 @@ textarea.form-control { resize: vertical; min-height: 66px; }
 /* ── Helpers ─────────────────────────── */
 .me-1 { margin-right: 4px; }
 .me-2 { margin-right: 8px; }
+
 /* ── Responsive ──────────────────────── */
 @media (max-width: 992px) {
   .positions-layout { grid-template-columns: 1fr; }
@@ -309,3 +318,52 @@ textarea.form-control { resize: vertical; min-height: 66px; }
   .empty-state h5 { font-size: 1rem; }
   .empty-state p { font-size: 0.85rem; max-width: 100%; }
 }
+
+/* ── Quick Add Item (wrapper with delete) ── */
+.quick-add-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.quick-add-item .quick-add-btn {
+  flex: 1;
+  min-width: 0;
+}
+.quick-add-item .quick-add-btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quick-delete-btn {
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem;
+  transition: all 0.18s;
+  padding: 0;
+}
+.quick-delete-btn:hover {
+  background: rgba(200,57,43,0.1);
+  border-color: rgba(200,57,43,0.4);
+  color: var(--accent);
+}
+
+/* ── Add Quick Button (header) ─────────── */
+.btn-add-quick {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px;
+  background: var(--navy);
+  color: #fff;
+  border: none; border-radius: 7px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.76rem; font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.btn-add-quick:hover { background: var(--navy-dark, #122040); }

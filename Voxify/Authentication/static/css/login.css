@@ -30,38 +30,23 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  align-items: center;
   padding: 60px;
   overflow: hidden;
 }
 
-.left-panel::before {
-  content: '';
-  position: absolute;
-  top: -100px;
-  right: -100px;
-  width: 500px;
-  height: 500px;
-  border-radius: 50%;
-  border: 80px solid rgba(212, 168, 67, 0.08);
-  pointer-events: none;
+.left-spacer {
+  visibility: hidden;
+  height: 46px; /* matches brand height to balance centering */
 }
 
-.left-panel::after {
-  content: '';
-  position: absolute;
-  bottom: -80px;
-  left: -80px;
-  width: 350px;
-  height: 350px;
-  border-radius: 50%;
-  border: 60px solid rgba(255, 255, 255, 0.04);
-  pointer-events: none;
-}
+
 
 /* BRAND */
 .brand {
   position: relative;
   z-index: 2;
+  align-self: flex-start;
 }
 
 .brand-logo {
@@ -126,6 +111,7 @@ body {
 .hero-text {
   position: relative;
   z-index: 2;
+  text-align: center;
 }
 
 .hero-text h1 {
