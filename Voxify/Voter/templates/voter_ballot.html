@@ -42,8 +42,10 @@
         <div class="candidate-initial">{{ candidate.full_name[0] if candidate.full_name else '?' }}</div>
         {% endif %}
       </div>
-      <div class="candidate-name">{{ candidate.full_name }}</div>
-      <div class="candidate-party">{{ candidate.partylist or 'Independent' }}</div>
+      <div class="candidate-info-bar">
+        <div class="candidate-name">{{ candidate.full_name }}</div>
+        <div class="candidate-party">{{ candidate.partylist or 'Independent' }}</div>
+      </div>
     </div>
     {% else %}
     <p class="text-muted-sm">No candidates for this position.</p>

@@ -233,6 +233,12 @@
         </div>
         {% endif %}
       </div>
+
+      <!-- Pagination -->
+      <div class="pagination-wrapper" id="posPagWrap">
+        <div class="pagination-info" id="posPagInfo"></div>
+        <ul class="pagination-custom" id="posPagList"></ul>
+      </div>
     </div>
   </div>
 </div>
@@ -265,12 +271,28 @@ document.getElementById('editModal').addEventListener('click', function(e) {
   if (e.target === this) closeEditModal();
 });
 
-function filterByElection(id, btn) {
-  document.querySelectorAll('.election-tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('#positionsTable tbody tr').forEach(row => {
-    row.style.display = (id === 'all' || row.dataset.electionId === id) ? '' : 'none';
+var _posCurrentElection = 'all';
+var _posPaginator = null;
+
+document.addEventListener('DOMContentLoaded', function () {
+  _posPaginator = new SvPaginator({
+    tableId:     'positionsTable',
+    rowSelector: 'tbody tr',
+    perPage:     10,
+    infoId:      'posPagInfo',
+    listId:      'posPagList',
+    wrapId:      'posPagWrap',
+    onFilter:    function(row) {
+      return _posCurrentElection === 'all' || row.dataset.electionId === _posCurrentElection;
+    }
   });
+});
+
+function filterByElection(id, btn) {
+  document.querySelectorAll('.election-tab').forEach(function(t){ t.classList.remove('active'); });
+  btn.classList.add('active');
+  _posCurrentElection = id;
+  if (_posPaginator) _posPaginator.applyFilter();
 }
 </script>
 {% endblock %}

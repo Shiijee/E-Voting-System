@@ -67,6 +67,13 @@
             </div>
           </div>
 
+          <div class="mb-3">
+            <label class="form-label-custom">Partylist / Party Affiliation</label>
+            <input type="text" name="partylist" class="form-control form-control-custom"
+                   value="{{ candidate.partylist if candidate and candidate.partylist else '' }}"
+                   placeholder="e.g. STEPS, KABILIN, Independent…"/>
+          </div>
+
           <div class="mb-4">
             <label class="form-label-custom">Platform / Campaign Statement</label>
             <textarea name="platform" class="form-control form-control-custom" rows="4"

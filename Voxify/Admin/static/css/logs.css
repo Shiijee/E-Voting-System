@@ -85,13 +85,12 @@
 /* ── Table ───────────────────────────── */
 .table-responsive { overflow-x: auto; }
 
-/* Column widths: #, Timestamp, User, Action, Details, Severity */
+/* Column widths: #, Timestamp, User, Action, Details */
 .table-custom thead th:nth-child(1) { width: 50px; }
 .table-custom thead th:nth-child(2) { width: 175px; }
 .table-custom thead th:nth-child(3) { width: 150px; }
 .table-custom thead th:nth-child(4) { width: 120px; }
 .table-custom thead th:nth-child(5) { width: auto; }
-.table-custom thead th:nth-child(6) { width: 110px; }
 
 /* Timestamp cell must never wrap */
 .table-custom tbody td:nth-child(2) { white-space: nowrap !important; }

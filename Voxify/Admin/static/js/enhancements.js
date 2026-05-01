@@ -14,9 +14,24 @@
   const notifList     = document.getElementById('notifList');
   const notifClearAll = document.getElementById('notifClearAll');
 
-  let notifications = loadNotifications();
+  let notifications = [];
+  let readIds = loadReadIds();
 
-  renderNotifications();
+  // Fetch real notifications from the server
+  fetchNotifications();
+
+  // Auto-refresh every 60 seconds
+  setInterval(fetchNotifications, 60000);
+
+  function fetchNotifications() {
+    fetch('/admin/api/notifications')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        notifications = data.map(n => ({ ...n, read: readIds.has(String(n.id)) }));
+        renderNotifications();
+      })
+      .catch(() => {});
+  }
 
   if (notifBtn) {
     notifBtn.addEventListener('click', (e) => {
@@ -36,34 +51,30 @@
 
   if (notifClearAll) {
     notifClearAll.addEventListener('click', () => {
-      notifications = [];
-      saveNotifications();
+      // Mark all as read and hide panel — "cleared" visually
+      notifications.forEach(n => { n.read = true; readIds.add(String(n.id)); });
+      saveReadIds();
       renderNotifications();
+      notifDropdown.classList.remove('open');
     });
   }
 
-  function loadNotifications() {
+  function loadReadIds() {
     try {
-      const stored = localStorage.getItem('sv_notifications');
-      return stored ? JSON.parse(stored) : getDefaultNotifications();
-    } catch { return getDefaultNotifications(); }
+      const stored = localStorage.getItem('sv_notif_read_ids');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch { return new Set(); }
   }
 
-  function getDefaultNotifications() {
-    return [
-      { id: 1, text: 'New voter registered and awaiting approval', icon: 'bi-person-plus-fill', type: 'blue', time: '2 min ago', read: false },
-      { id: 2, text: 'Election "Student Council" is starting soon', icon: 'bi-calendar-event-fill', type: 'amber', time: '15 min ago', read: false },
-      { id: 3, text: 'Audit log: Admin login detected', icon: 'bi-shield-check', type: 'green', time: '1 hr ago', read: true },
-    ];
-  }
-
-  function saveNotifications() {
-    localStorage.setItem('sv_notifications', JSON.stringify(notifications));
+  function saveReadIds() {
+    // Keep only the last 200 IDs to avoid unbounded growth
+    const arr = Array.from(readIds).slice(-200);
+    localStorage.setItem('sv_notif_read_ids', JSON.stringify(arr));
   }
 
   function markAllRead() {
-    notifications.forEach(n => n.read = true);
-    saveNotifications();
+    notifications.forEach(n => { n.read = true; readIds.add(String(n.id)); });
+    saveReadIds();
     updateBadge();
   }
 
@@ -96,20 +107,20 @@
       `;
       item.querySelector('.notif-item-dismiss').addEventListener('click', (e) => {
         e.stopPropagation();
+        readIds.add(String(n.id));
+        saveReadIds();
         notifications = notifications.filter(x => x.id !== n.id);
-        saveNotifications();
         renderNotifications();
       });
       notifList.appendChild(item);
     });
   }
 
-  // Expose so Flask flash messages can create notifications
+  // Expose so other code can push a notification
   window.svAddNotification = function(text, type = 'blue', icon = 'bi-info-circle-fill') {
     const n = { id: Date.now(), text, icon, type, time: 'Just now', read: false };
     notifications.unshift(n);
     if (notifications.length > 20) notifications.pop();
-    saveNotifications();
     renderNotifications();
   };
 
@@ -233,31 +244,28 @@
       });
     });
 
-    // Inline search
+    // Inline search — routes through paginator so pagination resets correctly
+    var _candSearchQ = '';
     const inlineSearch = document.getElementById('candidateInlineSearch');
     if (inlineSearch) {
       inlineSearch.addEventListener('input', () => {
-        const q = inlineSearch.value.toLowerCase().trim();
-        let visCount = 0;
+        _candSearchQ = inlineSearch.value.toLowerCase().trim();
 
-        // Filter table rows
-        rows.forEach(row => {
-          const text = row.textContent.toLowerCase();
-          const visible = !q || text.includes(q);
-          row.style.display = visible ? '' : 'none';
-          if (visible) visCount++;
-        });
-
-        // Filter cards
+        // Update cards grid (not paginated)
         cardsGrid.querySelectorAll('.candidate-card').forEach(card => {
-          const matches = !q || card.dataset.name.includes(q) || card.dataset.position.includes(q) || card.dataset.election.includes(q);
+          const matches = !_candSearchQ || card.dataset.name.includes(_candSearchQ) || card.dataset.position.includes(_candSearchQ) || card.dataset.election.includes(_candSearchQ);
           card.style.display = matches ? '' : 'none';
         });
 
-        countEl.innerHTML = `<span>${q ? visCount : rows.length}</span> candidate${rows.length !== 1 ? 's' : ''}${q ? ` matching "<strong>${escHtml(q)}</strong>"` : ''}`;
+        // Tell paginator to re-filter table rows
+        if (window._candPaginator) {
+          window._candPaginator.applyFilter(function(row) {
+            if (!_candSearchQ) return true;
+            return row.textContent.toLowerCase().includes(_candSearchQ);
+          });
+        }
       });
     }
-  }
 
   /* ── 4. ELECTION INLINE SEARCH & STATUS FILTER ───── */
   initElectionFilters();
@@ -292,14 +300,16 @@
     let currentSearch = '';
 
     function applyFilters() {
-      rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        const statusBadge = row.querySelector('.badge-status');
-        const status = statusBadge ? statusBadge.textContent.trim().toLowerCase() : '';
-        const matchSearch = !currentSearch || text.includes(currentSearch);
-        const matchFilter = currentFilter === 'all' || status.includes(currentFilter);
-        row.style.display = (matchSearch && matchFilter) ? '' : 'none';
-      });
+      if (window._elecPaginator) {
+        window._elecPaginator.applyFilter(function(row) {
+          const text = row.textContent.toLowerCase();
+          const statusBadge = row.querySelector('.badge-status');
+          const status = statusBadge ? statusBadge.textContent.trim().toLowerCase() : '';
+          const matchSearch = !currentSearch || text.includes(currentSearch);
+          const matchFilter = currentFilter === 'all' || status.includes(currentFilter);
+          return matchSearch && matchFilter;
+        });
+      }
     }
 
     document.getElementById('electionInlineSearch')?.addEventListener('input', (e) => {
