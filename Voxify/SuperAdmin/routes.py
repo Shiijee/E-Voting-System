@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from werkzeug.security import generate_password_hash
 from Voxify.Authentication.routes import superadmin_required
+from Voxify.utils.otp import send_account_email
 
 superadmin_bp = Blueprint('super_admin', __name__,
                           template_folder='templates',
@@ -232,7 +233,19 @@ def create_admin():
             (firstname, middlename, surname, new_student_id, hashed_password, role, email, college_id)
         )
         conn.commit()
-        flash("Admin account created successfully!", "success")
+        email_sent = False
+        if email and '@' in email:
+            email_sent = send_account_email(
+                email, 'admin', new_student_id, password,
+                fullname=f"{firstname} {surname}",
+                extra_info=f"College ID: {college_id}"
+            )
+        message = "Admin account created successfully!"
+        if email_sent:
+            message += " Email notification sent."
+        else:
+            message += " Could not send notification email."
+        flash(message, "success")
     except Exception as e:
         flash(f"Error creating admin: {str(e)}", "error")
     finally:

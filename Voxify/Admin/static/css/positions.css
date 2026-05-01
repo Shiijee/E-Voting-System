@@ -283,3 +283,29 @@ textarea.form-control { resize: vertical; min-height: 66px; }
 /* ── Helpers ─────────────────────────── */
 .me-1 { margin-right: 4px; }
 .me-2 { margin-right: 8px; }
+/* ── Responsive ──────────────────────── */
+@media (max-width: 992px) {
+  .positions-layout { grid-template-columns: 1fr; }
+  .page-header { flex-direction: column; align-items: stretch; gap: 16px; }
+  .page-heading { font-size: 1.5rem; }
+  .card-panel-body { padding: 20px; }
+}
+@media (max-width: 768px) {
+  .page-header { flex-direction: column; align-items: stretch; gap: 16px; }
+  .page-heading { font-size: 1.4rem; }
+  .page-header-actions { justify-content: center; flex-wrap: wrap; }
+  .card-panel-body { padding: 16px; }
+  .quick-add-grid { grid-template-columns: 1fr; }
+  .election-tabs { flex-wrap: wrap; gap: 4px; }
+  .table-responsive { font-size: 0.85rem; }
+  .btn-action { width: 28px; height: 28px; font-size: 0.75rem; }
+  .action-buttons { gap: 4px; }
+}
+@media (max-width: 600px) {
+  .page-content { padding: 16px 12px; }
+  .page-header { gap: 12px; margin-bottom: 20px; }
+  .empty-state { padding: 48px 16px; }
+  .empty-state i { font-size: 2.8rem; }
+  .empty-state h5 { font-size: 1rem; }
+  .empty-state p { font-size: 0.85rem; max-width: 100%; }
+}

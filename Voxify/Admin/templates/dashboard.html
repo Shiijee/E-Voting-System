@@ -35,20 +35,7 @@
       <span class="stat-note">{{ active_elections }} active</span>
     </div>
   </div>
-  <div class="stat-card stat-card-amber">
-    <div class="stat-icon"><i class="bi bi-person-badge-fill"></i></div>
-    <div class="stat-info">
-      <span class="stat-number">{{ total_candidates }}</span>
-      <span class="stat-label">Candidates</span>
-    </div>
-  </div>
-  <div class="stat-card stat-card-purple">
-    <div class="stat-icon"><i class="bi bi-check2-square"></i></div>
-    <div class="stat-info">
-      <span class="stat-number">{{ total_votes }}</span>
-      <span class="stat-label">Votes Cast</span>
-    </div>
-  </div>
+
 </div>
 
 <!-- Main Content Row -->
@@ -204,27 +191,7 @@
             </div>
             <span class="health-val">{{ total_voters }}</span>
           </div>
-          <div class="health-item">
-            <div class="health-icon health-icon-purple"><i class="bi bi-person-badge-fill"></i></div>
-            <div class="health-info">
-              <span class="health-label">Candidates Registered</span>
-              <div class="health-bar-wrap">
-                <div class="health-bar health-bar-purple" style="width:{{ [[total_candidates * 10, 100]|min, 0]|max }}%"></div>
-              </div>
-            </div>
-            <span class="health-val">{{ total_candidates }}</span>
-          </div>
-          <div class="health-item">
-            <div class="health-icon health-icon-amber"><i class="bi bi-check2-square"></i></div>
-            <div class="health-info">
-              <span class="health-label">Votes Cast</span>
-              <div class="health-bar-wrap">
-                {% set vp = (total_votes / total_voters * 100)|int if total_voters > 0 else 0 %}
-                <div class="health-bar health-bar-amber" style="width:{{ [[vp, 100]|min, 0]|max }}%"></div>
-              </div>
-            </div>
-            <span class="health-val">{{ total_votes }}</span>
-          </div>
+
         </div>
       </div>
     </div>

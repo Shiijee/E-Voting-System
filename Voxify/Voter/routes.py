@@ -317,3 +317,79 @@ def profile():
     return render_template("voter_profile.html", voter=voter,
                            total_votes=total_votes,
                            elections_participated=elections_participated)
+
+@voter_bp.route("/profile/update", methods=["POST"])
+@voter_required
+def update_profile():
+    form_type = request.form.get("form_type")
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+
+    if form_type == "info":
+        firstname = request.form.get("firstname", "").strip()
+        middlename = request.form.get("middlename", "").strip()
+        surname = request.form.get("surname", "").strip()
+        email = request.form.get("email", "").strip()
+
+        if not firstname or not surname or not email:
+            flash("First name, surname, and email are required.", "danger")
+            cursor.close(); conn.close()
+            return redirect(url_for("voter.profile"))
+
+        # Check email uniqueness (excluding self)
+        cursor.execute(
+            "SELECT id FROM users WHERE email=%s AND id != %s",
+            (email, session["user_id"])
+        )
+        if cursor.fetchone():
+            flash("That email address is already in use.", "danger")
+            cursor.close(); conn.close()
+            return redirect(url_for("voter.profile"))
+
+        cursor.execute(
+            """UPDATE users SET firstname=%s, middlename=%s, surname=%s, email=%s
+               WHERE id=%s""",
+            (firstname, middlename or None, surname, email, session["user_id"])
+        )
+        conn.commit()
+        # Keep session name in sync
+        session["fullname"] = " ".join(filter(None, [firstname, middlename, surname])).strip()
+        flash("Profile updated successfully.", "success")
+
+    elif form_type == "password":
+        from werkzeug.security import check_password_hash, generate_password_hash
+        current_password = request.form.get("current_password", "")
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        cursor.execute("SELECT password FROM users WHERE id=%s", (session["user_id"],))
+        row = cursor.fetchone()
+
+        if not row or not check_password_hash(row["password"], current_password):
+            flash("Current password is incorrect.", "danger")
+            cursor.close(); conn.close()
+            return redirect(url_for("voter.profile"))
+
+        if len(new_password) < 6:
+            flash("New password must be at least 6 characters.", "danger")
+            cursor.close(); conn.close()
+            return redirect(url_for("voter.profile"))
+
+        if new_password != confirm_password:
+            flash("New passwords do not match.", "danger")
+            cursor.close(); conn.close()
+            return redirect(url_for("voter.profile"))
+
+        cursor.execute(
+            "UPDATE users SET password=%s WHERE id=%s",
+            (generate_password_hash(new_password), session["user_id"])
+        )
+        conn.commit()
+        flash("Password updated successfully.", "success")
+
+    else:
+        flash("Invalid request.", "danger")
+
+    cursor.close()
+    conn.close()
+    return redirect(url_for("voter.profile"))

@@ -141,26 +141,5 @@
 </div>
 {% endif %}
 
-<!-- Quick Actions -->
-<div class="card-panel mt-4">
-  <div class="card-panel-header">
-    <h5 class="card-panel-title"><i class="bi bi-lightning-charge-fill me-2"></i>Quick Actions</h5>
-  </div>
-  <div class="card-panel-body">
-    <div class="quick-actions-grid">
-      <a href="{{ url_for('voter.elections') }}" class="quick-action-btn">
-        <i class="bi bi-calendar2-event-fill"></i><span>Vote Now</span>
-      </a>
-      <a href="{{ url_for('voter.my_votes') }}" class="quick-action-btn">
-        <i class="bi bi-check2-square"></i><span>My Votes</span>
-      </a>
-      <a href="{{ url_for('voter.results') }}" class="quick-action-btn">
-        <i class="bi bi-bar-chart-fill"></i><span>Results</span>
-      </a>
-      <a href="{{ url_for('voter.profile') }}" class="quick-action-btn">
-        <i class="bi bi-person-fill"></i><span>My Profile</span>
-      </a>
-    </div>
-  </div>
-</div>
+
 {% endblock %}

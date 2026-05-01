@@ -1,6 +1,7 @@
 ﻿from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
 from datetime import datetime
 from Voxify.Authentication.routes import admin_required
+from Voxify.utils.otp import send_account_email
 import os
 from werkzeug.utils import secure_filename
 import uuid
@@ -893,7 +894,19 @@ def create_voter():
              generate_password_hash(password), college_id)
         )
         conn.commit()
-        flash(f"Voter {firstname} {surname} created successfully! (ID: {student_id})", "success")
+        email_sent = False
+        if email and '@' in email:
+            email_sent = send_account_email(
+                email, 'voter', student_id, password,
+                fullname=f"{firstname} {surname}",
+                extra_info=f"College ID: {college_id}"
+            )
+        message = f"Voter {firstname} {surname} created successfully! (ID: {student_id})"
+        if email_sent:
+            message += " Email notification sent."
+        else:
+            message += " Could not send notification email."
+        flash(message, "success")
     except Exception as e:
         flash(f"Error creating voter: {str(e)}", "error")
     finally:

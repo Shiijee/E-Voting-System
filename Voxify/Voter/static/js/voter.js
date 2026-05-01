@@ -1,35 +1,72 @@
-// ── Sidebar toggle ───────────────────────────────────
-const sidebar      = document.getElementById('sidebar');
-const mainWrapper  = document.getElementById('mainWrapper');
-const sidebarToggle = document.getElementById('sidebarToggle');
+window.addEventListener('DOMContentLoaded', () => {
+  // ── Sidebar Toggle ──────────────────────────────────────────────────
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebar       = document.getElementById('sidebar');
+  const mainWrapper   = document.getElementById('mainWrapper');
 
-if (sidebarToggle) {
-  sidebarToggle.addEventListener('click', () => {
-    sidebar.classList.toggle('open');
-  });
-}
+  if (sidebarToggle && sidebar) {
+    let backdrop = null;
 
-// Close sidebar when clicking outside on mobile
-document.addEventListener('click', (e) => {
-  if (window.innerWidth <= 900 &&
-      sidebar && sidebar.classList.contains('open') &&
-      !sidebar.contains(e.target) &&
-      !sidebarToggle.contains(e.target)) {
-    sidebar.classList.remove('open');
+    function isMobile() { return window.innerWidth <= 768; }
+
+    function closeBackdrop() {
+      document.body.style.overflow = '';
+      if (backdrop) {
+        backdrop.remove();
+        backdrop = null;
+      }
+    }
+
+    sidebarToggle.addEventListener('click', () => {
+      if (isMobile()) {
+        const isOpen = sidebar.classList.toggle('open');
+        if (mainWrapper) mainWrapper.classList.toggle('open', isOpen);
+
+        if (isOpen) {
+          document.body.style.overflow = 'hidden';
+          backdrop = document.createElement('div');
+          backdrop.className = 'sidebar-backdrop';
+          backdrop.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            if (mainWrapper) mainWrapper.classList.remove('open');
+            closeBackdrop();
+          });
+          document.body.appendChild(backdrop);
+        } else {
+          closeBackdrop();
+        }
+      } else {
+        const isCollapsed = sidebar.classList.toggle('collapsed');
+        if (mainWrapper) mainWrapper.classList.toggle('sidebar-collapsed', isCollapsed);
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (!isMobile()) {
+        sidebar.classList.remove('open');
+        if (mainWrapper) mainWrapper.classList.remove('open');
+        closeBackdrop();
+      } else {
+        sidebar.classList.remove('collapsed');
+        if (mainWrapper) mainWrapper.classList.remove('sidebar-collapsed');
+      }
+    });
   }
-});
 
-// ── Live clock ────────────────────────────────────────
-function updateClock() {
-  const el = document.getElementById('topbarTime');
-  if (!el) return;
-  const now = new Date();
-  el.textContent = now.toLocaleTimeString('en-US', {
-    hour: '2-digit', minute: '2-digit', second: '2-digit'
-  });
-}
-updateClock();
-setInterval(updateClock, 1000);
+  // ── Live Clock ──────────────────────────────────────────────────────
+  const clockEl = document.getElementById('topbarTime');
+  if (clockEl) {
+    const tick = () => {
+      const now = new Date();
+      clockEl.textContent = now.toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    };
+    tick();
+    setInterval(tick, 1000);
+  }
+
+}); // end DOMContentLoaded
 
 // ── Candidate selection (ballot page) ────────────────
 function selectCandidate(cardElement, positionId, candidateId) {

@@ -7,121 +7,213 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div>
-    <h2 class="page-heading">My Profile</h2>
-    <p class="page-subheading">View your registered voter information.</p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-wrap">
+    {% for category, message in messages %}
+    <div class="flash-msg flash-{{ category }}">
+      {{ message }}
+      <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<div class="profile-layout">
+
+  <!-- ── Left: Avatar card ── -->
+  <div class="profile-sidebar">
+    <div class="profile-avatar-card">
+      <div class="profile-avatar-ring">
+        <div class="profile-avatar-letter">{{ voter.firstname[0]|upper if voter and voter.firstname else 'V' }}</div>
+      </div>
+      <div class="profile-avatar-name">{{ voter.firstname }} {{ voter.surname }}</div>
+      <div class="profile-avatar-role">
+        <i class="bi bi-person-check-fill me-1"></i>Registered Voter
+      </div>
+      {% if voter and voter.college_name %}
+      <div class="profile-avatar-college">
+        <i class="bi bi-building me-1"></i>{{ voter.college_name }}
+      </div>
+      {% endif %}
+      <div class="profile-avatar-divider"></div>
+      <div class="profile-meta-row">
+        <i class="bi bi-envelope-fill"></i>
+        <span>{{ voter.email if voter and voter.email else '—' }}</span>
+      </div>
+      <div class="profile-meta-row">
+        <i class="bi bi-person-badge-fill"></i>
+        <span>{{ voter.student_id if voter and voter.student_id else '—' }}</span>
+      </div>
+      <div class="profile-meta-row">
+        <i class="bi bi-calendar3"></i>
+        <span>Joined {{ voter.created_at.strftime('%b %d, %Y') if voter and voter.created_at else '—' }}</span>
+      </div>
+      <div class="profile-avatar-divider"></div>
+      <div class="profile-stats-row">
+        <div class="profile-stat-item">
+          <span class="profile-stat-num">{{ total_votes }}</span>
+          <span class="profile-stat-lbl">Votes Cast</span>
+        </div>
+        <div class="profile-stat-divider"></div>
+        <div class="profile-stat-item">
+          <span class="profile-stat-num">{{ elections_participated }}</span>
+          <span class="profile-stat-lbl">Elections</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Right: Forms ── -->
+  <div class="profile-main">
+
+    <!-- Personal Info form -->
+    <div class="card-panel profile-card">
+      <div class="profile-card-header">
+        <div class="profile-card-title"><i class="bi bi-person-fill me-2"></i>Personal Information</div>
+        <div class="profile-card-subtitle">Update your name and email address.</div>
+      </div>
+      <form method="POST" action="{{ url_for('voter.update_profile') }}" class="profile-form">
+        <input type="hidden" name="form_type" value="info"/>
+        <div class="pform-row">
+          <div class="pform-group">
+            <label class="pform-label">First Name</label>
+            <input type="text" name="firstname" class="pform-input" value="{{ voter.firstname or '' }}" required/>
+          </div>
+          <div class="pform-group">
+            <label class="pform-label">Middle Name <span class="pform-optional">(optional)</span></label>
+            <input type="text" name="middlename" class="pform-input" value="{{ voter.middlename or '' }}"/>
+          </div>
+          <div class="pform-group">
+            <label class="pform-label">Surname</label>
+            <input type="text" name="surname" class="pform-input" value="{{ voter.surname or '' }}" required/>
+          </div>
+        </div>
+        <div class="pform-row">
+          <div class="pform-group pform-group-wide">
+            <label class="pform-label">Email Address</label>
+            <input type="email" name="email" class="pform-input" value="{{ voter.email or '' }}" required/>
+          </div>
+        </div>
+        <div class="pform-actions">
+          <button type="submit" class="btn btn-primary-custom">
+            <i class="bi bi-check-lg me-2"></i>Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Change Password form -->
+    <div class="card-panel profile-card">
+      <div class="profile-card-header">
+        <div class="profile-card-title"><i class="bi bi-lock-fill me-2"></i>Change Password</div>
+        <div class="profile-card-subtitle">Use a strong password you don't use elsewhere.</div>
+      </div>
+      <form method="POST" action="{{ url_for('voter.update_profile') }}" class="profile-form" id="pwForm">
+        <input type="hidden" name="form_type" value="password"/>
+        <div class="pform-row">
+          <div class="pform-group">
+            <label class="pform-label">Current Password</label>
+            <div class="pform-pw-wrap">
+              <input type="password" name="current_password" id="cur_pw" class="pform-input" placeholder="Enter current password"/>
+              <button type="button" class="pform-pw-eye" onclick="togglePw('cur_pw','eye0')"><i class="bi bi-eye-fill" id="eye0"></i></button>
+            </div>
+          </div>
+          <div class="pform-group">
+            <label class="pform-label">New Password</label>
+            <div class="pform-pw-wrap">
+              <input type="password" name="new_password" id="new_pw" class="pform-input" placeholder="Min. 6 characters"/>
+              <button type="button" class="pform-pw-eye" onclick="togglePw('new_pw','eye1')"><i class="bi bi-eye-fill" id="eye1"></i></button>
+            </div>
+          </div>
+          <div class="pform-group">
+            <label class="pform-label">Confirm New Password</label>
+            <div class="pform-pw-wrap">
+              <input type="password" name="confirm_password" id="conf_pw" class="pform-input" placeholder="Repeat new password"/>
+              <button type="button" class="pform-pw-eye" onclick="togglePw('conf_pw','eye2')"><i class="bi bi-eye-fill" id="eye2"></i></button>
+            </div>
+          </div>
+        </div>
+        <div class="pform-actions">
+          <button type="submit" class="btn btn-primary-custom">
+            <i class="bi bi-shield-lock-fill me-2"></i>Update Password
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Account Details (read-only) -->
+    <div class="card-panel profile-card">
+      <div class="profile-card-header">
+        <div class="profile-card-title"><i class="bi bi-info-circle-fill me-2"></i>Account Details</div>
+        <div class="profile-card-subtitle">Your system account information — read only.</div>
+      </div>
+      <div class="profile-details-grid">
+        <div class="profile-detail-item">
+          <div class="profile-detail-label">Student ID</div>
+          <div class="profile-detail-value">{{ voter.student_id if voter else '—' }}</div>
+        </div>
+        <div class="profile-detail-item">
+          <div class="profile-detail-label">College / Department</div>
+          <div class="profile-detail-value">{{ voter.college_name if voter and voter.college_name else '—' }}</div>
+        </div>
+        <div class="profile-detail-item">
+          <div class="profile-detail-label">Account Status</div>
+          <div class="profile-detail-value">
+            {% if voter and voter.is_approved and voter.is_active %}
+              <span class="status-active"><i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Active</span>
+            {% elif voter and not voter.is_active %}
+              <span class="status-archived"><i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Archived</span>
+            {% else %}
+              <span class="status-pending"><i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Pending</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="profile-detail-item">
+          <div class="profile-detail-label">Voter Role</div>
+          <div class="profile-detail-value">
+            <span class="role-badge"><i class="bi bi-person-check me-1"></i>Voter</span>
+          </div>
+        </div>
+        <div class="profile-detail-item">
+          <div class="profile-detail-label">Date Registered</div>
+          <div class="profile-detail-value">{{ voter.created_at.strftime('%B %d, %Y') if voter and voter.created_at else '—' }}</div>
+        </div>
+        <div class="profile-detail-item">
+          <div class="profile-detail-label">Elections Participated</div>
+          <div class="profile-detail-value">{{ elections_participated }}</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
+{% endblock %}
 
-<div class="row g-4">
-  <div class="col-lg-8">
-    <!-- Profile Hero -->
-    <div class="profile-hero">
-      <div class="profile-avatar-lg">
-        {{ voter.full_name[0]|upper if voter and voter.full_name else 'V' }}
-      </div>
-      <div class="profile-hero-info">
-        <div class="profile-hero-name">{{ voter.full_name if voter and voter.full_name else 'Voter' }}</div>
-        <div class="profile-hero-username">{{ voter.student_id if voter else '' }}</div>
-        {% if voter %}
-          {% if voter.is_approved and voter.is_active %}
-            <span class="profile-status-badge status-approved">
-              <i class="bi bi-check2-circle-fill" style="margin-right:4px;"></i>Active Voter
-            </span>
-          {% elif not voter.is_active %}
-            <span class="profile-status-badge status-archived">
-              <i class="bi bi-archive-fill" style="margin-right:4px;"></i>Archived
-            </span>
-          {% else %}
-            <span class="profile-status-badge status-pending">
-              <i class="bi bi-hourglass-split" style="margin-right:4px;"></i>Pending
-            </span>
-          {% endif %}
-        {% endif %}
-      </div>
-    </div>
+{% block extra_js %}
+<script>
+function togglePw(inputId, iconId) {
+  var inp = document.getElementById(inputId);
+  var ico = document.getElementById(iconId);
+  if (!inp) return;
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    if (ico) { ico.classList.remove('bi-eye-fill'); ico.classList.add('bi-eye-slash-fill'); }
+  } else {
+    inp.type = 'password';
+    if (ico) { ico.classList.remove('bi-eye-slash-fill'); ico.classList.add('bi-eye-fill'); }
+  }
+}
 
-    <!-- Personal Info Card -->
-    <div class="card-panel">
-      <div class="card-panel-header">
-        <h5 class="card-panel-title"><i class="bi bi-person-lines-fill" style="margin-right:8px;"></i>Personal Information</h5>
-      </div>
-      <div class="card-panel-body">
-        <div class="profile-fields">
-          <div class="profile-field">
-            <div class="profile-field-label">Full Name</div>
-            <div class="profile-field-value">{{ voter.full_name if voter and voter.full_name else '—' }}</div>
-          </div>
-          <div class="profile-field">
-            <div class="profile-field-label">Email Address</div>
-            <div class="profile-field-value">{{ voter.email if voter and voter.email else '—' }}</div>
-          </div>
-          <div class="profile-field">
-            <div class="profile-field-label">Student ID</div>
-            <div class="profile-field-value">{{ voter.student_id if voter and voter.student_id else '—' }}</div>
-          </div>
-          <div class="profile-field">
-            <div class="profile-field-label">College</div>
-            <div class="profile-field-value">{{ voter.college_name if voter and voter.college_name else '—' }}</div>
-          </div>
-          <div class="profile-field">
-            <div class="profile-field-label">Registered On</div>
-            <div class="profile-field-value">{{ voter.created_at if voter and voter.created_at else '—' }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-lg-4">
-    <!-- Account Status -->
-    <div class="card-panel mb-4">
-      <div class="card-panel-header">
-        <h5 class="card-panel-title"><i class="bi bi-shield-check" style="margin-right:8px;"></i>Account Status</h5>
-      </div>
-      <div class="card-panel-body">
-        <div class="account-status-display">
-          {% if voter and voter.is_approved and voter.is_active %}
-          <i class="bi bi-check-circle-fill account-status-icon" style="color:#22c55e;"></i>
-          <div class="account-status-title">Approved Voter</div>
-          <div class="account-status-desc">Your account is verified. You can participate in active elections.</div>
-          {% elif voter and not voter.is_active %}
-          <i class="bi bi-archive-fill account-status-icon" style="color:var(--muted);"></i>
-          <div class="account-status-title">Account Archived</div>
-          <div class="account-status-desc">Your account is currently archived. Contact your administrator.</div>
-          {% else %}
-          <i class="bi bi-hourglass-split account-status-icon" style="color:var(--gold);"></i>
-          <div class="account-status-title">Pending Approval</div>
-          <div class="account-status-desc">Your account is awaiting administrator approval before you can vote.</div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <!-- Voting Summary -->
-    <div class="card-panel">
-      <div class="card-panel-header">
-        <h5 class="card-panel-title"><i class="bi bi-bar-chart-line" style="margin-right:8px;"></i>Voting Summary</h5>
-      </div>
-      <div class="card-panel-body">
-        <div class="voting-summary-list">
-          <div class="voting-summary-row">
-            <span class="voting-summary-key">Total Votes Cast</span>
-            <span class="voting-summary-val">{{ total_votes }}</span>
-          </div>
-          <div class="voting-summary-row">
-            <span class="voting-summary-key">Elections Participated</span>
-            <span class="voting-summary-val">{{ elections_participated }}</span>
-          </div>
-        </div>
-        <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);">
-          <a href="{{ url_for('voter.my_votes') }}" class="btn-outline-custom w-100" style="justify-content:center;">
-            <i class="bi bi-check2-square" style="margin-right:8px;"></i>View My Votes
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+document.getElementById('pwForm').addEventListener('submit', function(e) {
+  var np = document.getElementById('new_pw').value;
+  var cp = document.getElementById('conf_pw').value;
+  var cur = document.getElementById('cur_pw').value;
+  if (!cur) { e.preventDefault(); alert('Please enter your current password.'); return; }
+  if (np.length < 6) { e.preventDefault(); alert('New password must be at least 6 characters.'); return; }
+  if (np !== cp) { e.preventDefault(); alert('New passwords do not match.'); return; }
+});
+</script>
 {% endblock %}

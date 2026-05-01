@@ -77,10 +77,10 @@
     <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
     <div class="topbar-right">
       <span class="topbar-time" id="topbarTime"></span>
-      <div class="topbar-admin">
+      <a href="{{ url_for('voter.profile') }}" class="topbar-admin topbar-admin-link">
         <div class="topbar-avatar">{{ session.get('fullname', 'V')[0]|upper }}</div>
         <span class="topbar-name d-none d-md-inline">{{ session.get('fullname', 'Voter') }}</span>
-      </div>
+      </a>
     </div>
   </header>
 

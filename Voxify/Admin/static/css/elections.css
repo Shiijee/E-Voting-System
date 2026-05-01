@@ -192,3 +192,23 @@
   .empty-state h5 { font-size: 1rem; }
   .empty-state p { font-size: 0.85rem; max-width: 100%; }
 }
+@media (max-width: 992px) {
+  .page-header { flex-direction: column; align-items: stretch; gap: 16px; }
+  .page-heading { font-size: 1.5rem; }
+  .filter-bar { gap: 8px; flex-wrap: wrap; }
+  .card-panel-body { padding: 20px; }
+  .table-custom thead th:nth-child(4),
+  .table-custom thead th:nth-child(5) { width: 140px; }
+  .table-custom thead th:nth-child(2) { min-width: 150px; }
+}
+@media (max-width: 768px) {
+  .page-header { flex-direction: column; align-items: stretch; gap: 16px; }
+  .page-heading { font-size: 1.4rem; }
+  .page-header-actions { justify-content: center; }
+  .filter-bar { flex-direction: column; align-items: stretch; gap: 12px; }
+  .form-control-custom, .form-select { width: 100%; }
+  .card-panel-body { padding: 16px; }
+  .table-responsive { font-size: 0.85rem; }
+  .btn-action { width: 28px; height: 28px; font-size: 0.75rem; }
+  .action-buttons { gap: 4px; }
+}
