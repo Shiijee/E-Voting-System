@@ -641,6 +641,7 @@ def create_candidate():
         middlename = request.form.get("middlename", "")
         surname = request.form["surname"]
         platform = request.form.get("platform", "")
+        partylist = request.form.get("partylist", "")
         
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor(dictionary=True)
@@ -670,9 +671,9 @@ def create_candidate():
             photo_filename = save_candidate_photo(request.files['photo'])
         
         cursor.execute(
-            """INSERT INTO candidates (position_id, student_id, firstname, middlename, surname, platform, status, college_id, photo) 
-               VALUES (%s, %s, %s, %s, %s, %s, 'approved', %s, %s)""",
-            (position_id, student_id, firstname, middlename, surname, platform, college_id, photo_filename)
+            """INSERT INTO candidates (position_id, student_id, firstname, middlename, surname, platform, partylist, status, college_id, photo) 
+               VALUES (%s, %s, %s, %s, %s, %s, %s, 'approved', %s, %s)""",
+            (position_id, student_id, firstname, middlename, surname, platform, partylist, college_id, photo_filename)
         )
         conn.commit()
         cursor.close()
@@ -718,6 +719,7 @@ def edit_candidate(candidate_id):
         middlename = request.form.get("middlename", "")
         surname = request.form["surname"]
         platform = request.form.get("platform", "")
+        partylist = request.form.get("partylist", "")
         
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor(dictionary=True)
@@ -743,8 +745,8 @@ def edit_candidate(candidate_id):
         
         cursor.execute(
             """UPDATE candidates SET position_id=%s, student_id=%s, firstname=%s, middlename=%s, 
-               surname=%s, platform=%s, photo=%s WHERE id=%s AND college_id=%s""",
-            (position_id, student_id, firstname, middlename, surname, platform, photo_filename, candidate_id, college_id)
+               surname=%s, platform=%s, partylist=%s, photo=%s WHERE id=%s AND college_id=%s""",
+            (position_id, student_id, firstname, middlename, surname, platform, partylist, photo_filename, candidate_id, college_id)
         )
         conn.commit()
         cursor.close()
@@ -1089,7 +1091,7 @@ def view_logs():
         like_search = f"%{search}%"
         params.extend([like_search] * 5)
 
-    query += " ORDER BY l.created_at DESC LIMIT 100"
+    query += " ORDER BY l.created_at DESC LIMIT 500"
     cursor.execute(query, params)
     logs = cursor.fetchall()
 
@@ -1103,6 +1105,89 @@ def view_logs():
         action_filter=action_filter,
         action_types=action_types
     )
+
+
+# ============================================
+# NOTIFICATIONS API
+# ============================================
+
+from flask import jsonify
+import math
+
+@admin_bp.route("/api/notifications")
+@admin_required
+def api_notifications():
+    """Return recent important system log events as notifications."""
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT l.id, l.action, l.details, l.created_at,
+               CONCAT(COALESCE(u.firstname, ''), ' ', COALESCE(u.surname, '')) AS user_name
+        FROM system_logs l
+        LEFT JOIN users u ON l.user_id = u.id
+        ORDER BY l.created_at DESC
+        LIMIT 15
+    """)
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    def time_ago(dt):
+        if not dt:
+            return ''
+        now = datetime.now()
+        diff = now - dt
+        secs = int(diff.total_seconds())
+        if secs < 60:
+            return 'Just now'
+        mins = secs // 60
+        if mins < 60:
+            return f'{mins} min ago'
+        hrs = mins // 60
+        if hrs < 24:
+            return f'{hrs} hr ago'
+        days = hrs // 24
+        return f'{days} day{"s" if days > 1 else ""} ago'
+
+    def classify(action):
+        a = (action or '').lower()
+        if 'delete' in a or 'remove' in a or 'error' in a:
+            return 'red', 'bi-exclamation-triangle-fill'
+        if 'login' in a:
+            return 'green', 'bi-shield-check'
+        if 'logout' in a:
+            return 'gray', 'bi-box-arrow-right'
+        if 'create' in a or 'add' in a:
+            return 'blue', 'bi-plus-circle-fill'
+        if 'update' in a or 'edit' in a:
+            return 'amber', 'bi-pencil-fill'
+        if 'vote' in a:
+            return 'blue', 'bi-check2-circle'
+        return 'gray', 'bi-info-circle-fill'
+
+    notifications = []
+    for row in rows:
+        color, icon = classify(row['action'])
+        action_label = (row['action'] or '').replace('_', ' ').title()
+        user = (row['user_name'] or '').strip() or 'System'
+        detail = row['details'] or ''
+        text = f"{action_label}"
+        if user and user != 'System':
+            text += f" by {user}"
+        if detail:
+            text += f" — {detail[:60]}{'…' if len(detail) > 60 else ''}"
+        notifications.append({
+            'id': row['id'],
+            'text': text,
+            'icon': icon,
+            'type': color,
+            'time': time_ago(row['created_at']),
+            'read': False
+        })
+
+    return jsonify(notifications)
+
 
 # ============================================
 # VOTER MANAGEMENT (ADMIN CREATES VOTERS)

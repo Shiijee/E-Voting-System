@@ -54,7 +54,7 @@
   <div class="card-panel-body p-0">
     {% if active_voters %}
     <div class="table-responsive">
-      <table class="table-custom">
+      <table class="table-custom" id="activeVotersTable">
         <thead>
           <tr>
             <th style="width:44px;">#</th>
@@ -114,6 +114,11 @@
     </div>
     {% endif %}
   </div>
+  <!-- Active pagination -->
+  <div class="pagination-wrapper" id="activePagWrap">
+    <div class="pagination-info" id="activePagInfo"></div>
+    <ul class="pagination-custom" id="activePagList"></ul>
+  </div>
 </div>
 
 <!-- Archived Voters Panel -->
@@ -127,7 +132,7 @@
   <div class="card-panel-body p-0">
     {% if archived_voters %}
     <div class="table-responsive">
-      <table class="table-custom">
+      <table class="table-custom" id="archivedVotersTable">
         <thead>
           <tr>
             <th style="width:44px;">#</th>
@@ -178,6 +183,11 @@
       <p>Voters you archive will appear here. Archived voters can be restored at any time.</p>
     </div>
     {% endif %}
+  </div>
+  <!-- Archived pagination -->
+  <div class="pagination-wrapper" id="archivedPagWrap">
+    <div class="pagination-info" id="archivedPagInfo"></div>
+    <ul class="pagination-custom" id="archivedPagList"></ul>
   </div>
 </div>
 
@@ -422,6 +432,24 @@
     // persist tab in session storage
     sessionStorage.setItem('voterTab', tab);
   }
+
+  // ── Paginators ─────────────────────────────────────────
+  new SvPaginator({
+    tableId:     'activeVotersTable',
+    rowSelector: 'tbody tr',
+    perPage:     10,
+    infoId:      'activePagInfo',
+    listId:      'activePagList',
+    wrapId:      'activePagWrap'
+  });
+  new SvPaginator({
+    tableId:     'archivedVotersTable',
+    rowSelector: 'tbody tr',
+    perPage:     10,
+    infoId:      'archivedPagInfo',
+    listId:      'archivedPagList',
+    wrapId:      'archivedPagWrap'
+  });
 
   // Restore last tab
   var saved = sessionStorage.getItem('voterTab');

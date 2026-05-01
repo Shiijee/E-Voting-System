@@ -23,7 +23,7 @@
   <div class="card-panel-body p-0">
     {% if elections %}
     <div class="table-responsive">
-      <table class="table-custom">
+      <table class="table-custom" id="electionsTable">
         <thead>
           <tr>
             <th>#</th>
@@ -106,6 +106,12 @@
       </table>
     </div>
 
+    <!-- Pagination -->
+    <div class="pagination-wrapper" id="electionsPagWrap">
+      <div class="pagination-info" id="electionsPagInfo"></div>
+      <ul class="pagination-custom" id="electionsPagList"></ul>
+    </div>
+
     {% else %}
     <div class="empty-state">
       <i class="bi bi-calendar-x"></i>
@@ -159,6 +165,17 @@
 {% block extra_js %}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    // ── Pagination ────────────────────────────────────────
+    window._elecPaginator = new SvPaginator({
+      tableId:     'electionsTable',
+      rowSelector: 'tbody tr',
+      perPage:     10,
+      infoId:      'electionsPagInfo',
+      listId:      'electionsPagList',
+      wrapId:      'electionsPagWrap'
+    });
+
+    // ── Positions modal ────────────────────────────────────
     const modalLabel = document.getElementById('electionPositionsModalLabel');
     const modalContent = document.getElementById('electionPositionsModalContent');
     const candidateModal = new bootstrap.Modal(document.getElementById('candidateInfoModal'));
