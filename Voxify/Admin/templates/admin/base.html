@@ -66,6 +66,11 @@
     </a>
 
     <div class="nav-section-label">Account</div>
+    <a href="{{ url_for('admin.view_profile') }}"
+       class="nav-item {% if request.endpoint == 'admin.view_profile' %}active{% endif %}">
+      <i class="bi bi-person-circle"></i>
+      <span>My Profile</span>
+    </a>
    <a href="{{ url_for('auth.logout') }}"
       class="nav-item nav-item-danger"
       onclick="return confirm('Are you sure you want to logout?');">
@@ -111,10 +116,10 @@
         </div>
       </div>
 
-      <div class="topbar-admin">
+      <a href="{{ url_for('admin.view_profile') }}" class="topbar-admin topbar-admin-link" title="My Profile">
         <div class="topbar-avatar">{{ session.get('fullname', 'A')[0]|upper }}</div>
         <span class="topbar-name d-none d-md-inline">{{ session.get('fullname', 'Administrator') }}</span>
-      </div>
+      </a>
     </div>
   </header>
 

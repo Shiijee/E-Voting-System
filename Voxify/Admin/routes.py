@@ -1,7 +1,6 @@
 ﻿from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
 from datetime import datetime
 from Voxify.Authentication.routes import admin_required
-from Voxify.utils.election_status import sync_election_statuses
 import os
 from werkzeug.utils import secure_filename
 import uuid
@@ -200,8 +199,6 @@ def view_elections():
     college_id = get_admin_college_id()
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
-
-    sync_election_statuses(conn, college_id)
     
     # Show elections for this college or elections with no college assigned
     if college_id is not None:
@@ -1190,6 +1187,96 @@ def api_notifications():
         })
 
     return jsonify(notifications)
+
+
+# ============================================
+# ADMIN PROFILE
+# ============================================
+
+from werkzeug.security import check_password_hash, generate_password_hash
+
+@admin_bp.route("/profile")
+@admin_required
+def view_profile():
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT u.id, u.firstname, u.middlename, u.surname, u.email,
+               u.student_id, u.role, u.created_at, u.college_id,
+               c.name AS college_name
+        FROM users u
+        LEFT JOIN colleges c ON u.college_id = c.id
+        WHERE u.id = %s
+    """, (session['user_id'],))
+    admin = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not admin:
+        flash('Profile not found.', 'danger')
+        return redirect(url_for('admin.dashboard'))
+
+    return render_template('profile.html', admin=admin)
+
+
+@admin_bp.route("/profile/update", methods=["POST"])
+@admin_required
+def update_profile():
+    form_type = request.form.get('form_type', '')
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+
+    if form_type == 'info':
+        firstname = request.form.get('firstname', '').strip()
+        middlename = request.form.get('middlename', '').strip()
+        surname = request.form.get('surname', '').strip()
+        email = request.form.get('email', '').strip()
+
+        if not firstname or not surname or not email:
+            flash('First name, surname, and email are required.', 'danger')
+        else:
+            try:
+                cursor.execute("""
+                    UPDATE users SET firstname=%s, middlename=%s, surname=%s, email=%s
+                    WHERE id=%s
+                """, (firstname, middlename or None, surname, email, session['user_id']))
+                conn.commit()
+                # Update session name
+                full = f"{firstname} {middlename} {surname}".replace('  ', ' ').strip()
+                session['fullname'] = full
+                flash('Profile updated successfully.', 'success')
+            except Exception as e:
+                flash(f'Error updating profile: {str(e)}', 'danger')
+
+    elif form_type == 'password':
+        current_password = request.form.get('current_password', '')
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        # Fetch current hash
+        cursor.execute("SELECT password FROM users WHERE id=%s", (session['user_id'],))
+        row = cursor.fetchone()
+
+        if not row:
+            flash('User not found.', 'danger')
+        elif not check_password_hash(row['password'], current_password):
+            flash('Current password is incorrect.', 'danger')
+        elif len(new_password) < 6:
+            flash('New password must be at least 6 characters.', 'danger')
+        elif new_password != confirm_password:
+            flash('New passwords do not match.', 'danger')
+        else:
+            try:
+                hashed = generate_password_hash(new_password)
+                cursor.execute("UPDATE users SET password=%s WHERE id=%s", (hashed, session['user_id']))
+                conn.commit()
+                flash('Password updated successfully.', 'success')
+            except Exception as e:
+                flash(f'Error updating password: {str(e)}', 'danger')
+
+    cursor.close()
+    conn.close()
+    return redirect(url_for('admin.view_profile'))
 
 
 # ============================================
