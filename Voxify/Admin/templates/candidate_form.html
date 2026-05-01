@@ -49,32 +49,6 @@
             </select>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label-custom">Link to Registered Voter (Student ID)</label>
-            {% if voters %}
-            <select name="student_id" id="voterSelect" class="form-select form-control-custom" required>
-              <option value="">Select voter…</option>
-              {% for voter in voters %}
-              <option value="{{ voter.student_id }}"
-                {% if candidate and candidate.student_id == voter.student_id %}selected{% endif %}>
-                {{ voter.student_id }} — {{ voter.firstname }} {% if voter.middlename %}{{ voter.middlename }} {% endif %}{{ voter.surname }}
-              </option>
-              {% endfor %}
-            </select>
-            <small class="form-text text-muted" style="font-size:0.78rem;color:#8a8070;display:block;margin-top:4px;">
-              Only approved voters from your college are shown. Selecting a voter links their student ID to this candidate.
-            </small>
-            {% else %}
-            <div class="alert" style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px 16px;font-size:0.85rem;color:#92400e;">
-              <i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;"></i>
-              No approved voters found for your college. Please add and approve voters first before adding candidates.
-            </div>
-            <input type="text" name="student_id" class="form-control form-control-custom"
-                   value="{{ candidate.student_id if candidate else '' }}"
-                   placeholder="Enter Student ID manually" required/>
-            {% endif %}
-          </div>
-
           <div class="row g-3 mb-3">
             <div class="col-md-4">
               <label class="form-label-custom">First Name</label>
@@ -204,33 +178,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   electionSelect.addEventListener('change', filterPositions);
   filterPositions();
-
-  // Auto-fill name from voter dropdown
-  const voterSelect = document.getElementById('voterSelect');
-  const voterData = {
-    {% for voter in voters %}
-    "{{ voter.student_id }}": {
-      firstname: "{{ voter.firstname | replace('"', '\\"') }}",
-      middlename: "{{ (voter.middlename or '') | replace('"', '\\"') }}",
-      surname: "{{ voter.surname | replace('"', '\\"') }}"
-    },
-    {% endfor %}
-  };
-
-  if (voterSelect) {
-    voterSelect.addEventListener('change', function() {
-      const sid = this.value;
-      if (voterData[sid]) {
-        const d = voterData[sid];
-        const fn = document.querySelector('input[name="firstname"]');
-        const mn = document.querySelector('input[name="middlename"]');
-        const sn = document.querySelector('input[name="surname"]');
-        if (fn && !fn.value) fn.value = d.firstname;
-        if (mn && !mn.value) mn.value = d.middlename;
-        if (sn && !sn.value) sn.value = d.surname;
-      }
-    });
-  }
 
   // Click to upload
   uploadArea.addEventListener('click', () => photoInput.click());

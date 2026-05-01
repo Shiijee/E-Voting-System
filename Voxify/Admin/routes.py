@@ -637,7 +637,6 @@ def create_candidate():
     college_id = get_admin_college_id()
     if request.method == "POST":
         position_id = request.form["position_id"]
-        student_id = request.form["student_id"]
         firstname = request.form["firstname"]
         middlename = request.form.get("middlename", "")
         surname = request.form["surname"]
@@ -655,16 +654,15 @@ def create_candidate():
                 conn.close()
                 flash("Selected position does not belong to your college.", "error")
                 return redirect(url_for('admin.view_candidates'))
-            
-            cursor.execute(
-                "SELECT id FROM users WHERE student_id=%s AND role='voter' AND college_id=%s AND is_approved=TRUE",
-                (student_id, college_id)
-            )
-            if cursor.fetchone() is None:
-                cursor.close()
-                conn.close()
-                flash("Selected voter is not approved or does not belong to your college.", "error")
-                return redirect(url_for('admin.view_candidates'))
+
+        # Auto-generate student_id: voter{college_id}({n})
+        cursor.execute(
+            "SELECT COUNT(*) as cnt FROM candidates WHERE college_id=%s",
+            (college_id,)
+        )
+        row = cursor.fetchone()
+        next_n = (row['cnt'] if row else 0) + 1
+        student_id = f"voter{college_id}({next_n})"
         
         # Handle photo upload
         photo_filename = None
@@ -706,24 +704,9 @@ def create_candidate():
         """)
     positions = cursor.fetchall()
 
-    # Only show approved voters from this college as candidate options
-    if college_id is not None:
-        cursor.execute("""
-            SELECT student_id, firstname, middlename, surname 
-            FROM users WHERE role='voter' AND is_approved=TRUE AND college_id=%s
-            ORDER BY surname
-        """, (college_id,))
-    else:
-        cursor.execute("""
-            SELECT student_id, firstname, middlename, surname 
-            FROM users WHERE role='voter' AND is_approved=TRUE
-            ORDER BY surname
-        """)
-    voters = cursor.fetchall()
-
     cursor.close()
     conn.close()
-    return render_template('candidate_form.html', action='add', candidate=None, positions=positions, voters=voters, elections=elections)
+    return render_template('candidate_form.html', action='add', candidate=None, positions=positions, voters=[], elections=elections)
 
 @admin_bp.route("/candidates/<int:candidate_id>/edit", methods=["GET", "POST"])
 @admin_required
@@ -731,7 +714,6 @@ def edit_candidate(candidate_id):
     college_id = get_admin_college_id()
     if request.method == "POST":
         position_id = request.form["position_id"]
-        student_id = request.form["student_id"]
         firstname = request.form["firstname"]
         middlename = request.form.get("middlename", "")
         surname = request.form["surname"]
@@ -740,7 +722,7 @@ def edit_candidate(candidate_id):
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor(dictionary=True)
         
-        # Get current candidate to check for existing photo
+        # Get current candidate to preserve existing student_id and photo
         if college_id is not None:
             cursor.execute("SELECT * FROM candidates WHERE id=%s AND college_id=%s", (candidate_id, college_id))
         else:
@@ -748,6 +730,8 @@ def edit_candidate(candidate_id):
         candidate = cursor.fetchone()
         
         photo_filename = candidate.get('photo') if candidate else None
+        # Preserve the auto-generated student_id; do not overwrite it
+        student_id = candidate.get('student_id') if candidate else None
         
         # Handle photo upload
         if 'photo' in request.files and request.files['photo'].filename != '':
@@ -811,21 +795,6 @@ def edit_candidate(candidate_id):
         """)
     positions = cursor.fetchall()
 
-    # Get voters
-    if college_id is not None:
-        cursor.execute("""
-            SELECT student_id, firstname, middlename, surname 
-            FROM users WHERE role='voter' AND is_approved=TRUE AND college_id=%s
-            ORDER BY surname
-        """, (college_id,))
-    else:
-        cursor.execute("""
-            SELECT student_id, firstname, middlename, surname 
-            FROM users WHERE role='voter' AND is_approved=TRUE
-            ORDER BY surname
-        """)
-    voters = cursor.fetchall()
-
     # Load all elections for the dropdown filter
     if college_id is not None:
         cursor.execute("SELECT id, title FROM elections WHERE college_id=%s OR college_id IS NULL ORDER BY created_at DESC", (college_id,))
@@ -835,7 +804,7 @@ def edit_candidate(candidate_id):
 
     cursor.close()
     conn.close()
-    return render_template('candidate_form.html', action='edit', candidate=candidate, positions=positions, voters=voters, elections=elections)
+    return render_template('candidate_form.html', action='edit', candidate=candidate, positions=positions, voters=[], elections=elections)
 
 @admin_bp.route("/candidates/<int:candidate_id>/delete")
 @admin_required
