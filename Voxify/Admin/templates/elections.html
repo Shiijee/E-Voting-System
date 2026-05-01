@@ -106,41 +106,6 @@
       </table>
     </div>
 
-    <!-- Positions Modal -->
-    <div class="modal fade" id="electionPositionsModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="electionPositionsModalLabel">Election Positions</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div id="electionPositionsModalContent" class="d-grid gap-2"></div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Candidate Info Modal -->
-    <div class="modal fade" id="candidateInfoModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="candidateInfoModalLabel">Candidate Information</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div id="candidateInfoContent" class="text-center"></div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>
     {% else %}
     <div class="empty-state">
       <i class="bi bi-calendar-x"></i>
@@ -151,6 +116,42 @@
       </a>
     </div>
     {% endif %}
+  </div>
+</div>
+
+<!-- Positions Modal — outside card-panel to avoid overflow:hidden clipping -->
+<div class="modal fade" id="electionPositionsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="electionPositionsModalLabel">Election Positions</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="electionPositionsModalContent" class="d-grid gap-2"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Candidate Info Modal — outside card-panel to avoid overflow:hidden clipping -->
+<div class="modal fade" id="candidateInfoModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="candidateInfoModalLabel">Candidate Information</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="candidateInfoContent" class="text-center"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

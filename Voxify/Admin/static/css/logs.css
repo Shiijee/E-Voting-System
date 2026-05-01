@@ -85,13 +85,13 @@
 /* ── Table ───────────────────────────── */
 .table-responsive { overflow-x: auto; }
 
-/* Column widths: #, Timestamp, User, Action, Details, IP Address */
+/* Column widths: #, Timestamp, User, Action, Details, Severity */
 .table-custom thead th:nth-child(1) { width: 50px; }
 .table-custom thead th:nth-child(2) { width: 175px; }
-.table-custom thead th:nth-child(3) { width: 140px; }
+.table-custom thead th:nth-child(3) { width: 150px; }
 .table-custom thead th:nth-child(4) { width: 120px; }
 .table-custom thead th:nth-child(5) { width: auto; }
-.table-custom thead th:nth-child(6) { width: 130px; }
+.table-custom thead th:nth-child(6) { width: 110px; }
 
 /* Timestamp cell must never wrap */
 .table-custom tbody td:nth-child(2) { white-space: nowrap !important; }
@@ -140,16 +140,30 @@
 .log-action-blue  { background: #dbeafe; color: #1d4ed8; }
 .log-action-gray  { background: #f3f4f6; color: #6b7280; }
 
-/* ── IP Code ─────────────────────────── */
-.ip-code {
-  font-family: 'Courier New', monospace;
-  font-size: 0.79rem;
-  background: var(--paper);
-  padding: 2px 8px;
-  border-radius: 5px;
-  border: 1px solid var(--border);
-  color: var(--muted);
+/* ── Severity Badges ─────────────────── */
+.sev-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
+.sev-high   { background: #fee2e2; color: #991b1b; }
+.sev-medium { background: #fffbeb; color: #92400e; }
+.sev-low    { background: #dcfce7; color: #166534; }
+
+/* ── Log Summary Chips ───────────────── */
+.log-summary-chips { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.log-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem; font-weight: 600;
+}
+.log-chip-total { background: var(--gold-dim); color: var(--navy); border: 1px solid rgba(212,168,67,0.3); }
 
 /* ── Pagination ──────────────────────── */
 .pagination-wrapper {

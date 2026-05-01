@@ -10,19 +10,71 @@
 <div class="page-header">
   <div>
     <h2 class="page-heading">Position Management</h2>
-    <p class="page-subheading">Manage ballot positions for each election.</p>
+    <p class="page-subheading">Define ballot positions for each Student Council election.</p>
+  </div>
+  <div class="position-stats">
+    <div class="pos-stat-chip"><i class="bi bi-layout-three-columns"></i> {{ positions|length }} Total Positions</div>
   </div>
 </div>
 
-<div class="row g-4">
-  <!-- Add Position Form -->
-  <div class="col-lg-4">
-    <div class="card-panel sticky-top" style="top:80px">
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h5 class="modal-box-title"><i class="bi bi-pencil-square me-2"></i>Edit Position</h5>
+      <button type="button" class="modal-close-btn" onclick="closeEditModal()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-box-body">
+      <form method="POST" id="editPositionForm" action="">
+        <div class="mb-3">
+          <label class="form-label-custom">Election</label>
+          <select name="election_id" class="form-select form-control-custom" required>
+            <option value="">Select election…</option>
+            {% for election in elections %}
+            <option value="{{ election.id }}">{{ election.title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label-custom">Position Title</label>
+          <input type="text" name="title" id="editTitle" class="form-control form-control-custom"
+                 placeholder="e.g. President, Vice President…" maxlength="255" required/>
+        </div>
+        <div class="mb-3">
+          <label class="form-label-custom">Description</label>
+          <textarea name="description" id="editDescription" class="form-control form-control-custom" rows="2"
+                    placeholder="Optional description…"></textarea>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label-custom">Max Votes</label>
+            <input type="number" name="max_votes" id="editMaxVotes" class="form-control form-control-custom" value="1" min="1" max="10" required/>
+          </div>
+          <div class="col-6">
+            <label class="form-label-custom">Display Order</label>
+            <input type="number" name="display_order" id="editDisplayOrder" class="form-control form-control-custom" value="0" min="0" required/>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary-custom flex-grow-1">
+            <i class="bi bi-check-lg me-2"></i>Save Changes
+          </button>
+          <button type="button" class="btn btn-outline-custom" onclick="closeEditModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="positions-layout">
+  <!-- LEFT: Add Form + Quick Add -->
+  <div class="positions-sidebar">
+    <div class="card-panel">
       <div class="card-panel-header">
         <h5 class="card-panel-title"><i class="bi bi-plus-circle-fill me-2"></i>Add Position</h5>
       </div>
       <div class="card-panel-body">
-        <form method="POST" action="{{ url_for('admin.create_position') }}">
+        <form method="POST" action="{{ url_for('admin.create_position') }}" id="addPositionForm">
           <div class="mb-3">
             <label class="form-label-custom">Election</label>
             <select name="election_id" class="form-select form-control-custom" required>
@@ -34,18 +86,18 @@
           </div>
           <div class="mb-3">
             <label class="form-label-custom">Position Title</label>
-            <input type="text" name="title" class="form-control form-control-custom"
+            <input type="text" name="title" id="addTitle" class="form-control form-control-custom"
                    placeholder="e.g. President, Vice President…" maxlength="255" required/>
           </div>
           <div class="mb-3">
             <label class="form-label-custom">Description</label>
-            <textarea name="description" class="form-control form-control-custom" rows="2"
+            <textarea name="description" id="addDescription" class="form-control form-control-custom" rows="2"
                       placeholder="Optional description…"></textarea>
           </div>
           <div class="row g-2 mb-3">
             <div class="col-6">
               <label class="form-label-custom">Max Votes</label>
-              <input type="number" name="max_votes" class="form-control form-control-custom" value="1" min="1" max="10" required/>
+              <input type="number" name="max_votes" id="addMaxVotes" class="form-control form-control-custom" value="1" min="1" max="10" required/>
             </div>
             <div class="col-6">
               <label class="form-label-custom">Display Order</label>
@@ -58,38 +110,109 @@
         </form>
       </div>
     </div>
+
+    <!-- Quick Add -->
+    <div class="card-panel mt-3">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-lightning-charge-fill me-2 text-gold"></i>Quick Add SC Positions</h5>
+      </div>
+      <div class="card-panel-body">
+        <p class="text-muted-sm mb-3">Click any position to pre-fill the form above.</p>
+        <div class="quick-add-grid">
+          <button class="quick-add-btn" onclick="prefill('President', 'Leads the Student Council and represents the student body.', 1)">
+            <i class="bi bi-person-badge"></i> President
+          </button>
+          <button class="quick-add-btn" onclick="prefill('Vice President', 'Assists the President and presides in their absence.', 1)">
+            <i class="bi bi-person-badge-fill"></i> Vice President
+          </button>
+          <button class="quick-add-btn" onclick="prefill('Secretary', 'Manages records, minutes, and official correspondence.', 1)">
+            <i class="bi bi-journal-text"></i> Secretary
+          </button>
+          <button class="quick-add-btn" onclick="prefill('Treasurer', 'Oversees the budget and financial management.', 1)">
+            <i class="bi bi-cash-coin"></i> Treasurer
+          </button>
+          <button class="quick-add-btn" onclick="prefill('Auditor', 'Reviews financial records and ensures accountability.', 1)">
+            <i class="bi bi-clipboard-check"></i> Auditor
+          </button>
+          <button class="quick-add-btn" onclick="prefill('P.R.O.', 'Handles communications and public relations.', 1)">
+            <i class="bi bi-megaphone"></i> P.R.O.
+          </button>
+          <button class="quick-add-btn" onclick="prefill('Senator', 'Represents the student body in legislative matters.', 3)">
+            <i class="bi bi-people"></i> Senator
+          </button>
+          <button class="quick-add-btn" onclick="prefill('Representative', 'Advocates for student concerns at the council.', 2)">
+            <i class="bi bi-person-raised-hand"></i> Rep.
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Positions Table -->
-  <div class="col-lg-8">
+  <!-- RIGHT: Election tabs + Table -->
+  <div class="positions-main">
+    <div class="election-tabs mb-3">
+      <button class="election-tab active" onclick="filterByElection('all', this)">All Elections</button>
+      {% for election in elections %}
+      <button class="election-tab" onclick="filterByElection('{{ election.id }}', this)">{{ election.title }}</button>
+      {% endfor %}
+    </div>
+
     <div class="card-panel">
       <div class="card-panel-body p-0">
         {% if positions %}
         <div class="table-responsive">
-          <table class="table-custom">
+          <table class="table-custom" id="positionsTable">
             <thead>
               <tr>
                 <th>Order</th>
                 <th>Position</th>
                 <th>Election</th>
                 <th>Max Votes</th>
+                <th>Candidates</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {% for position in positions %}
-              <tr>
+              <tr data-election-id="{{ position.election_id }}">
                 <td><span class="order-badge">{{ position.display_order }}</span></td>
                 <td>
                   <div class="fw-600">{{ position.title }}</div>
                   {% if position.description %}
-                  <div class="text-muted-sm">{{ position.description[:50] }}…</div>
+                  <div class="text-muted-sm">{{ position.description[:60] }}{% if position.description|length > 60 %}…{% endif %}</div>
+                  {% else %}
+                  <div class="text-muted-sm pos-no-desc">No description</div>
                   {% endif %}
                 </td>
-                <td class="text-muted-sm">{{ position.election_title or '—' }}</td>
-                <td><span class="badge-count">{{ position.max_votes }}</span></td>
+                <td><span class="election-tag">{{ position.election_title or '—' }}</span></td>
+                <td>
+                  <span class="badge-count">
+                    {% if position.max_votes == 1 %}
+                      <i class="bi bi-person-fill me-1"></i>
+                    {% else %}
+                      <i class="bi bi-people-fill me-1"></i>
+                    {% endif %}
+                    {{ position.max_votes }}
+                  </span>
+                </td>
+                <td>
+                  <a href="{{ url_for('admin.view_candidates') }}?position={{ position.id }}" class="cand-link">
+                    <i class="bi bi-person-lines-fill"></i> View
+                  </a>
+                </td>
                 <td>
                   <div class="action-buttons">
+                    <button type="button" class="btn-action btn-action-edit" title="Edit"
+                      onclick="openEditModal(
+                        {{ position.id }},
+                        '{{ position.election_id }}',
+                        {{ position.title | tojson }},
+                        {{ (position.description or '') | tojson }},
+                        {{ position.max_votes }},
+                        {{ position.display_order }}
+                      )">
+                      <i class="bi bi-pencil-fill"></i>
+                    </button>
                     <a href="{{ url_for('admin.delete_position', position_id=position.id) }}"
                        class="btn-action btn-action-delete" title="Delete"
                        onclick="return confirm('Are you sure you want to delete this position?')">
@@ -113,4 +236,41 @@
     </div>
   </div>
 </div>
+
+<script>
+function prefill(title, desc, maxVotes) {
+  document.getElementById('addTitle').value = title;
+  document.getElementById('addDescription').value = desc;
+  document.getElementById('addMaxVotes').value = maxVotes;
+  document.getElementById('addTitle').focus();
+}
+
+function openEditModal(id, electionId, title, description, maxVotes, displayOrder) {
+  document.getElementById('editTitle').value = title;
+  document.getElementById('editDescription').value = description;
+  document.getElementById('editMaxVotes').value = maxVotes;
+  document.getElementById('editDisplayOrder').value = displayOrder;
+  document.querySelector('#editPositionForm select[name="election_id"]').value = electionId;
+  document.getElementById('editPositionForm').action = '/admin/positions/' + id + '/edit';
+  document.getElementById('editModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+
+function filterByElection(id, btn) {
+  document.querySelectorAll('.election-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#positionsTable tbody tr').forEach(row => {
+    row.style.display = (id === 'all' || row.dataset.electionId === id) ? '' : 'none';
+  });
+}
+</script>
 {% endblock %}

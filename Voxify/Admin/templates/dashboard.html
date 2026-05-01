@@ -14,11 +14,7 @@
       {% if college %}{{ college.name }} — {% endif %}Here's an overview of your election system.
     </p>
   </div>
-  <div class="page-header-actions">
-    <a href="{{ url_for('admin.create_election') }}" class="btn btn-primary-custom">
-      <i class="bi bi-plus-lg me-2"></i>New Election
-    </a>
-  </div>
+
 </div>
 
 <!-- Stats Grid -->
@@ -28,7 +24,7 @@
     <div class="stat-info">
       <span class="stat-number">{{ total_voters }}</span>
       <span class="stat-label">Total Voters</span>
-      <span class="stat-note">{{ approved_voters }} approved · {{ pending_voters }} pending</span>
+      <span class="stat-note">Registered in system</span>
     </div>
   </div>
   <div class="stat-card stat-card-green">
@@ -55,8 +51,9 @@
   </div>
 </div>
 
-<!-- Content Row -->
+<!-- Main Content Row -->
 <div class="row g-4 mt-1">
+
   <!-- Recent Elections -->
   <div class="col-lg-7">
     <div class="card-panel">
@@ -64,14 +61,17 @@
         <h5 class="card-panel-title"><i class="bi bi-calendar2-event-fill me-2"></i>Recent Elections</h5>
         <a href="{{ url_for('admin.view_elections') }}" class="btn-link-subtle">View all</a>
       </div>
-      <div class="card-panel-body">
+      <div class="card-panel-body p-0">
         {% if recent_elections %}
-        <div class="recent-list">
+        <div class="elections-list">
           {% for election in recent_elections %}
-          <div class="recent-list-item">
-            <div>
-              <h6 class="mb-1">{{ election.title }}</h6>
-              <p class="text-muted-sm mb-1">{{ election.start_date }} — {{ election.end_date }}</p>
+          <div class="election-list-item">
+            <div class="election-status-bar election-bar-{{ election.status.lower() }}"></div>
+            <div class="election-item-body">
+              <div class="election-item-main">
+                <h6>{{ election.title }}</h6>
+                <p class="text-muted-sm"><i class="bi bi-calendar3 me-1"></i>{{ election.start_date }} — {{ election.end_date }}</p>
+              </div>
               <span class="badge-status badge-{{ election.status.lower() }}">
                 <i class="bi bi-circle-fill me-1" style="font-size:6px"></i>{{ election.status }}
               </span>
@@ -89,22 +89,74 @@
     </div>
   </div>
 
-  <!-- Recent Activity Logs -->
-  <div class="col-lg-5">
+  <!-- Right column -->
+  <div class="col-lg-5 right-col-stack">
+
+    <!-- Voter Turnout Ring -->
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-pie-chart-fill me-2"></i>Voter Turnout</h5>
+      </div>
+      <div class="card-panel-body">
+        <div class="turnout-widget">
+          <div class="turnout-ring-wrap">
+            <svg class="turnout-ring" viewBox="0 0 100 100">
+              <circle class="ring-bg" cx="50" cy="50" r="38" />
+              <circle class="ring-fill" cx="50" cy="50" r="38"
+                id="turnoutArc"
+                stroke-dasharray="0 239"
+                stroke-dashoffset="60" />
+            </svg>
+            <div class="turnout-center">
+              <span class="turnout-pct" id="turnoutPct">0%</span>
+              <span class="turnout-pct-label">turnout</span>
+            </div>
+          </div>
+          <div class="turnout-legend">
+            <div class="turnout-leg-item">
+              <span class="leg-dot leg-dot-navy"></span>
+              <div>
+                <span class="leg-val">{{ total_votes }}</span>
+                <span class="leg-lbl">Votes Cast</span>
+              </div>
+            </div>
+            <div class="turnout-leg-divider"></div>
+            <div class="turnout-leg-item">
+              <span class="leg-dot leg-dot-paper"></span>
+              <div>
+                <span class="leg-val">{{ total_voters }}</span>
+                <span class="leg-lbl">Registered Voters</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
     <div class="card-panel">
       <div class="card-panel-header">
         <h5 class="card-panel-title"><i class="bi bi-activity me-2"></i>Recent Activity</h5>
         <a href="{{ url_for('admin.view_logs') }}" class="btn-link-subtle">View all</a>
       </div>
-      <div class="card-panel-body">
+      <div class="card-panel-body p-0">
         {% if recent_logs %}
-        <div class="recent-list">
+        <div class="activity-timeline">
           {% for log in recent_logs %}
-          <div class="recent-list-item">
-            <div>
-              <p class="text-muted-sm mb-1">{{ log.created_at }}</p>
-              <h6 class="mb-1">{{ log.user_name or 'System' }}</h6>
-              <p class="text-muted-sm mb-0">{{ log.action.replace('_', ' ') }}{% if log.details %}: {{ log.details[:80] }}{% if log.details|length > 80 %}…{% endif %}{% endif %}</p>
+          {% set act = log.action.lower() %}
+          <div class="timeline-item">
+            <div class="timeline-dot {% if 'login' in act or 'create' in act %}timeline-dot-green{% elif 'delete' in act or 'logout' in act %}timeline-dot-red{% elif 'update' in act or 'edit' in act %}timeline-dot-amber{% else %}timeline-dot-blue{% endif %}"></div>
+            <div class="timeline-line"></div>
+            <div class="timeline-content">
+              <span class="timeline-action">{{ log.action.replace('_', ' ').title() }}</span>
+              {% if log.details %}
+              <span class="timeline-detail">{{ log.details[:70] }}{% if log.details|length > 70 %}…{% endif %}</span>
+              {% endif %}
+              <span class="timeline-meta">
+                <i class="bi bi-person me-1"></i>{{ log.user_name or 'System' }}
+                <span class="mx-1">·</span>
+                <i class="bi bi-clock me-1"></i>{{ log.created_at }}
+              </span>
             </div>
           </div>
           {% endfor %}
@@ -117,41 +169,164 @@
         {% endif %}
       </div>
     </div>
+
   </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="card-panel mt-4">
-  <div class="card-panel-header">
-    <h5 class="card-panel-title"><i class="bi bi-lightning-charge-fill me-2"></i>Quick Actions</h5>
-  </div>
-  <div class="card-panel-body">
-    <div class="quick-actions-grid">
-      <a href="{{ url_for('admin.create_election') }}" class="quick-action-btn">
-        <i class="bi bi-calendar2-plus-fill"></i>
-        <span>New Election</span>
-      </a>
-      <a href="{{ url_for('admin.view_positions') }}" class="quick-action-btn">
-        <i class="bi bi-layout-three-columns"></i>
-        <span>Manage Positions</span>
-      </a>
-      <a href="{{ url_for('admin.create_candidate') }}" class="quick-action-btn">
-        <i class="bi bi-person-plus-fill"></i>
-        <span>Add Candidate</span>
-      </a>
-      <a href="{{ url_for('admin.view_voters') }}" class="quick-action-btn">
-        <i class="bi bi-people-fill"></i>
-        <span>Manage Voters</span>
-      </a>
-      <a href="{{ url_for('admin.view_results') }}" class="quick-action-btn">
-        <i class="bi bi-bar-chart-fill"></i>
-        <span>View Results</span>
-      </a>
-      <a href="{{ url_for('admin.view_logs') }}" class="quick-action-btn">
-        <i class="bi bi-journal-text"></i>
-        <span>Audit Logs</span>
-      </a>
+<!-- Bottom Row -->
+<div class="row g-4 mt-1">
+
+  <!-- System Overview -->
+  <div class="col-lg-4">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-speedometer2 me-2"></i>System Overview</h5>
+      </div>
+      <div class="card-panel-body">
+        <div class="health-list">
+          <div class="health-item">
+            <div class="health-icon health-icon-blue"><i class="bi bi-calendar2-check"></i></div>
+            <div class="health-info">
+              <span class="health-label">Active Elections</span>
+              <div class="health-bar-wrap">
+                <div class="health-bar health-bar-blue" style="width:{% if total_elections > 0 %}{{ [[((active_elections / total_elections) * 100)|int, 100]|min, 0]|max }}{% else %}0{% endif %}%"></div>
+              </div>
+            </div>
+            <span class="health-val">{{ active_elections }}</span>
+          </div>
+          <div class="health-item">
+            <div class="health-icon health-icon-green"><i class="bi bi-people-fill"></i></div>
+            <div class="health-info">
+              <span class="health-label">Registered Voters</span>
+              <div class="health-bar-wrap">
+                <div class="health-bar health-bar-green" style="width:{{ [[total_voters * 5, 100]|min, 0]|max }}%"></div>
+              </div>
+            </div>
+            <span class="health-val">{{ total_voters }}</span>
+          </div>
+          <div class="health-item">
+            <div class="health-icon health-icon-purple"><i class="bi bi-person-badge-fill"></i></div>
+            <div class="health-info">
+              <span class="health-label">Candidates Registered</span>
+              <div class="health-bar-wrap">
+                <div class="health-bar health-bar-purple" style="width:{{ [[total_candidates * 10, 100]|min, 0]|max }}%"></div>
+              </div>
+            </div>
+            <span class="health-val">{{ total_candidates }}</span>
+          </div>
+          <div class="health-item">
+            <div class="health-icon health-icon-amber"><i class="bi bi-check2-square"></i></div>
+            <div class="health-info">
+              <span class="health-label">Votes Cast</span>
+              <div class="health-bar-wrap">
+                {% set vp = (total_votes / total_voters * 100)|int if total_voters > 0 else 0 %}
+                <div class="health-bar health-bar-amber" style="width:{{ [[vp, 100]|min, 0]|max }}%"></div>
+              </div>
+            </div>
+            <span class="health-val">{{ total_votes }}</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+
+  <!-- Archives Summary -->
+  <div class="col-lg-8">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-archive-fill me-2"></i>Archives</h5>
+        <a href="{{ url_for('admin.view_voters') }}" class="btn-link-subtle">Manage voters</a>
+      </div>
+      <div class="card-panel-body">
+
+        <div class="archive-summary-grid">
+
+          <!-- Voters archive -->
+          <div class="archive-summary-card">
+            <div class="archive-summary-icon archive-icon-voter">
+              <i class="bi bi-person-slash"></i>
+            </div>
+            <div class="archive-summary-body">
+              <span class="archive-summary-label">Archived Voters</span>
+              <span class="archive-summary-count">{{ archived_voters }}</span>
+              <span class="archive-summary-sub">{% if archived_voters == 0 %}None archived{% else %}{{ archived_voters }} voter{{ 's' if archived_voters != 1 }} removed from active roster{% endif %}</span>
+            </div>
+            <a href="{{ url_for('admin.view_voters') }}" class="archive-summary-link" title="Go to voter archives">
+              <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+
+          <!-- Elections archive -->
+          <div class="archive-summary-card">
+            <div class="archive-summary-icon archive-icon-election">
+              <i class="bi bi-calendar-x"></i>
+            </div>
+            <div class="archive-summary-body">
+              <span class="archive-summary-label">Closed Elections</span>
+              <span class="archive-summary-count">{{ closed_elections }}</span>
+              <span class="archive-summary-sub">{% if closed_elections == 0 %}No closed elections{% else %}{{ closed_elections }} election{{ 's' if closed_elections != 1 }} completed or closed{% endif %}</span>
+            </div>
+            <a href="{{ url_for('admin.view_elections') }}" class="archive-summary-link" title="Go to elections">
+              <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+
+        </div>
+
+        <!-- Voter breakdown row -->
+        <div class="voter-summary-row" style="margin-top:16px;">
+          <div class="voter-summary-item">
+            <span class="vsummary-num" style="color:#1a3a5c;">{{ total_voters }}</span>
+            <span class="vsummary-lbl">Active Voters</span>
+          </div>
+          <div class="voter-summary-divider"></div>
+          <div class="voter-summary-item">
+            <span class="vsummary-num" style="color:#6b7280;">{{ archived_voters }}</span>
+            <span class="vsummary-lbl">Archived</span>
+          </div>
+          <div class="voter-summary-divider"></div>
+          <div class="voter-summary-item">
+            <span class="vsummary-num">{{ total_elections }}</span>
+            <span class="vsummary-lbl">Total Elections</span>
+          </div>
+          <div class="voter-summary-divider"></div>
+          <div class="voter-summary-item">
+            <span class="vsummary-num" style="color:#6b7280;">{{ closed_elections }}</span>
+            <span class="vsummary-lbl">Closed</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  const votes = {{ total_votes }};
+  const total = {{ total_voters }};
+  const pctEl = document.getElementById('turnoutPct');
+  const arc = document.getElementById('turnoutArc');
+  if (!arc || !pctEl) return;
+
+  const pct = total > 0 ? Math.min((votes / total) * 100, 100) : 0;
+  const circumference = 2 * Math.PI * 38;
+
+  let current = 0;
+  const target = (pct / 100) * circumference;
+  const step = Math.max(target / 40, 0.3);
+
+  function tick() {
+    current = Math.min(current + step, target);
+    arc.setAttribute('stroke-dasharray', current.toFixed(2) + ' ' + (circumference + 1).toFixed(2));
+    const shown = total > 0 ? Math.round((current / circumference) * 100) : 0;
+    pctEl.textContent = shown + '%';
+    if (current < target) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
 {% endblock %}

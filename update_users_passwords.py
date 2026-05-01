@@ -10,28 +10,17 @@ conn = mysql.connector.connect(
 
 cursor = conn.cursor()
 
-# Update current database users to known login credentials.
-# Voter passwords here are reset to their student IDs so they can log in immediately.
-updates = [
-    ('SUPER001', 'superadmin', 'superadmin123'),
-    ('ADMIN001', 'admin', 'admin123'),
-    ('20240001', '20240001', '20240001'),
-    ('241-0001', '241-0001', '241-0001'),
-]
+# Change student_id and new_password to whichever account you're locked out of
+student_id = "241-1-0003"   # <-- change this to your student_id
+new_password = "Voter@1234" # <-- change this to your new password
 
-for student_id, username, password in updates:
-    hashed_password = generate_password_hash(password)
-    cursor.execute(
-        """UPDATE users SET username=%s, password=%s WHERE student_id=%s""",
-        (username, hashed_password, student_id)
-    )
-    print(f"Updated {student_id}: username={username}, password={password}")
-
+hashed_password = generate_password_hash(new_password)
+cursor.execute(
+    "UPDATE users SET password=%s WHERE student_id=%s",
+    (hashed_password, student_id)
+)
 conn.commit()
-
-cursor.execute("SELECT id, student_id, username, role, LEFT(password, 50) FROM users ORDER BY id")
-for row in cursor.fetchall():
-    print(row)
+print(f"Password reset for {student_id}. You can now log in with: {new_password}")
 
 cursor.close()
 conn.close()

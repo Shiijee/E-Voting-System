@@ -12,6 +12,9 @@
     <h2 class="page-heading">Audit Log System</h2>
     <p class="page-subheading">A complete record of all administrative actions and system events.</p>
   </div>
+  <div class="log-summary-chips">
+    <span class="log-chip log-chip-total"><i class="bi bi-journal-text"></i> {{ logs|length }} Events</span>
+  </div>
 </div>
 
 <!-- Filter Bar -->
@@ -20,7 +23,7 @@
     <div class="search-input-wrap flex-grow-1">
       <i class="bi bi-search search-icon"></i>
       <input type="text" class="form-control form-control-custom search-input"
-             placeholder="Search actions, details, IP addresses…"
+             placeholder="Search actions, details, users…"
              value="{{ search }}"/>
     </div>
     <select class="form-select form-control-custom w-auto">
@@ -47,19 +50,44 @@
             <th>User</th>
             <th>Action</th>
             <th>Details</th>
-            <th>IP Address</th>
+            <th>Severity</th>
           </tr>
         </thead>
         <tbody>
           {% for log in logs %}
+          {% set action = log.action | lower if log.action else '' %}
+          {% if 'delete' in action or 'remove' in action or 'error' in action %}
+            {% set sev = 'high' %}
+          {% elif 'login' in action or 'logout' in action or 'update' in action or 'edit' in action %}
+            {% set sev = 'medium' %}
+          {% else %}
+            {% set sev = 'low' %}
+          {% endif %}
           <tr>
             <td class="text-muted-sm">{{ log.id }}</td>
             <td class="text-muted-sm text-nowrap">{{ log.created_at }}</td>
-            <td><span class="text-muted-sm">System</span></td>
             <td>
-              <span class="log-action-badge log-action-gray">
-                {{ log.action.replace('_', ' ') if log.action else '—' }}
-              </span>
+              <div class="voter-cell">
+                <div class="voter-avatar-sm voter-avatar-xs">
+                  {{ (log.user or 'S')[0] | upper }}
+                </div>
+                <span class="text-muted-sm">{{ log.user or 'System' }}</span>
+              </div>
+            </td>
+            <td>
+              {% if 'login' in action %}
+                <span class="log-action-badge log-action-green">{{ log.action.replace('_',' ') if log.action else '—' }}</span>
+              {% elif 'logout' in action %}
+                <span class="log-action-badge log-action-gray">{{ log.action.replace('_',' ') if log.action else '—' }}</span>
+              {% elif 'delete' in action or 'remove' in action %}
+                <span class="log-action-badge log-action-red">{{ log.action.replace('_',' ') if log.action else '—' }}</span>
+              {% elif 'create' in action or 'add' in action %}
+                <span class="log-action-badge log-action-blue">{{ log.action.replace('_',' ') if log.action else '—' }}</span>
+              {% elif 'update' in action or 'edit' in action %}
+                <span class="log-action-badge log-action-amber">{{ log.action.replace('_',' ') if log.action else '—' }}</span>
+              {% else %}
+                <span class="log-action-badge log-action-gray">{{ log.action.replace('_',' ') if log.action else '—' }}</span>
+              {% endif %}
             </td>
             <td>
               <span class="text-muted-sm">
@@ -67,7 +95,13 @@
               </span>
             </td>
             <td>
-              <code class="ip-code">{{ log.ip_address or '—' }}</code>
+              {% if sev == 'high' %}
+                <span class="sev-badge sev-high"><i class="bi bi-exclamation-circle-fill"></i> High</span>
+              {% elif sev == 'medium' %}
+                <span class="sev-badge sev-medium"><i class="bi bi-dash-circle-fill"></i> Medium</span>
+              {% else %}
+                <span class="sev-badge sev-low"><i class="bi bi-check-circle-fill"></i> Low</span>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}

@@ -41,22 +41,23 @@ function selectCandidate(cardElement, positionId, candidateId) {
   }
   // Mark this card as selected
   cardElement.classList.add('selected');
-  
-  // Set the form input value
-  const input = cardElement.querySelector(`input[name="position_${positionId}"]`);
+
+  // FIX: Set the single shared hidden input for this position
+  const input = document.getElementById(`position_input_${positionId}`);
   if (input) {
     input.value = candidateId;
   }
-  
+
   updateConfirmBar();
 }
 
 function clearAllSelections() {
   document.querySelectorAll('.candidate-card.selected').forEach(c => {
     c.classList.remove('selected');
-    // Clear form inputs
-    const inputs = c.querySelectorAll('input[name^="position_"]');
-    inputs.forEach(input => input.value = '');
+  });
+  // FIX: Clear all position inputs by ID
+  document.querySelectorAll('input[id^="position_input_"]').forEach(input => {
+    input.value = '';
   });
   document.getElementById('voteConfirmBar').style.display = 'none';
 }
@@ -71,18 +72,15 @@ function updateConfirmBar() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Form submission handler
   const ballotForm = document.getElementById('ballotForm');
   if (ballotForm) {
     ballotForm.addEventListener('submit', (e) => {
-      // Collect selected candidates
       const selected = document.querySelectorAll('.candidate-card.selected');
       if (selected.length === 0) {
         e.preventDefault();
         alert('Please select at least one candidate before submitting.');
         return;
       }
-      // Form will submit normally with the selected candidates
     });
   }
 });

@@ -33,7 +33,7 @@
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(13,17,23,0.07);
   border: 1px solid var(--border);
-  overflow: hidden;
+  overflow: visible;
 }
 .card-panel-body { padding: 24px; }
 .card-panel-body.p-0 { padding: 0; }

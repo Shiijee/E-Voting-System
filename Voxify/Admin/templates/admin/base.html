@@ -8,6 +8,7 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <link href="{{ url_for('admin.static', filename='css/admin.css') }}" rel="stylesheet"/>
+  <link href="{{ url_for('admin.static', filename='css/enhancements.css') }}" rel="stylesheet"/>
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -92,6 +93,24 @@
     <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
     <div class="topbar-right">
       <span class="topbar-time" id="topbarTime"></span>
+
+      <!-- Notification Bell -->
+      <div class="notif-wrap" id="notifWrap">
+        <button class="notif-btn" id="notifBtn" title="Notifications">
+          <i class="bi bi-bell-fill"></i>
+          <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+        </button>
+        <div class="notif-dropdown" id="notifDropdown">
+          <div class="notif-header">
+            <span class="notif-title">Notifications</span>
+            <button class="notif-clear-all" id="notifClearAll">Clear all</button>
+          </div>
+          <div class="notif-list" id="notifList">
+            <div class="notif-empty"><i class="bi bi-bell-slash"></i><span>All caught up!</span></div>
+          </div>
+        </div>
+      </div>
+
       <div class="topbar-admin">
         <div class="topbar-avatar">{{ session.get('fullname', 'A')[0]|upper }}</div>
         <span class="topbar-name d-none d-md-inline">{{ session.get('fullname', 'Administrator') }}</span>
@@ -122,9 +141,14 @@
   </div>
 </div>
 
+<!-- Toast Container -->
+<div class="toast-stack" id="toastStack"></div>
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="{{ url_for('admin.static', filename='js/admin.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/enhancements.js') }}"></script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -400,3 +400,124 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* ═══════════════════════════════════════
+   VOTER TABS & ARCHIVE UI
+═══════════════════════════════════════ */
+
+.voter-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid var(--border, #ddd5c4);
+  padding-bottom: 0;
+}
+
+.voter-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -2px;
+  background: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.87rem;
+  font-weight: 500;
+  color: #8a8070;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  transition: all 0.18s ease;
+}
+
+.voter-tab:hover {
+  color: #1a3a5c;
+  background: rgba(26,58,92,0.05);
+}
+
+.voter-tab.voter-tab-active {
+  color: #1a3a5c;
+  font-weight: 700;
+  border-bottom-color: #1a3a5c;
+  background: rgba(26,58,92,0.04);
+}
+
+.vtab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  background: #1a3a5c;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.vtab-count-muted {
+  background: #ddd5c4;
+  color: #8a8070;
+}
+
+.voter-tab.voter-tab-active .vtab-count-muted {
+  background: #8a8070;
+  color: #fff;
+}
+
+/* Archive notice banner */
+.archive-panel-header {
+  border-bottom: 1px solid #f0ebe0;
+}
+
+.archive-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: #f5f0e8;
+  font-size: 0.82rem;
+  color: #8a8070;
+}
+
+.archive-notice i {
+  font-size: 1rem;
+  color: #8a8070;
+  flex-shrink: 0;
+}
+
+/* Archived row styling */
+.archived-row {
+  opacity: 0.75;
+}
+
+.voter-avatar-archived {
+  background: #9ca3af !important;
+}
+
+/* Restore button */
+.btn-action-restore {
+  background: #16a34a;
+  color: #fff !important;
+}
+.btn-action-restore:hover {
+  filter: brightness(1.15);
+}
+
+/* ── Validation ─────────────────────── */
+.vform-error {
+  display: block;
+  color: #dc2626;
+  font-size: 0.76rem;
+  margin-top: 4px;
+  min-height: 1em;
+}
+.vform-input-error {
+  border-color: #dc2626 !important;
+  background: #fff5f5 !important;
+}
+.vform-input-error:focus {
+  box-shadow: 0 0 0 3px rgba(220,38,38,0.12) !important;
+}

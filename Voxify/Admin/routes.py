@@ -90,6 +90,12 @@ def dashboard():
         cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter' AND is_approved=TRUE AND college_id=%s", (college_id,))
         approved_voters = cursor.fetchone()['total']
 
+        cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter' AND is_active=FALSE AND college_id=%s", (college_id,))
+        archived_voters = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM elections WHERE status='closed' AND college_id=%s", (college_id,))
+        closed_elections = cursor.fetchone()['total']
+
         cursor.execute("""
             SELECT COUNT(*) as total FROM candidates c
             JOIN positions p ON c.position_id = p.id
@@ -128,6 +134,12 @@ def dashboard():
 
         cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter' AND is_approved=TRUE")
         approved_voters = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM users WHERE role='voter' AND is_active=FALSE")
+        archived_voters = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM elections WHERE status='closed'")
+        closed_elections = cursor.fetchone()['total']
 
         cursor.execute("""
             SELECT COUNT(*) as total FROM candidates c
@@ -170,6 +182,8 @@ def dashboard():
                          total_voters=total_voters,
                          pending_voters=pending_voters,
                          approved_voters=approved_voters,
+                         archived_voters=archived_voters,
+                         closed_elections=closed_elections,
                          total_candidates=total_candidates,
                          total_votes=total_votes,
                          recent_elections=recent_elections,
@@ -520,6 +534,37 @@ def create_position():
     cursor.close()
     conn.close()
     return render_template('position_form.html', action='add', position=None, elections=elections)
+
+
+@admin_bp.route("/positions/<int:position_id>/edit", methods=["POST"])
+@admin_required
+def edit_position(position_id):
+    college_id = get_admin_college_id()
+    election_id = request.form["election_id"]
+    title = request.form["title"]
+    description = request.form.get("description", "")
+    max_votes = request.form.get("max_votes", 1)
+    display_order = request.form.get("display_order", 0)
+
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor()
+    if college_id is not None:
+        cursor.execute(
+            """UPDATE positions p JOIN elections e ON p.election_id = e.id
+               SET p.title=%s, p.description=%s, p.max_votes=%s, p.display_order=%s, p.election_id=%s
+               WHERE p.id=%s AND e.college_id=%s""",
+            (title, description, max_votes, display_order, election_id, position_id, college_id)
+        )
+    else:
+        cursor.execute(
+            "UPDATE positions SET title=%s, description=%s, max_votes=%s, display_order=%s, election_id=%s WHERE id=%s",
+            (title, description, max_votes, display_order, election_id, position_id)
+        )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Position updated successfully!", "success")
+    return redirect(url_for('admin.view_positions'))
 
 @admin_bp.route("/positions/<int:position_id>/delete")
 @admin_required

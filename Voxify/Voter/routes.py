@@ -51,7 +51,6 @@ def dashboard():
     """, (session['user_id'], college_id))
     past_elections = cursor.fetchall()
 
-    # Get recent votes with candidate info
     cursor.execute("""
         SELECT v.cast_at, e.title as election_title, e.id as election_id,
                p.title as position_title,
@@ -66,11 +65,9 @@ def dashboard():
     """, (session['user_id'],))
     recent_votes = cursor.fetchall()
 
-    # Total votes cast by this voter
     cursor.execute("SELECT COUNT(*) as total FROM votes WHERE voter_id=%s", (session['user_id'],))
     total_votes_cast = cursor.fetchone()['total']
 
-    # Get college name
     college = None
     if college_id:
         cursor.execute("SELECT name FROM colleges WHERE id=%s", (college_id,))
@@ -113,7 +110,6 @@ def ballot(election_id):
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     
-    # Check election exists, is active, AND belongs to voter's college
     cursor.execute("SELECT * FROM elections WHERE id=%s AND college_id=%s", (election_id, college_id))
     election = cursor.fetchone()
     
@@ -135,6 +131,9 @@ def ballot(election_id):
         votes_cast = 0
         for key, value in request.form.items():
             if key.startswith('position_'):
+                # FIX: skip positions where no candidate was selected
+                if not value or not value.strip():
+                    continue
                 position_id = int(key.split('_')[1])
                 candidate_id = int(value)
                 cursor.execute("""
@@ -164,7 +163,6 @@ def ballot(election_id):
             ORDER BY surname
         """, (position['id'],))
         candidates = cursor.fetchall()
-        # Construct full_name for each candidate
         for candidate in candidates:
             full_name = ' '.join(filter(None, [
                 candidate.get('firstname', ''),
@@ -207,7 +205,6 @@ def results():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     
-    # Only show elections from voter's college
     cursor.execute("""
         SELECT id, title FROM elections 
         WHERE status != 'upcoming' AND college_id = %s
@@ -296,7 +293,6 @@ def profile():
     """, (session['user_id'],))
     voter = cursor.fetchone()
 
-    # Compute full name and counts
     if voter:
         voter['full_name'] = ' '.join(filter(None, [voter['firstname'], voter['middlename'], voter['surname']])).strip()
 

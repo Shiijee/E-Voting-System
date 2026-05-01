@@ -28,10 +28,12 @@
     </span>
   </div>
 
+  {# ONE hidden input per position, outside the candidate cards #}
+  <input type="hidden" name="position_{{ position.id }}" id="position_input_{{ position.id }}" value="">
+
   <div class="candidates-grid">
     {% for candidate in position.candidates %}
     <div class="candidate-card" data-group="pos-{{ position.id }}" data-candidate="{{ candidate.id }}" onclick="selectCandidate(this, {{ position.id }}, {{ candidate.id }})">
-      <input type="hidden" name="position_{{ position.id }}" class="position-input" value="">
       <div class="candidate-check"><i class="bi bi-check2"></i></div>
       <div class="candidate-photo-wrap">
         {% if candidate.photo %}
@@ -56,8 +58,7 @@
     <div class="vote-confirm-info">Review your choices before submitting</div>
   </div>
   <div class="confirm-actions">
-    <button type="button" class="btn-ghost-white"
-            onclick="clearAllSelections()">
+    <button type="button" class="btn-ghost-white" onclick="clearAllSelections()">
       <i class="bi bi-x-lg"></i> Clear
     </button>
     <button type="submit" class="btn-gold">
