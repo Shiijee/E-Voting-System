@@ -1,6 +1,7 @@
 ﻿from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
 from datetime import datetime
 from Voxify.Authentication.routes import admin_required
+from Voxify.utils.election_status import sync_election_statuses
 import os
 from werkzeug.utils import secure_filename
 import uuid
@@ -199,6 +200,8 @@ def view_elections():
     college_id = get_admin_college_id()
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
+
+    sync_election_statuses(conn, college_id)
     
     # Show elections for this college or elections with no college assigned
     if college_id is not None:

@@ -1,6 +1,7 @@
 ﻿from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
 from datetime import datetime
 from Voxify.Authentication.routes import voter_required
+from Voxify.utils.election_status import sync_election_statuses
 
 voter_bp = Blueprint('voter', __name__,
                      template_folder='templates', 
@@ -23,6 +24,7 @@ def dashboard():
     college_id = get_voter_college_id()
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
+    sync_election_statuses(conn, college_id)
     
     cursor.execute("""
         SELECT e.*, 
@@ -90,6 +92,7 @@ def elections():
     college_id = get_voter_college_id()
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
+    sync_election_statuses(conn, college_id)
     cursor.execute("""
         SELECT e.*,
                (SELECT COUNT(*) FROM votes v WHERE v.election_id = e.id AND v.voter_id = %s) as has_voted,
@@ -109,6 +112,7 @@ def ballot(election_id):
     college_id = get_voter_college_id()
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
+    sync_election_statuses(conn, college_id)
     
     cursor.execute("SELECT * FROM elections WHERE id=%s AND college_id=%s", (election_id, college_id))
     election = cursor.fetchone()
@@ -117,6 +121,11 @@ def ballot(election_id):
         flash("Election not found or not available for your college.", "error")
         return redirect(url_for('voter.elections'))
     
+    now = datetime.now()
+    if election['start_date'] > now or election['end_date'] < now:
+        flash("This election is not currently open. Please check the election schedule.", "warning")
+        return redirect(url_for('voter.elections'))
+
     if election['status'] != 'active':
         flash("This election is not active.", "warning")
         return redirect(url_for('voter.elections'))
@@ -204,6 +213,7 @@ def results():
     
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
+    sync_election_statuses(conn, college_id)
     
     cursor.execute("""
         SELECT id, title FROM elections 
