@@ -52,11 +52,11 @@
       <div class="election-card-meta">
         <div class="election-meta-row">
           <i class="bi bi-calendar-event"></i>
-          <span>Start: {{ election.start_date }}</span>
+          <span>Start: {{ election.start_date.strftime('%b %d, %Y %I:%M %p') }}</span>
         </div>
         <div class="election-meta-row">
           <i class="bi bi-calendar-x"></i>
-          <span>End: {{ election.end_date }}</span>
+          <span>End: {{ election.end_date.strftime('%b %d, %Y %I:%M %p') }}</span>
         </div>
         <div class="election-meta-row">
           <i class="bi bi-layout-three-columns"></i>
@@ -75,6 +75,9 @@
       <a href="{{ url_for('voter.ballot', election_id=election.id) }}" class="btn-primary-custom" style="padding:8px 18px;font-size:0.82rem;">
         <i class="bi bi-check2-square" style="margin-right:4px;"></i>Vote Now
       </a>
+      {% elif election.status == 'paused' %}
+      <span class="text-muted-sm" style="color:#b45309;font-weight:600;"><i class="bi bi-pause-circle" style="margin-right:4px;"></i>Temporarily paused</span>
+      <span class="badge-status" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;"><i class="bi bi-pause-fill" style="margin-right:4px;"></i>Paused</span>
       {% elif election.status == 'completed' %}
       <span class="text-muted-sm">Election ended</span>
       <a href="{{ url_for('voter.results', election_id=election.id) }}" class="btn-outline-custom" style="padding:7px 16px;font-size:0.82rem;">

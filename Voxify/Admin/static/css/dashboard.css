@@ -59,10 +59,7 @@
   opacity: 0.1;
   background: #fff;
 }
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(13,17,23,0.18);
-}
+
 
 .stat-card-blue   { background: linear-gradient(135deg,#1a3a5c 0%,#1e4470 100%); }
 .stat-card-green  { background: linear-gradient(135deg,#064e3b 0%,#065f46 100%); }
@@ -176,7 +173,7 @@
   vertical-align: middle;
 }
 .table-custom tbody tr:last-child td { border-bottom: none; }
-.table-custom tbody tr:hover td { background: #fdf8f0; }
+
 
 .fw-500 { font-weight: 500; }
 .text-muted-sm { font-size: 0.8rem; color: var(--muted); }
@@ -364,7 +361,7 @@ p.mb-1 { font-size: 0.8rem; }
   transition: background 0.2s;
 }
 .election-list-item:last-child { border-bottom: none; }
-.election-list-item:hover { background: #fdf8f0; }
+
 
 .election-status-bar {
   width: 4px;
@@ -805,10 +802,7 @@ p.mb-1 { font-size: 0.8rem; }
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.archive-summary-card:hover {
-  border-color: var(--navy);
-  box-shadow: 0 4px 16px rgba(26,58,92,0.1);
-}
+
 
 .archive-summary-icon {
   width: 44px; height: 44px;

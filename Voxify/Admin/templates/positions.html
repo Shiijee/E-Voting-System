@@ -306,22 +306,29 @@ function renderQuickGrid() {
   var grid = document.getElementById('quickAddGrid');
   grid.innerHTML = '';
   positions.forEach(function(p, idx) {
-    var btn = document.createElement('div');
-    btn.className = 'quick-add-item';
-    btn.innerHTML =
-      '<button class="quick-add-btn" onclick="prefill(' +
-        JSON.stringify(p.title) + ',' +
-        JSON.stringify(p.desc) + ',' +
-        p.maxVotes + ',' +
-        (p.displayOrder || 0) +
-      ')">' +
-        '<i class="bi ' + p.icon + '"></i>' +
-        '<span>' + p.title + '</span>' +
-      '</button>' +
-      '<button class="quick-delete-btn" onclick="deleteQuickPosition(' + idx + ')" title="Remove">' +
-        '<i class="bi bi-x"></i>' +
-      '</button>';
-    grid.appendChild(btn);
+    var item = document.createElement('div');
+    item.className = 'quick-add-item';
+
+    var prefillBtn = document.createElement('button');
+    prefillBtn.className = 'quick-add-btn';
+    prefillBtn.type = 'button';
+    prefillBtn.innerHTML = '<i class="bi ' + p.icon + '"></i><span>' + p.title + '</span>';
+    prefillBtn.addEventListener('click', function() {
+      prefill(p.title, p.desc, p.maxVotes, p.displayOrder || 0);
+    });
+
+    var deleteBtn = document.createElement('button');
+    deleteBtn.className = 'quick-delete-btn';
+    deleteBtn.type = 'button';
+    deleteBtn.title = 'Remove';
+    deleteBtn.innerHTML = '<i class="bi bi-x"></i>';
+    deleteBtn.addEventListener('click', function() {
+      deleteQuickPosition(idx);
+    });
+
+    item.appendChild(prefillBtn);
+    item.appendChild(deleteBtn);
+    grid.appendChild(item);
   });
 }
 

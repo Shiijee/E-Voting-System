@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const electionSelect = document.getElementById('electionSelect');
   const positionSelect = document.getElementById('positionSelect');
 
-  function filterPositions() {
+  function filterPositions(autoSelect) {
     const electionId = electionSelect.value;
     Array.from(positionSelect.options).forEach(option => {
       if (!option.value) {
@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
       option.disabled = !show;
     });
 
-    if (electionSelect.value) {
+    if (autoSelect && electionSelect.value) {
       const firstVisible = Array.from(positionSelect.options).find(o => !o.disabled && o.value);
       if (firstVisible) {
         positionSelect.value = firstVisible.value;
@@ -183,8 +183,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  electionSelect.addEventListener('change', filterPositions);
-  filterPositions();
+  electionSelect.addEventListener('change', function() { filterPositions(true); });
+  filterPositions(false);
 
   // Click to upload
   uploadArea.addEventListener('click', () => photoInput.click());

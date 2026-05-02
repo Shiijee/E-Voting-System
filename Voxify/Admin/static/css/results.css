@@ -112,7 +112,7 @@
   box-shadow: 0 2px 8px rgba(13,17,23,0.06);
   transition: transform 0.2s;
 }
-.stat-card-mini:hover { transform: translateY(-2px); }
+
 .stat-card-mini i { font-size: 1.7rem; flex-shrink: 0; }
 .stat-num-mini {
   font-family: 'Playfair Display', serif;
@@ -177,7 +177,7 @@
   align-items: center;
   transition: all 0.2s;
 }
-.result-row:hover { border-color: var(--navy); background: #fdfaf6; }
+
 
 .result-row-winner {
   border-color: var(--gold);

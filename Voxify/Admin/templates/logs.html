@@ -59,7 +59,7 @@
               data-action="{{ log.action | lower if log.action else '' }}"
               data-text="{{ ((log.user_name or 'System') ~ ' ' ~ (log.action or '') ~ ' ' ~ (log.details or '') ~ ' ' ~ (log.ip_address or '')) | lower }}">
             <td class="text-muted-sm">{{ log.id }}</td>
-            <td class="text-muted-sm text-nowrap">{{ log.created_at }}</td>
+            <td class="text-muted-sm text-nowrap">{{ log.created_at.strftime('%b %d, %Y %I:%M %p') if log.created_at else '—' }}</td>
             <td>
               <div class="voter-cell">
                 <div class="voter-avatar-sm voter-avatar-xs">

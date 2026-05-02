@@ -106,7 +106,7 @@
   to { opacity: 1; transform: translateX(0); }
 }
 .notif-item:last-child { border-bottom: none; }
-.notif-item:hover { background: var(--paper); }
+
 .notif-item.unread { background: rgba(26,58,92,0.04); }
 .notif-item-icon {
   width: 32px; height: 32px;
@@ -233,10 +233,7 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: default;
 }
-.candidate-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
-}
+
 [data-theme="dark"] .candidate-card {
   background: #1a2d42;
   border-color: #2a3d55;
@@ -446,11 +443,7 @@
 .stat-card-blue, .stat-card-green, .stat-card-amber, .stat-card-purple {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.stat-card-blue:hover, .stat-card-green:hover,
-.stat-card-amber:hover, .stat-card-purple:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-}
+
 
 /* ── Topbar right spacing ────────────────────────── */
 .topbar-right { gap: 10px; }

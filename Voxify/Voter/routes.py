@@ -121,13 +121,17 @@ def ballot(election_id):
         flash("Election not found or not available for your college.", "error")
         return redirect(url_for('voter.elections'))
     
-    now = datetime.now()
-    if election['start_date'] > now or election['end_date'] < now:
-        flash("This election is not currently open. Please check the election schedule.", "warning")
+    if election['status'] == 'paused':
+        flash("This election has been temporarily paused by the administrator. Please check back later.", "warning")
         return redirect(url_for('voter.elections'))
 
     if election['status'] != 'active':
-        flash("This election is not active.", "warning")
+        flash("This election is not currently active.", "warning")
+        return redirect(url_for('voter.elections'))
+
+    now = datetime.now()
+    if election['start_date'] > now or election['end_date'] < now:
+        flash("This election is not currently open. Please check the election schedule.", "warning")
         return redirect(url_for('voter.elections'))
     
     cursor.execute("SELECT COUNT(*) as voted FROM votes WHERE election_id=%s AND voter_id=%s", 
@@ -314,9 +318,16 @@ def profile():
 
     cursor.close()
     conn.close()
+
+    # Restore submitted values after redirect errors
+    profile_email_error = session.pop("profile_email_error", None)
+    pw_error_restore = session.pop("pw_error_restore", None)
+
     return render_template("voter_profile.html", voter=voter,
                            total_votes=total_votes,
-                           elections_participated=elections_participated)
+                           elections_participated=elections_participated,
+                           profile_email_error=profile_email_error,
+                           pw_error_restore=pw_error_restore)
 
 @voter_bp.route("/profile/update", methods=["POST"])
 @voter_required
@@ -342,7 +353,8 @@ def update_profile():
             (email, session["user_id"])
         )
         if cursor.fetchone():
-            flash("That email address is already in use.", "danger")
+            flash("That email address is already in use by another account.", "danger")
+            session["profile_email_error"] = email
             cursor.close(); conn.close()
             return redirect(url_for("voter.profile"))
 
@@ -367,6 +379,11 @@ def update_profile():
 
         if not row or not check_password_hash(row["password"], current_password):
             flash("Current password is incorrect.", "danger")
+            session["pw_error_restore"] = {
+                "current_password": current_password,
+                "new_password": new_password,
+                "confirm_password": confirm_password,
+            }
             cursor.close(); conn.close()
             return redirect(url_for("voter.profile"))
 

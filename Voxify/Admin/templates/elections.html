@@ -69,11 +69,11 @@
             </td>
             <td>
               <span class="badge-status badge-{{ election.status.lower() }}">
-                <i class="bi bi-circle-fill me-1" style="font-size:6px"></i>{{ election.status }}
+                <i class="bi bi-circle-fill me-1" style="font-size:6px"></i>{{ election.status | capitalize }}
               </span>
             </td>
-            <td class="text-muted-sm">{{ election.start_date }}</td>
-            <td class="text-muted-sm">{{ election.end_date }}</td>
+            <td class="text-muted-sm">{{ election.start_date.strftime("%b %d, %Y %I:%M %p") if election.start_date else "—" }}</td>
+            <td class="text-muted-sm">{{ election.end_date.strftime("%b %d, %Y %I:%M %p") if election.end_date else "—" }}</td>
             <td>
               <div class="action-buttons">
                 <a href="{{ url_for('admin.edit_election', election_id=election.id) }}"
@@ -82,14 +82,30 @@
                 </a>
                 {% if election.status == 'upcoming' %}
                 <a href="{{ url_for('admin.activate_election', election_id=election.id) }}"
-                   class="btn-action btn-action-success" title="Activate"
-                   onclick="return confirm('Are you sure you want to activate this election?')">
+                   class="btn-action btn-action-success" title="Activate now"
+                   onclick="return confirm('Activate this election now?')">
                   <i class="bi bi-play-fill"></i>
                 </a>
                 {% elif election.status == 'active' %}
+                <a href="{{ url_for('admin.pause_election', election_id=election.id) }}"
+                   class="btn-action btn-action-warn" title="Pause"
+                   onclick="return confirm('Pause this election?')">
+                  <i class="bi bi-pause-fill"></i>
+                </a>
                 <a href="{{ url_for('admin.deactivate_election', election_id=election.id) }}"
-                   class="btn-action btn-action-warn" title="Deactivate"
-                   onclick="return confirm('Are you sure you want to deactivate this election?')">
+                   class="btn-action btn-action-delete" title="Close election"
+                   onclick="return confirm('Close this election? This marks it as completed.')">
+                  <i class="bi bi-stop-fill"></i>
+                </a>
+                {% elif election.status == 'paused' %}
+                <a href="{{ url_for('admin.resume_election', election_id=election.id) }}"
+                   class="btn-action btn-action-success" title="Resume"
+                   onclick="return confirm('Resume this election?')">
+                  <i class="bi bi-play-fill"></i>
+                </a>
+                <a href="{{ url_for('admin.deactivate_election', election_id=election.id) }}"
+                   class="btn-action btn-action-delete" title="Close election"
+                   onclick="return confirm('Close this election? This marks it as completed.')">
                   <i class="bi bi-stop-fill"></i>
                 </a>
                 {% endif %}
@@ -278,5 +294,23 @@
       });
     });
   });
+</script>
+<script>
+// Auto-update: poll every 30 seconds to open/close elections by schedule
+(function() {
+  function autoUpdate() {
+    fetch('{{ url_for("admin.auto_update_elections") }}', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+      .then(r => r.json())
+      .then(data => {
+        if (data.opened > 0 || data.closed > 0) {
+          // Status changed — reload to reflect new state
+          window.location.reload();
+        }
+      })
+      .catch(() => {});
+  }
+  // Only poll on interval — do NOT run immediately on page load to avoid race with manual actions
+  setInterval(autoUpdate, 30000);
+})();
 </script>
 {% endblock %}

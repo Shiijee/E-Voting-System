@@ -19,18 +19,6 @@
   </div>
 </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-  <div class="flash-wrap">
-    {% for category, message in messages %}
-    <div class="flash-msg flash-{{ category }}">
-      {{ message }}
-      <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-{% endwith %}
 
 <!-- Tab Navigation -->
 {% set active_voters = voters | selectattr('is_active', 'equalto', true) | list %}
@@ -78,7 +66,7 @@
               </div>
             </td>
             <td class="text-muted-sm">{{ voter.student_id or '—' }}</td>
-            <td class="text-muted-sm">{{ voter.created_at }}</td>
+            <td class="text-muted-sm">{{ voter.created_at.strftime('%b %d, %Y %I:%M %p') if voter.created_at else '—' }}</td>
             <td>
               <div class="action-buttons">
                 <button class="btn-action btn-action-edit" title="Edit"
@@ -156,7 +144,7 @@
               </div>
             </td>
             <td class="text-muted-sm">{{ voter.student_id or '—' }}</td>
-            <td class="text-muted-sm">{{ voter.created_at }}</td>
+            <td class="text-muted-sm">{{ voter.created_at.strftime('%b %d, %Y %I:%M %p') if voter.created_at else '—' }}</td>
             <td>
               <div class="action-buttons">
                 <a href="{{ url_for('admin.archive_voter', voter_id=voter.id) }}"
@@ -200,20 +188,40 @@
     </div>
     <form method="POST" action="{{ url_for('admin.create_voter') }}" id="addVoterForm" novalidate>
       <div class="vmodal-body">
+
+        <!-- Flash messages inside the modal -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages and create_voter_restore %}
+            {% for category, message in messages %}
+            <div style="background:{% if category=='error' %}#fef2f2{% else %}#f0fdf4{% endif %};
+                        border:1px solid {% if category=='error' %}#fca5a5{% else %}#86efac{% endif %};
+                        color:{% if category=='error' %}#991b1b{% else %}#166534{% endif %};
+                        border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:0.85rem;
+                        display:flex;justify-content:space-between;align-items:center;">
+              <span><i class="bi bi-exclamation-circle me-2"></i>{{ message }}</span>
+              <button type="button" style="background:none;border:none;cursor:pointer;font-size:1rem;color:inherit;padding:0 0 0 10px;" onclick="this.parentElement.remove()">&times;</button>
+            </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
         <div class="vform-row">
           <div class="vform-col">
             <label class="vform-label required">First Name</label>
-            <input type="text" name="firstname" id="av-firstname" class="vform-input" placeholder="First name" autocomplete="off"/>
+            <input type="text" name="firstname" id="av-firstname" class="vform-input" placeholder="First name" autocomplete="off"
+                   value="{{ create_voter_restore.firstname if create_voter_restore else '' }}"/>
             <small class="vform-error" id="av-firstname-err"></small>
           </div>
           <div class="vform-col">
             <label class="vform-label">Middle Name</label>
-            <input type="text" name="middlename" id="av-middlename" class="vform-input" placeholder="Middle name" autocomplete="off"/>
+            <input type="text" name="middlename" id="av-middlename" class="vform-input" placeholder="Middle name" autocomplete="off"
+                   value="{{ create_voter_restore.middlename if create_voter_restore else '' }}"/>
             <small class="vform-error" id="av-middlename-err"></small>
           </div>
           <div class="vform-col">
             <label class="vform-label required">Surname</label>
-            <input type="text" name="surname" id="av-surname" class="vform-input" placeholder="Surname" autocomplete="off"/>
+            <input type="text" name="surname" id="av-surname" class="vform-input" placeholder="Surname" autocomplete="off"
+                   value="{{ create_voter_restore.surname if create_voter_restore else '' }}"/>
             <small class="vform-error" id="av-surname-err"></small>
           </div>
         </div>
@@ -222,28 +230,58 @@
             <label class="vform-label required">Student ID</label>
             <div class="vform-input-group">
               <span class="vform-input-prefix">{{ student_id_prefix }}</span>
-              <input type="number" name="student_id_seq" id="av-studentid" class="vform-input vform-input-suffix" placeholder="1" min="1"/>
+              <input type="number" name="student_id_seq" id="av-studentid" class="vform-input vform-input-suffix" placeholder="1" min="1"
+                     value="{{ create_voter_restore.student_id_seq if create_voter_restore else '' }}"/>
             </div>
             <small class="vform-hint">Type a number, e.g. 3 → {{ student_id_prefix }}0003</small>
             <small class="vform-error" id="av-studentid-err"></small>
           </div>
           <div class="vform-col-half">
             <label class="vform-label required">Email</label>
-            <input type="email" name="email" id="av-email" class="vform-input" placeholder="student@email.com" autocomplete="off"/>
+            <input type="text" name="email" id="av-email" class="vform-input" placeholder="student@gmail.com" autocomplete="off"
+                   value="{{ create_voter_restore.email if create_voter_restore else '' }}"/>
             <small class="vform-error" id="av-email-err"></small>
           </div>
         </div>
         <div class="vform-row">
-          <div class="vform-col-full">
+          <div class="vform-col-half">
             <label class="vform-label required">Password</label>
             <div style="position:relative;">
-              <input type="password" name="password" id="av-password" class="vform-input" placeholder="Minimum 6 characters" style="padding-right:40px;"/>
+              <input type="password" name="password" id="av-password" class="vform-input" placeholder="Min. 8 characters" style="padding-right:40px;" oninput="avUpdateStrength()"/>
               <button type="button" onclick="togglePw('av-password','av-pw-icon')" tabindex="-1"
                 style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#6b7280;padding:0;">
                 <i class="bi bi-eye-fill" id="av-pw-icon"></i>
               </button>
             </div>
+            <!-- Strength bar -->
+            <div id="av-strength-wrapper" style="display:none;margin-top:8px;">
+              <div style="display:flex;gap:4px;margin-bottom:4px;">
+                <div id="av-seg1" style="flex:1;height:4px;border-radius:3px;background:#ddd;transition:background .3s;"></div>
+                <div id="av-seg2" style="flex:1;height:4px;border-radius:3px;background:#ddd;transition:background .3s;"></div>
+                <div id="av-seg3" style="flex:1;height:4px;border-radius:3px;background:#ddd;transition:background .3s;"></div>
+              </div>
+              <div id="av-strength-label" style="font-size:0.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;min-height:14px;"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin-top:6px;">
+                <div class="av-req" id="av-req-len"  style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="av-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>8+ characters</div>
+                <div class="av-req" id="av-req-upper" style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="av-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>Uppercase letter</div>
+                <div class="av-req" id="av-req-lower" style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="av-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>Lowercase letter</div>
+                <div class="av-req" id="av-req-num"   style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="av-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>Number</div>
+                <div class="av-req" id="av-req-special" style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="av-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>Special char</div>
+              </div>
+            </div>
             <small class="vform-error" id="av-password-err"></small>
+          </div>
+          <div class="vform-col-half">
+            <label class="vform-label required">Confirm Password</label>
+            <div style="position:relative;">
+              <input type="password" name="confirm_password" id="av-confirm-password" class="vform-input" placeholder="Repeat password" style="padding-right:40px;" oninput="avUpdateMatch()"/>
+              <button type="button" onclick="togglePw('av-confirm-password','av-cpw-icon')" tabindex="-1"
+                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#6b7280;padding:0;">
+                <i class="bi bi-eye-fill" id="av-cpw-icon"></i>
+              </button>
+            </div>
+            <small id="av-match-hint" style="font-size:0.76rem;margin-top:4px;display:block;min-height:16px;"></small>
+            <small class="vform-error" id="av-confirm-password-err"></small>
           </div>
         </div>
       </div>
@@ -325,8 +363,8 @@
   }
 
   /* ── Validation helpers ── */
-  var nameRe = /^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$/;
-  var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var nameRe  = /^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$/;
+  var gmailRe = /^[a-zA-Z0-9._%+\-]+@gmail\.com$/i;
 
   function setErr(id, msg) {
     var el = document.getElementById(id);
@@ -336,6 +374,75 @@
     if (inp) inp.classList.toggle('vform-input-error', !!msg);
   }
   function clearErr(id) { setErr(id, ''); }
+
+  /* ── Password strength for Add Voter modal ── */
+  function avEvalPw(pw) {
+    return {
+      len:     pw.length >= 8,
+      upper:   /[A-Z]/.test(pw),
+      lower:   /[a-z]/.test(pw),
+      num:     /[0-9]/.test(pw),
+      special: /[^A-Za-z0-9]/.test(pw),
+    };
+  }
+
+  function avUpdateStrength() {
+    var pw      = document.getElementById('av-password').value;
+    var wrapper = document.getElementById('av-strength-wrapper');
+    var label   = document.getElementById('av-strength-label');
+    var segs    = ['av-seg1','av-seg2','av-seg3'].map(function(id){ return document.getElementById(id); });
+    var reqIds  = { len:'av-req-len', upper:'av-req-upper', lower:'av-req-lower', num:'av-req-num', special:'av-req-special' };
+
+    if (!pw) {
+      wrapper.style.display = 'none';
+      segs.forEach(function(s){ s.style.background = '#ddd'; });
+      label.textContent = '';
+      label.style.color = '';
+      Object.values(reqIds).forEach(function(rid){
+        var r = document.getElementById(rid);
+        if (r) { r.style.color = '#999'; r.querySelector('.av-dot').style.background = '#ddd'; }
+      });
+      avUpdateMatch();
+      return;
+    }
+
+    wrapper.style.display = 'block';
+    var checks = avEvalPw(pw);
+    var score  = Object.values(checks).filter(Boolean).length;
+
+    Object.keys(checks).forEach(function(k){
+      var r = document.getElementById(reqIds[k]);
+      if (!r) return;
+      if (checks[k]) { r.style.color = '#2e7d32'; r.querySelector('.av-dot').style.background = '#2e7d32'; }
+      else           { r.style.color = '#999';    r.querySelector('.av-dot').style.background = '#ddd'; }
+    });
+
+    var level = score <= 2 ? 'weak' : score <= 3 ? 'medium' : 'strong';
+    var text  = level === 'weak' ? 'Weak' : level === 'medium' ? 'Medium' : 'Very Strong';
+    var color = level === 'weak' ? '#e53935' : level === 'medium' ? '#f9a825' : '#2e7d32';
+    var activeBars = level === 'weak' ? 1 : level === 'medium' ? 2 : 3;
+
+    segs.forEach(function(s, i){
+      s.style.background = i < activeBars ? color : '#ddd';
+    });
+    label.textContent = text;
+    label.style.color = color;
+
+    avUpdateMatch();
+  }
+
+  function avUpdateMatch() {
+    var pw   = document.getElementById('av-password').value;
+    var cpw  = document.getElementById('av-confirm-password').value;
+    var hint = document.getElementById('av-match-hint');
+    if (!cpw) {
+      hint.textContent = ''; hint.style.color = '';
+    } else if (pw === cpw) {
+      hint.textContent = '✓ Passwords match.'; hint.style.color = '#2e7d32';
+    } else {
+      hint.textContent = '✗ Passwords do not match.'; hint.style.color = '#c62828';
+    }
+  }
 
   function validateAddVoterForm() {
     var ok = true;
@@ -364,17 +471,27 @@
       setErr('av-studentid-err', 'Must be a whole number (e.g. 3).'); ok = false;
     } else clearErr('av-studentid-err');
 
-    /* Email */
+    /* Email — Gmail only */
     var em = document.getElementById('av-email').value.trim();
     if (!em) { setErr('av-email-err', 'Email is required.'); ok = false; }
-    else if (!emailRe.test(em)) { setErr('av-email-err', 'Enter a valid email address.'); ok = false; }
+    else if (!gmailRe.test(em)) { setErr('av-email-err', 'Only Gmail addresses are allowed (e.g. name@gmail.com).'); ok = false; }
     else clearErr('av-email-err');
 
-    /* Password */
+    /* Password — must meet all 5 rules */
     var pw = document.getElementById('av-password').value;
     if (!pw) { setErr('av-password-err', 'Password is required.'); ok = false; }
-    else if (pw.length < 6) { setErr('av-password-err', 'Password must be at least 6 characters.'); ok = false; }
-    else clearErr('av-password-err');
+    else {
+      var checks = avEvalPw(pw);
+      var allMet = Object.values(checks).every(Boolean);
+      if (!allMet) { setErr('av-password-err', 'Password must meet all requirements above.'); ok = false; }
+      else clearErr('av-password-err');
+    }
+
+    /* Confirm password */
+    var cpw = document.getElementById('av-confirm-password').value;
+    if (!cpw) { setErr('av-confirm-password-err', 'Please confirm the password.'); ok = false; }
+    else if (pw !== cpw) { setErr('av-confirm-password-err', 'Passwords do not match.'); ok = false; }
+    else clearErr('av-confirm-password-err');
 
     return ok;
   }
@@ -387,7 +504,7 @@
       });
 
       /* Live clear errors on input */
-      ['av-firstname','av-middlename','av-surname','av-studentid','av-email','av-password'].forEach(function (id) {
+      ['av-firstname','av-middlename','av-surname','av-studentid','av-email','av-password','av-confirm-password'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.addEventListener('input', function () { clearErr(id + '-err'); });
       });
@@ -405,11 +522,16 @@
     if (id === 'addVoterModal') {
       var form = document.getElementById('addVoterForm');
       if (form) { form.reset(); }
-      ['av-firstname','av-middlename','av-surname','av-studentid','av-email','av-password'].forEach(function (fid) {
+      ['av-firstname','av-middlename','av-surname','av-studentid','av-email','av-password','av-confirm-password'].forEach(function (fid) {
         clearErr(fid + '-err');
         var inp = document.getElementById(fid);
         if (inp) inp.classList.remove('vform-input-error');
       });
+      /* Reset strength UI */
+      var sw = document.getElementById('av-strength-wrapper');
+      if (sw) sw.style.display = 'none';
+      var mh = document.getElementById('av-match-hint');
+      if (mh) { mh.textContent = ''; }
     }
   }
   function overlayClose(e, id) {
@@ -454,5 +576,12 @@
   // Restore last tab
   var saved = sessionStorage.getItem('voterTab');
   if (saved) switchTab(saved);
+
+  // Auto-open Add Voter modal and restore strength if there was a create error
+  {% if create_voter_restore %}
+  openModal('addVoterModal');
+  var avPw = document.getElementById('av-password');
+  if (avPw && avPw.value) { avUpdateStrength(); }
+  {% endif %}
 </script>
 {% endblock %}

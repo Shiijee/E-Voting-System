@@ -1,5 +1,10 @@
 def sync_election_statuses(conn, college_id=None):
-    """Update election statuses based on their scheduled start and end times."""
+    """Update election statuses based on their scheduled start and end times.
+
+    Excludes 'paused' and 'completed' elections so that admin-set statuses
+    (manual pause or early close) are never overwritten by the time-based sync.
+    Only 'upcoming' and 'active' elections are eligible for auto-transition.
+    """
     cursor = conn.cursor()
     if college_id is not None:
         cursor.execute(
@@ -11,7 +16,8 @@ def sync_election_statuses(conn, college_id=None):
                 WHEN start_date > NOW() THEN 'upcoming'
                 ELSE status
             END
-            WHERE college_id=%s OR college_id IS NULL
+            WHERE (college_id=%s OR college_id IS NULL)
+              AND status NOT IN ('paused', 'completed')
             """,
             (college_id,)
         )
@@ -25,6 +31,7 @@ def sync_election_statuses(conn, college_id=None):
                 WHEN start_date > NOW() THEN 'upcoming'
                 ELSE status
             END
+            WHERE status NOT IN ('paused', 'completed')
             """
         )
     conn.commit()

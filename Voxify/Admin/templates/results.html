@@ -34,7 +34,7 @@
 {% if selected_election %}
 <!-- Summary Stats -->
 <div class="row g-3 mb-4">
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="stat-card-mini">
       <i class="bi bi-check2-square text-blue"></i>
       <div>
@@ -43,16 +43,25 @@
       </div>
     </div>
   </div>
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="stat-card-mini">
       <i class="bi bi-people-fill text-green"></i>
       <div>
         <span class="stat-num-mini">{{ total_voters_voted }}</span>
-        <span class="stat-lbl-mini">Voters Participated</span>
+        <span class="stat-lbl-mini">Voters Voted</span>
       </div>
     </div>
   </div>
-  <div class="col-md-4">
+  <div class="col-md-3">
+    <div class="stat-card-mini">
+      <i class="bi bi-person-x-fill" style="color:#ef4444;"></i>
+      <div>
+        <span class="stat-num-mini" style="color:#ef4444;">{{ total_voters_not_voted }}</span>
+        <span class="stat-lbl-mini">Did Not Vote</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
     <div class="stat-card-mini">
       <i class="bi bi-layout-three-columns text-amber"></i>
       <div>
@@ -62,6 +71,25 @@
     </div>
   </div>
 </div>
+<!-- Voter Turnout Bar -->
+{% if total_eligible_voters > 0 %}
+{% set turnout_pct = ((total_voters_voted / total_eligible_voters) * 100) | round(1) %}
+<div class="card-panel mb-4">
+  <div class="card-panel-body" style="padding: 14px 20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <span style="font-size:0.85rem; font-weight:600; color:var(--navy);">
+        <i class="bi bi-bar-chart-fill me-1 text-green"></i>Voter Turnout
+      </span>
+      <span style="font-size:0.85rem; font-weight:700; color:var(--navy);">
+        {{ total_voters_voted }} / {{ total_eligible_voters }} &nbsp;({{ turnout_pct }}%)
+      </span>
+    </div>
+    <div style="background:#e5e7eb; border-radius:999px; height:10px; overflow:hidden;">
+      <div style="height:100%; width:{{ turnout_pct }}%; background:linear-gradient(90deg,#22c55e,#16a34a); border-radius:999px; transition:width 0.4s ease;"></div>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 {% if results %}
   {% for result in results %}

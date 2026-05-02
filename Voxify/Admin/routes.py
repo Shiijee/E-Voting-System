@@ -368,10 +368,42 @@ def election_positions(election_id):
             'candidates': candidates
         })
     
+    # Extra stats for the sidebar
+    cursor2 = conn.cursor(dictionary=True)
+
+    # Total votes cast in this election
+    cursor2.execute("SELECT COUNT(*) as total FROM votes WHERE election_id=%s", (election_id,))
+    total_votes_cast = cursor2.fetchone()['total'] or 0
+
+    # Distinct voters who voted
+    cursor2.execute("SELECT COUNT(DISTINCT voter_id) as total FROM votes WHERE election_id=%s", (election_id,))
+    total_voters_voted = cursor2.fetchone()['total'] or 0
+
+    # Total eligible voters for this election's college
+    election_college_id = election.get('college_id')
+    if election_college_id:
+        cursor2.execute(
+            "SELECT COUNT(*) as total FROM users WHERE role='voter' AND is_approved=1 AND is_active=1 AND college_id=%s",
+            (election_college_id,)
+        )
+    else:
+        cursor2.execute(
+            "SELECT COUNT(*) as total FROM users WHERE role='voter' AND is_approved=1 AND is_active=1"
+        )
+    total_eligible_voters = cursor2.fetchone()['total'] or 0
+    total_voters_not_voted = max(0, total_eligible_voters - total_voters_voted)
+
+    cursor2.close()
     cursor.close()
     conn.close()
     
-    return render_template('election_positions.html', election=election, positions=positions_data)
+    return render_template('election_positions.html',
+                           election=election,
+                           positions=positions_data,
+                           total_votes_cast=total_votes_cast,
+                           total_voters_voted=total_voters_voted,
+                           total_voters_not_voted=total_voters_not_voted,
+                           total_eligible_voters=total_eligible_voters)
 
 @admin_bp.route("/elections/<int:election_id>/edit", methods=["GET", "POST"])
 @admin_required
@@ -441,6 +473,77 @@ def deactivate_election(election_id):
     conn.close()
     flash("Election completed!", "success")
     return redirect(url_for('admin.view_elections'))
+
+@admin_bp.route("/elections/<int:election_id>/pause")
+@admin_required
+def pause_election(election_id):
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE elections SET status='paused' WHERE id=%s", (election_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Election paused!", "success")
+    return redirect(url_for('admin.view_elections'))
+
+@admin_bp.route("/elections/<int:election_id>/resume")
+@admin_required
+def resume_election(election_id):
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE elections SET status='active' WHERE id=%s", (election_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Election resumed!", "success")
+    return redirect(url_for('admin.view_elections'))
+
+@admin_bp.route("/elections/auto-update", methods=["POST"])
+@admin_required
+def auto_update_elections():
+    """Auto-open upcoming elections whose start_date has passed,
+       and auto-close active elections whose end_date has passed."""
+    from datetime import datetime
+    college_id = get_admin_college_id()
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+    now = datetime.now()
+
+    if college_id is not None:
+        cursor.execute(
+            "SELECT id, status, start_date, end_date FROM elections WHERE (college_id=%s OR college_id IS NULL) AND status IN ('upcoming','active')",
+            (college_id,)
+        )
+    else:
+        cursor.execute(
+            "SELECT id, status, start_date, end_date FROM elections WHERE status IN ('upcoming','active')"
+        )
+    elections = cursor.fetchall()
+
+    opened = closed = 0
+    for e in elections:
+        start = e['start_date']
+        end   = e['end_date']
+        if isinstance(start, str):
+            try: start = datetime.fromisoformat(start)
+            except: start = None
+        if isinstance(end, str):
+            try: end = datetime.fromisoformat(end)
+            except: end = None
+
+        if e['status'] == 'upcoming' and start and now >= start:
+            cursor.execute("UPDATE elections SET status='active' WHERE id=%s", (e['id'],))
+            opened += 1
+        elif e['status'] == 'active' and end and now >= end:
+            cursor.execute("UPDATE elections SET status='completed' WHERE id=%s", (e['id'],))
+            closed += 1
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    from flask import jsonify
+    return jsonify({"opened": opened, "closed": closed})
 
 @admin_bp.route("/elections/<int:election_id>/delete")
 @admin_required
@@ -601,9 +704,9 @@ def view_candidates():
 
     # Load all elections for the dropdown filter
     if college_id is not None:
-        cursor.execute("SELECT id, title FROM elections WHERE college_id=%s OR college_id IS NULL ORDER BY created_at DESC", (college_id,))
+        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') AND (college_id=%s OR college_id IS NULL) ORDER BY created_at DESC", (college_id,))
     else:
-        cursor.execute("SELECT id, title FROM elections ORDER BY created_at DESC")
+        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') ORDER BY created_at DESC")
     elections = cursor.fetchall()
 
     query = """
@@ -686,9 +789,9 @@ def create_candidate():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     if college_id is not None:
-        cursor.execute("SELECT id, title FROM elections WHERE college_id=%s OR college_id IS NULL ORDER BY created_at DESC", (college_id,))
+        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') AND (college_id=%s OR college_id IS NULL) ORDER BY created_at DESC", (college_id,))
     else:
-        cursor.execute("SELECT id, title FROM elections ORDER BY created_at DESC")
+        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') ORDER BY created_at DESC")
     elections = cursor.fetchall()
 
     if college_id is not None:
@@ -801,9 +904,9 @@ def edit_candidate(candidate_id):
 
     # Load all elections for the dropdown filter
     if college_id is not None:
-        cursor.execute("SELECT id, title FROM elections WHERE college_id=%s OR college_id IS NULL ORDER BY created_at DESC", (college_id,))
+        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') AND (college_id=%s OR college_id IS NULL) ORDER BY created_at DESC", (college_id,))
     else:
-        cursor.execute("SELECT id, title FROM elections ORDER BY created_at DESC")
+        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') ORDER BY created_at DESC")
     elections = cursor.fetchall()
 
     cursor.close()
@@ -856,7 +959,9 @@ def view_voters():
     cursor.close()
     conn.close()
     student_id_prefix = f"241-{college_id}-"
-    return render_template('voters.html', voters=voters, student_id_prefix=student_id_prefix)
+    create_voter_restore = session.pop("create_voter_restore", None)
+    return render_template('voters.html', voters=voters, student_id_prefix=student_id_prefix,
+                           create_voter_restore=create_voter_restore)
 
 @admin_bp.route("/voters/create", methods=["POST"])
 @admin_required
@@ -872,9 +977,20 @@ def create_voter():
     from werkzeug.security import generate_password_hash
     import re
 
-    if not seq.isdigit():
-        flash("Student ID sequence must be a number (e.g. 1, 2, 3).", "error")
+    def save_form_and_redirect(msg):
+        """Flash error, stash form values in session, redirect back."""
+        flash(msg, "error")
+        session["create_voter_restore"] = {
+            "firstname": firstname,
+            "middlename": middlename,
+            "surname": surname,
+            "email": email,
+            "student_id_seq": seq,
+        }
         return redirect(url_for('admin.view_voters'))
+
+    if not seq.isdigit():
+        return save_form_and_redirect("Student ID sequence must be a number (e.g. 1, 2, 3).")
 
     student_id = f"241-{college_id}-{seq.zfill(4)}"
 
@@ -882,10 +998,16 @@ def create_voter():
     cursor = conn.cursor(dictionary=True)
     try:
         # Check for duplicate student_id
-        cursor.execute("SELECT id FROM users WHERE student_id=%s", (student_id,))
+        cursor.execute("SELECT id FROM users WHERE student_id=%s LIMIT 1", (student_id,))
         if cursor.fetchone():
-            flash(f"Student ID {student_id} already exists. Please use a different number.", "error")
-            return redirect(url_for('admin.view_voters'))
+            cursor.close(); conn.close()
+            return save_form_and_redirect(f"Student ID {student_id} already exists. Please use a different number.")
+
+        # Check for duplicate email
+        cursor.execute("SELECT id FROM users WHERE email=%s LIMIT 1", (email,))
+        if cursor.fetchone():
+            cursor.close(); conn.close()
+            return save_form_and_redirect(f"The email address '{email}' is already registered. Please use a different email.")
 
         cursor.execute(
             """INSERT INTO users (student_id, firstname, middlename, surname, email,
@@ -897,8 +1019,10 @@ def create_voter():
         conn.commit()
         email_sent = False
         if email and '@' in email:
+            # Format student_id as XXXXX (digits only, zero-padded to 5)
+            display_id = seq.zfill(5)
             email_sent = send_account_email(
-                email, 'voter', student_id, password,
+                email, 'voter', display_id, password,
                 fullname=f"{firstname} {surname}",
                 extra_info=f"College ID: {college_id}"
             )
@@ -997,15 +1121,17 @@ def view_results():
     cursor = conn.cursor(dictionary=True)
     
     if college_id is not None:
-        cursor.execute("SELECT id, title FROM elections WHERE college_id=%s OR college_id IS NULL ORDER BY created_at DESC", (college_id,))
+        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') AND (college_id=%s OR college_id IS NULL) ORDER BY created_at DESC", (college_id,))
     else:
-        cursor.execute("SELECT id, title FROM elections ORDER BY created_at DESC")
+        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') ORDER BY created_at DESC")
     elections = cursor.fetchall()
     
     selected_election = None
     results = []
     total_votes = 0
     total_voters_voted = 0
+    total_eligible_voters = 0
+    total_voters_not_voted = 0
     
     if election_id:
         if college_id is not None:
@@ -1069,13 +1195,31 @@ def view_results():
             total_votes = sum(p['total_votes'] for p in results)
             cursor.execute("SELECT COUNT(DISTINCT voter_id) as total FROM votes WHERE election_id=%s", (election_id,))
             total_voters_voted = cursor.fetchone()['total'] or 0
+
+            # Count total eligible voters for this election's college
+            election_college_id = selected_election.get('college_id')
+            if election_college_id:
+                cursor.execute("""
+                    SELECT COUNT(*) as total FROM users
+                    WHERE role='voter' AND is_approved=1 AND is_active=1
+                    AND college_id=%s
+                """, (election_college_id,))
+            else:
+                cursor.execute("""
+                    SELECT COUNT(*) as total FROM users
+                    WHERE role='voter' AND is_approved=1 AND is_active=1
+                """)
+            total_eligible_voters = cursor.fetchone()['total'] or 0
+            total_voters_not_voted = max(0, total_eligible_voters - total_voters_voted)
     
     cursor.close()
     conn.close()
     
     return render_template('results.html', elections=elections, election_id=election_id,
                          selected_election=selected_election, results=results,
-                         total_votes=total_votes, total_voters_voted=total_voters_voted)
+                         total_votes=total_votes, total_voters_voted=total_voters_voted,
+                         total_eligible_voters=total_eligible_voters,
+                         total_voters_not_voted=total_voters_not_voted)
 
 @admin_bp.route("/logs")
 @admin_required
@@ -1233,7 +1377,9 @@ def view_profile():
         flash('Profile not found.', 'danger')
         return redirect(url_for('admin.dashboard'))
 
-    return render_template('profile.html', admin=admin)
+    pw_error_restore = session.pop("admin_pw_error_restore", None)
+
+    return render_template('profile.html', admin=admin, pw_error_restore=pw_error_restore)
 
 
 @admin_bp.route("/profile/update", methods=["POST"])
@@ -1278,6 +1424,11 @@ def update_profile():
             flash('User not found.', 'danger')
         elif not check_password_hash(row['password'], current_password):
             flash('Current password is incorrect.', 'danger')
+            session["admin_pw_error_restore"] = {
+                "current_password": current_password,
+                "new_password": new_password,
+                "confirm_password": confirm_password,
+            }
         elif len(new_password) < 6:
             flash('New password must be at least 6 characters.', 'danger')
         elif new_password != confirm_password:
