@@ -1,6 +1,7 @@
 ﻿from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
 from datetime import datetime
 from Voxify.Authentication.routes import admin_required
+from Voxify.utils.election_status import sync_election_statuses
 from Voxify.utils.otp import send_account_email
 import os
 from werkzeug.utils import secure_filename
@@ -201,7 +202,8 @@ def view_elections():
     college_id = get_admin_college_id()
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
-    
+    sync_election_statuses(conn, college_id)
+
     # Show elections for this college or elections with no college assigned
     if college_id is not None:
         cursor.execute("SELECT * FROM elections WHERE college_id=%s OR college_id IS NULL ORDER BY created_at DESC", (college_id,))
@@ -702,11 +704,11 @@ def view_candidates():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
 
-    # Load all elections for the dropdown filter
+    # Load ALL elections for the dropdown filter (all statuses so admin can view candidates from any election)
     if college_id is not None:
-        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') AND (college_id=%s OR college_id IS NULL) ORDER BY created_at DESC", (college_id,))
+        cursor.execute("SELECT id, title FROM elections WHERE (college_id=%s OR college_id IS NULL) ORDER BY created_at DESC", (college_id,))
     else:
-        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') ORDER BY created_at DESC")
+        cursor.execute("SELECT id, title FROM elections ORDER BY created_at DESC")
     elections = cursor.fetchall()
 
     query = """
@@ -789,9 +791,9 @@ def create_candidate():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     if college_id is not None:
-        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') AND (college_id=%s OR college_id IS NULL) ORDER BY created_at DESC", (college_id,))
+        cursor.execute("SELECT id, title FROM elections WHERE status NOT IN ('completed', 'paused') AND (college_id=%s OR college_id IS NULL) ORDER BY created_at DESC", (college_id,))
     else:
-        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') ORDER BY created_at DESC")
+        cursor.execute("SELECT id, title FROM elections WHERE status NOT IN ('completed', 'paused') ORDER BY created_at DESC")
     elections = cursor.fetchall()
 
     if college_id is not None:
@@ -799,14 +801,14 @@ def create_candidate():
             SELECT p.id as position_id, p.title as position_title, p.election_id, e.title as election_title 
             FROM positions p 
             JOIN elections e ON p.election_id = e.id 
-            WHERE e.status != 'completed' AND (e.college_id=%s OR e.college_id IS NULL)
+            WHERE e.status NOT IN ('completed', 'paused') AND (e.college_id=%s OR e.college_id IS NULL)
         """, (college_id,))
     else:
         cursor.execute("""
             SELECT p.id as position_id, p.title as position_title, p.election_id, e.title as election_title 
             FROM positions p 
             JOIN elections e ON p.election_id = e.id 
-            WHERE e.status != 'completed'
+            WHERE e.status NOT IN ('completed', 'paused')
         """)
     positions = cursor.fetchall()
 
@@ -891,22 +893,22 @@ def edit_candidate(candidate_id):
             SELECT p.id as position_id, p.title as position_title, p.election_id, e.title as election_title 
             FROM positions p 
             JOIN elections e ON p.election_id = e.id 
-            WHERE e.status != 'completed' AND (e.college_id=%s OR e.college_id IS NULL)
+            WHERE e.status NOT IN ('completed', 'paused') AND (e.college_id=%s OR e.college_id IS NULL)
         """, (college_id,))
     else:
         cursor.execute("""
             SELECT p.id as position_id, p.title as position_title, p.election_id, e.title as election_title 
             FROM positions p 
             JOIN elections e ON p.election_id = e.id 
-            WHERE e.status != 'completed'
+            WHERE e.status NOT IN ('completed', 'paused')
         """)
     positions = cursor.fetchall()
 
     # Load all elections for the dropdown filter
     if college_id is not None:
-        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') AND (college_id=%s OR college_id IS NULL) ORDER BY created_at DESC", (college_id,))
+        cursor.execute("SELECT id, title FROM elections WHERE status NOT IN ('completed', 'paused') AND (college_id=%s OR college_id IS NULL) ORDER BY created_at DESC", (college_id,))
     else:
-        cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') ORDER BY created_at DESC")
+        cursor.execute("SELECT id, title FROM elections WHERE status NOT IN ('completed', 'paused') ORDER BY created_at DESC")
     elections = cursor.fetchall()
 
     cursor.close()

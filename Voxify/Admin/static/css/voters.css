@@ -67,21 +67,23 @@
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  color: #fff;
   font-size: 13px;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-action:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
-  filter: brightness(1.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
 }
 
-.btn-action-edit  { background: #2563eb; }
-.btn-action-warn  { background: #f59e0b; }
-.btn-action-delete { background: #dc2626; }
+.btn-action-edit   { background: rgba(26,58,92,0.1);   color: var(--navy, #1a3a5c); }
+.btn-action-warn   { background: rgba(212,168,67,0.15); color: #a37a10; }
+.btn-action-delete { background: rgba(200,57,43,0.1);   color: #c8392b; }
+
+.btn-action-edit:hover   { background: var(--navy, #1a3a5c); color: #fff; }
+.btn-action-warn:hover   { background: #d4a843;               color: #1a1a1a; }
+.btn-action-delete:hover { background: #c8392b;               color: #fff; }
 
 /* ── Empty state ───────────────────────────────────────────── */
 .empty-state {
@@ -509,13 +511,8 @@
 }
 
 /* Restore button */
-.btn-action-restore {
-  background: #16a34a;
-  color: #fff !important;
-}
-.btn-action-restore:hover {
-  filter: brightness(1.15);
-}
+.btn-action-restore { background: rgba(34,197,94,0.12); color: #16a34a; }
+.btn-action-restore:hover { background: #16a34a; color: #fff; }
 
 /* ── Validation ─────────────────────── */
 .vform-error {
