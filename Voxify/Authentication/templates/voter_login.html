@@ -80,7 +80,7 @@
       </div>
 
       <div class="form-options">
-        <a href="#" class="forgot-link">Forgot password?</a>
+        <a href="{{ url_for('auth.forgot_password', role='voter') }}" class="forgot-link">Forgot password?</a>
       </div>
 
       <button type="submit" class="btn-login">Vote Now →</button>
