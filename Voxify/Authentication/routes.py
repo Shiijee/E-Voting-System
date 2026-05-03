@@ -11,11 +11,7 @@ from ..utils.otp import (
 
 auth_bp = Blueprint('auth', __name__, template_folder='templates', static_folder='static', static_url_path='/auth/static')
 
-logging.basicConfig(level=logging.DEBUG)
-
-# ============================================
-# DECORATORS
-# ============================================
+logging.basicConfig(level=logging.DEBUG)                                            
 
 def login_required(f):
     @wraps(f)
@@ -78,17 +74,13 @@ def superadmin_required(f):
             flash("Access denied. Super Admin privileges required.", "error")
             return redirect(url_for('auth.admin_login'))
         return f(*args, **kwargs)
-    return decorated_function
-
-# ============================================
-# MAIN LOGIN ROUTES
-# ============================================
+    return decorated_function                                                            
 
 @auth_bp.route("/", methods=["GET", "POST"])
 @auth_bp.route("/voter-login", methods=["GET", "POST"])
 def voter_login():
     """Main voter login page - Default entry point"""
-    # If already logged in as voter, go to dashboard
+                                                    
     if 'user_id' in session:
         if session.get('role') == 'voter':
             return redirect(url_for('voter.dashboard'))
@@ -99,7 +91,7 @@ def voter_login():
         username = request.form.get("username")
         password = request.form.get("password")
         
-        print(f"Login attempt - Student ID: {username}")  # Debug
+        print(f"Login attempt - Student ID: {username}")         
         
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor(dictionary=True)
@@ -112,10 +104,10 @@ def voter_login():
         conn.close()
         
         if user:
-            print(f"User found: {user['student_id']}, Role: {user['role']}")  # Debug
-            print(f"Stored password hash: {user['password'][:50]}...")  # Debug
+            print(f"User found: {user['student_id']}, Role: {user['role']}")         
+            print(f"Stored password hash: {user['password'][:50]}...")         
             
-            # Check password with error handling
+                                                
             try:
                 if check_password_hash(user['password'], password):
                     print("Password verified successfully!")
@@ -128,7 +120,7 @@ def voter_login():
                         flash("Your account has been archived. Please contact your college administrator.", "error")
                         return render_template("voter_login.html")
                     
-                    # Check if device is trusted - skip OTP if trusted
+                                                                      
                     if check_trusted_device(user['id']):
                         session.clear()
                         session['user_id'] = user['id']
@@ -139,7 +131,7 @@ def voter_login():
                         flash(f"Welcome, {user['firstname']}!", "success")
                         return redirect(url_for('voter.dashboard'))
                     
-                    # Not trusted - send OTP
+                                            
                     email = user.get('email')
                     if not email or '@' not in str(email):
                         flash("No valid email found for your account. Please contact the administrator.", "error")
@@ -169,10 +161,10 @@ def voter_login():
                     print("Password verification failed!")
             except ValueError as e:
                 print(f"Password hash error: {e}")
-                # If hash is invalid, try plain text comparison (temporary fix)
+                                                                               
                 if user['password'] == password:
                     print("Plain text password match! Updating hash...")
-                    # Update to proper hash
+                                           
                     new_hash = generate_password_hash(password)
                     conn = current_app.config["get_db_connection"]()
                     cursor = conn.cursor()
@@ -198,7 +190,7 @@ def voter_login():
 @auth_bp.route("/admin-login", methods=["GET", "POST"])
 def admin_login():
     """Admin login page - Separate from voter login"""
-    # If already logged in as admin, go to dashboard
+                                                    
     if 'user_id' in session:
         if session.get('role') in ['admin', 'superadmin']:
             if session.get('role') == 'superadmin':
@@ -227,7 +219,7 @@ def admin_login():
                 flash("Your account has been archived. Please contact the registrar.", "error")
                 return render_template("admin_login.html")
 
-            # Check if device is trusted - skip OTP if trusted
+                                                              
             if check_trusted_device(user['id']):
                 session.clear()
                 session['user_id'] = user['id']
@@ -241,7 +233,7 @@ def admin_login():
                 else:
                     return redirect(url_for('admin.dashboard'))
 
-            # Not trusted - send OTP
+                                    
             email = user.get('email')
             if not email or '@' not in str(email):
                 flash("No valid email found for your account. Please contact the administrator.", "error")
@@ -273,15 +265,12 @@ def admin_login():
         
         flash("Invalid admin credentials.", "error")
     
-    return render_template("admin_login.html")
+    return render_template("admin_login.html")                                                                          
 
-# ============================================
-# VOTER SIGNUP
-# ============================================
 
 @auth_bp.route("/signup", methods=["GET", "POST"])
 def signup():
-    # Signup disabled - admin creates voter accounts
+                                                    
     flash("Registration is closed. Please contact your college administrator.", "info")
     return redirect(url_for('auth.voter_login'))
     
@@ -427,9 +416,9 @@ def resend_otp():
     return redirect(url_for('auth.verify_otp', purpose=purpose))
 
 
-# ============================================
-# HELPER FUNCTIONS
-# ============================================
+                                              
+                  
+                                              
 
 def log_activity(get_db_connection, user_id, action, details):
     try:
@@ -454,15 +443,12 @@ def check_session():
         'role_in_session': 'role' in session
     }
 
-
-# ============================================
-# FORGOT PASSWORD ROUTES
-# ============================================
+                                         
 
 @auth_bp.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     """Step 1: User submits their Student ID / username to receive a reset OTP."""
-    role_type = request.args.get('role', 'voter')  # 'voter' or 'admin'
+    role_type = request.args.get('role', 'voter')                      
 
     if request.method == "POST":
         identifier = request.form.get("identifier", "").strip()
@@ -490,7 +476,7 @@ def forgot_password():
         cursor.close()
         conn.close()
 
-        # Always show the same message to avoid user enumeration
+                                                                
         if not user:
             flash("If that account exists, an OTP has been sent to its registered email.", "info")
             return render_template("forgot_password.html", role_type=role_type)
@@ -500,7 +486,7 @@ def forgot_password():
             flash("No valid email is associated with this account. Please contact the administrator.", "error")
             return render_template("forgot_password.html", role_type=role_type)
 
-        # Generate & send OTP
+                             
         clear_otp_from_session("forgot_password")
         otp = generate_otp()
         store_otp_in_session(otp, "forgot_password", {
@@ -541,7 +527,7 @@ def verify_forgot_otp():
 
         success, message = verify_otp_from_session(otp, "forgot_password")
         if success:
-            # Mark session as OTP-verified so reset_password route can proceed
+                                                                              
             session["forgot_password_verified"] = True
             session["forgot_password_user_id"] = user_data["user_id"]
             session["forgot_password_role_type"] = user_data.get("role_type", "voter")
@@ -590,7 +576,7 @@ def reset_password():
             flash("An error occurred while resetting your password. Please try again.", "error")
             return render_template("reset_password.html")
 
-        # Clean up forgot-password session keys
+                                               
         for key in ["forgot_password_verified", "forgot_password_user_id",
                     "forgot_password_role_type", "user_data_forgot_password"]:
             session.pop(key, None)

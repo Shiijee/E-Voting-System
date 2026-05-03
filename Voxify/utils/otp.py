@@ -7,7 +7,7 @@ from flask import session, current_app, request
 import hashlib
 import secrets
 
-# OTP Configuration
+                   
 OTP_LENGTH = 6
 OTP_EXPIRY_MINUTES = 5
 MAX_ATTEMPTS = 3
@@ -37,7 +37,7 @@ def send_otp_email(email, otp):
         print(f"[OTP] Attempting to send OTP to {email}")
         print(f"[OTP] SMTP_USERNAME: {smtp_username}")
 
-        # Create message
+                        
         msg = MIMEMultipart()
         msg['From'] = smtp_username
         msg['To'] = email
@@ -63,7 +63,7 @@ def send_otp_email(email, otp):
         server.quit()
 
         print(f"[OTP] Email sent successfully to {email}")
-        # Clear any fallback OTP since real email worked
+                                                        
         session.pop('_otp_fallback', None)
         session.modified = True
         return True
@@ -73,11 +73,11 @@ def send_otp_email(email, otp):
         print(f"[OTP ERROR] Email sending failed: {e}")
         traceback.print_exc()
 
-        # --- FALLBACK: Store OTP in session so route can show it on screen ---
+                                                                               
         session['_otp_fallback'] = otp
         session.modified = True
         print(f"[OTP FALLBACK] OTP stored in session for on-screen display: {otp}")
-        # Return True so login flow continues — route will show the OTP via flash
+                                                                                 
         return True
 
 
@@ -145,7 +145,7 @@ def store_otp_in_session(otp, purpose, user_data=None):
     session.permanent = True
     session.modified = True
 
-    # Store user data for signup and login
+                                          
     if user_data:
         session[f'user_data_{purpose}'] = user_data
 
@@ -158,27 +158,27 @@ def verify_otp_from_session(otp, purpose):
     otp_data = session[otp_key]
     hashed_input = hash_otp(otp)
 
-    # Check attempts
+                    
     if otp_data['attempts'] >= MAX_ATTEMPTS:
         clear_otp_from_session(purpose)
         return False, "Maximum attempts exceeded"
 
-    # Check expiry
+                  
     expiry_time = datetime.fromisoformat(otp_data['expiry'])
     if datetime.now() > expiry_time:
         clear_otp_from_session(purpose)
         return False, "OTP has expired"
 
-    # Check OTP
+               
     if hashed_input != otp_data['hashed_otp']:
         otp_data['attempts'] += 1
         session[otp_key] = otp_data
         return False, f"Invalid OTP. {MAX_ATTEMPTS - otp_data['attempts']} attempts remaining"
 
-    # Success - clear OTP data but NOT user_data (needed in next step)
+                                                                      
     if otp_key in session:
         del session[otp_key]
-    # Clear the fallback OTP too
+                                
     session.pop('_otp_fallback', None)
 
     return True, "OTP verified successfully"
@@ -246,7 +246,7 @@ def set_trusted_device(user_id, response):
     if request.is_secure:
         secure_cookie = True
 
-    # Use a per-user cookie name so switching accounts doesn't overwrite each other's trust
+                                                                                           
     cookie_name = f'trusted_device_{user_id}'
     response.set_cookie(
         cookie_name,
@@ -262,7 +262,7 @@ def set_trusted_device(user_id, response):
 
 def check_trusted_device(user_id):
     """Check if THIS specific user's device is trusted using a per-user cookie."""
-    # Look for this user's own cookie, not a shared one
+                                                       
     cookie_name = f'trusted_device_{user_id}'
     token = request.cookies.get(cookie_name)
     print(f"DEBUG: Checking trusted device for user_id={user_id}, cookie='{cookie_name}', found: {token is not None}")

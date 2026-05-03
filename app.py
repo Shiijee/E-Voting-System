@@ -5,7 +5,7 @@ app = create_app()
 
 @app.route('/')
 def home():
-    # If user is logged in, redirect to their dashboard
+                                                       
     if 'user_id' in session:
         role = session.get('role')
         if role == 'admin':
@@ -15,7 +15,7 @@ def home():
         elif role == 'superadmin':
             return redirect(url_for('super_admin.dashboard'))
     
-    # Default: Go to VOTER login page
+                                     
     return redirect(url_for("auth.voter_login"))
 
 if __name__ == "__main__":

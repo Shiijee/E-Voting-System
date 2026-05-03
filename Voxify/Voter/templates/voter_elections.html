@@ -6,6 +6,10 @@
 <link href="{{ url_for('voter.static', filename='css/elections.css') }}" rel="stylesheet"/>
 {% endblock %}
 
+{% block extra_js %}
+<script src="{{ url_for('voter.static', filename='js/voter_elections.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
   <div>
@@ -24,7 +28,7 @@
       {% elif category == 'warning' %}background:#fffbeb;color:#92400e;border-left:4px solid #f59e0b;
       {% else %}background:#eff6ff;color:#1e40af;border-left:4px solid #3b82f6;{% endif %}">
       {{ message }}
-      <button onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;opacity:0.5;padding:0 4px;">&times;</button>
+      <button onclick="closeFlashMessage(this)" style="background:none;border:none;cursor:pointer;font-size:1.1rem;opacity:0.5;padding:0 4px;">&times;</button>
     </div>
     {% endfor %}
   </div>

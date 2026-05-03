@@ -233,7 +233,7 @@ def create_admin():
     password = request.form.get("password", "")
     confirm_password = request.form.get("confirm_password", "")
     college_id = request.form.get("college_id", "").strip()
-    role = "admin"  # Only admin role is allowed
+    role = "admin"                              
 
     if not firstname or not surname or not email or not password or not confirm_password or not college_id:
         flash("All fields except middle name are required.", "error")
@@ -252,7 +252,7 @@ def create_admin():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor()
     try:
-        # Auto-generate student_id: admin-0001, admin-0002, ...
+                                                               
         cursor.execute("SELECT COUNT(*) as cnt FROM users WHERE role IN ('admin','superadmin')")
         row = cursor.fetchone()
         count = row['cnt'] if isinstance(row, dict) else row[0]
@@ -306,7 +306,7 @@ def edit_admin(admin_id):
     cursor.execute("SELECT * FROM users WHERE id=%s AND role='admin'", (admin_id,))
     admin = cursor.fetchone()
     
-    # Fetch colleges for the dropdown
+                                     
     cursor.execute("SELECT id, name FROM colleges ORDER BY name")
     colleges = cursor.fetchall()
     
@@ -368,13 +368,13 @@ def archive_admin(admin_id):
     if admin:
         if admin['is_archived']:
             cursor.execute("UPDATE users SET is_active=TRUE, is_archived=FALSE WHERE id=%s AND role='admin'", (admin_id,))
-            # Restore voters in the college
+                                           
             cursor.execute("UPDATE users SET is_active=TRUE WHERE role='voter' AND college_id=%s", (admin['college_id'],))
             conn.commit()
             flash("Admin restored!", "success")
         else:
             cursor.execute("UPDATE users SET is_active=FALSE, is_archived=TRUE WHERE id=%s AND role='admin'", (admin_id,))
-            # Deactivate voters in the college
+                                              
             cursor.execute("UPDATE users SET is_active=FALSE WHERE role='voter' AND college_id=%s", (admin['college_id'],))
             conn.commit()
             flash("Admin archived!", "warning")
@@ -409,7 +409,7 @@ def toggle_admin_status(admin_id):
             flash_text = "Admin restored!" if new_status else "Admin deactivated!"
             flash_category = "success" if new_status else "warning"
         cursor.execute("UPDATE users SET is_active=%s, is_archived=%s WHERE id=%s AND role='admin'", (new_status, archive_status, admin_id))
-        # Update voters in the college
+                                      
         cursor.execute("UPDATE users SET is_active=%s WHERE role='voter' AND college_id=%s", (new_status, admin['college_id']))
         conn.commit()
         flash(flash_text, flash_category)

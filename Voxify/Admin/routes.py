@@ -22,15 +22,15 @@ def save_candidate_photo(file):
     """Save uploaded photo and return the filename"""
     if file and allowed_file(file.filename):
         try:
-            # Create upload folder if it doesn't exist
+                                                      
             os.makedirs(UPLOAD_FOLDER, exist_ok=True)
             
-            # Generate unique filename
+                                      
             ext = file.filename.rsplit('.', 1)[1].lower()
             filename = f"candidate_{uuid.uuid4().hex}.{ext}"
             filepath = os.path.join(UPLOAD_FOLDER, filename)
             
-            # Save file
+                       
             file.save(filepath)
             return filename
         except Exception as e:
@@ -58,9 +58,9 @@ def get_admin_college_id():
     conn.close()
     return result['college_id'] if result else None
 
-# ============================================
-# DASHBOARD
-# ============================================
+                                              
+           
+                                              
 
 @admin_bp.route("/")
 @admin_bp.route("/dashboard")
@@ -70,7 +70,7 @@ def dashboard():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
 
-    # Get college info
+                      
     college = None
     if college_id:
         cursor.execute("SELECT name FROM colleges WHERE id=%s", (college_id,))
@@ -192,9 +192,9 @@ def dashboard():
                          recent_elections=recent_elections,
                          recent_logs=recent_logs)
 
-# ============================================
-# ELECTION MANAGEMENT
-# ============================================
+                                              
+                     
+                                              
 
 @admin_bp.route("/elections")
 @admin_required
@@ -204,7 +204,7 @@ def view_elections():
     cursor = conn.cursor(dictionary=True)
     sync_election_statuses(conn, college_id)
 
-    # Show elections for this college or elections with no college assigned
+                                                                           
     if college_id is not None:
         cursor.execute("SELECT * FROM elections WHERE college_id=%s OR college_id IS NULL ORDER BY created_at DESC", (college_id,))
     else:
@@ -305,7 +305,7 @@ def election_positions(election_id):
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     
-    # Get election details
+                          
     if college_id is not None:
         cursor.execute("SELECT * FROM elections WHERE id=%s AND (college_id=%s OR college_id IS NULL)", (election_id, college_id))
     else:
@@ -316,7 +316,7 @@ def election_positions(election_id):
         flash("Election not found!", "error")
         return redirect(url_for('admin.view_elections'))
     
-    # Get positions with candidates for this election
+                                                     
     cursor.execute("""
         SELECT p.id AS position_id,
                p.title AS position_title,
@@ -342,7 +342,7 @@ def election_positions(election_id):
     """, (election_id,))
     positions = cursor.fetchall()
     
-    # Parse candidates data
+                           
     positions_data = []
     for pos in positions:
         candidates = []
@@ -370,18 +370,18 @@ def election_positions(election_id):
             'candidates': candidates
         })
     
-    # Extra stats for the sidebar
+                                 
     cursor2 = conn.cursor(dictionary=True)
 
-    # Total votes cast in this election
+                                       
     cursor2.execute("SELECT COUNT(*) as total FROM votes WHERE election_id=%s", (election_id,))
     total_votes_cast = cursor2.fetchone()['total'] or 0
 
-    # Distinct voters who voted
+                               
     cursor2.execute("SELECT COUNT(DISTINCT voter_id) as total FROM votes WHERE election_id=%s", (election_id,))
     total_voters_voted = cursor2.fetchone()['total'] or 0
 
-    # Total eligible voters for this election's college
+                                                       
     election_college_id = election.get('college_id')
     if election_college_id:
         cursor2.execute(
@@ -563,9 +563,9 @@ def delete_election(election_id):
     flash("Election deleted!", "success")
     return redirect(url_for('admin.view_elections'))
 
-# ============================================
-# POSITION MANAGEMENT
-# ============================================
+                                              
+                     
+                                              
 
 @admin_bp.route("/positions")
 @admin_required
@@ -692,9 +692,9 @@ def delete_position(position_id):
     flash("Position deleted!", "success")
     return redirect(url_for('admin.view_positions'))
 
-# ============================================
-# CANDIDATE MANAGEMENT
-# ============================================
+                                              
+                      
+                                              
 
 @admin_bp.route("/candidates")
 @admin_required
@@ -704,7 +704,7 @@ def view_candidates():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
 
-    # Load ALL elections for the dropdown filter (all statuses so admin can view candidates from any election)
+                                                                                                              
     if college_id is not None:
         cursor.execute("SELECT id, title FROM elections WHERE (college_id=%s OR college_id IS NULL) ORDER BY created_at DESC", (college_id,))
     else:
@@ -763,7 +763,7 @@ def create_candidate():
                 flash("Selected position does not belong to your college.", "error")
                 return redirect(url_for('admin.view_candidates'))
 
-        # Auto-generate student_id: voter{college_id}({n})
+                                                          
         cursor.execute(
             "SELECT COUNT(*) as cnt FROM candidates WHERE college_id=%s",
             (college_id,)
@@ -772,7 +772,7 @@ def create_candidate():
         next_n = (row['cnt'] if row else 0) + 1
         student_id = f"voter{college_id}({next_n})"
         
-        # Handle photo upload
+                             
         photo_filename = None
         if 'photo' in request.files and request.files['photo'].filename != '':
             photo_filename = save_candidate_photo(request.files['photo'])
@@ -831,7 +831,7 @@ def edit_candidate(candidate_id):
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor(dictionary=True)
         
-        # Get current candidate to preserve existing student_id and photo
+                                                                         
         if college_id is not None:
             cursor.execute("SELECT * FROM candidates WHERE id=%s AND college_id=%s", (candidate_id, college_id))
         else:
@@ -839,15 +839,15 @@ def edit_candidate(candidate_id):
         candidate = cursor.fetchone()
         
         photo_filename = candidate.get('photo') if candidate else None
-        # Preserve the auto-generated student_id; do not overwrite it
+                                                                     
         student_id = candidate.get('student_id') if candidate else None
         
-        # Handle photo upload
+                             
         if 'photo' in request.files and request.files['photo'].filename != '':
-            # Delete old photo if exists
+                                        
             if photo_filename:
                 delete_candidate_photo(photo_filename)
-            # Save new photo
+                            
             photo_filename = save_candidate_photo(request.files['photo'])
         
         cursor.execute(
@@ -864,7 +864,7 @@ def edit_candidate(candidate_id):
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     
-    # Get candidate data
+                        
     if college_id is not None:
         cursor.execute("""
             SELECT c.*, p.election_id
@@ -887,7 +887,7 @@ def edit_candidate(candidate_id):
         flash("Candidate not found!", "error")
         return redirect(url_for('admin.view_candidates'))
     
-    # Get positions
+                   
     if college_id is not None:
         cursor.execute("""
             SELECT p.id as position_id, p.title as position_title, p.election_id, e.title as election_title 
@@ -904,7 +904,7 @@ def edit_candidate(candidate_id):
         """)
     positions = cursor.fetchall()
 
-    # Load all elections for the dropdown filter
+                                                
     if college_id is not None:
         cursor.execute("SELECT id, title FROM elections WHERE status NOT IN ('completed', 'paused') AND (college_id=%s OR college_id IS NULL) ORDER BY created_at DESC", (college_id,))
     else:
@@ -927,7 +927,7 @@ def delete_candidate(candidate_id):
         cursor.execute("SELECT photo FROM candidates WHERE id=%s", (candidate_id,))
     candidate = cursor.fetchone()
     
-    # Delete photo if it exists
+                               
     if candidate and candidate.get('photo'):
         delete_candidate_photo(candidate['photo'])
     
@@ -941,9 +941,9 @@ def delete_candidate(candidate_id):
     flash("Candidate deleted!", "success")
     return redirect(url_for('admin.view_candidates'))
 
-# ============================================
-# VOTER MANAGEMENT (ADMIN CREATES VOTERS)
-# ============================================
+                                              
+                                         
+                                              
 
 @admin_bp.route("/voters")
 @admin_required
@@ -999,13 +999,13 @@ def create_voter():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
     try:
-        # Check for duplicate student_id
+                                        
         cursor.execute("SELECT id FROM users WHERE student_id=%s LIMIT 1", (student_id,))
         if cursor.fetchone():
             cursor.close(); conn.close()
             return save_form_and_redirect(f"Student ID {student_id} already exists. Please use a different number.")
 
-        # Check for duplicate email
+                                   
         cursor.execute("SELECT id FROM users WHERE email=%s LIMIT 1", (email,))
         if cursor.fetchone():
             cursor.close(); conn.close()
@@ -1021,7 +1021,7 @@ def create_voter():
         conn.commit()
         email_sent = False
         if email and '@' in email:
-            # Format student_id as XXXXX (digits only, zero-padded to 5)
+                                                                        
             display_id = seq.zfill(5)
             email_sent = send_account_email(
                 email, 'voter', display_id, password,
@@ -1109,9 +1109,9 @@ def delete_voter(voter_id):
     flash("Voter deleted permanently!", "success")
     return redirect(url_for('admin.view_voters'))
 
-# ============================================
-# RESULTS
-# ============================================
+                                              
+         
+                                              
 
 @admin_bp.route("/results")
 @admin_required
@@ -1198,7 +1198,7 @@ def view_results():
             cursor.execute("SELECT COUNT(DISTINCT voter_id) as total FROM votes WHERE election_id=%s", (election_id,))
             total_voters_voted = cursor.fetchone()['total'] or 0
 
-            # Count total eligible voters for this election's college
+                                                                     
             election_college_id = selected_election.get('college_id')
             if election_college_id:
                 cursor.execute("""
@@ -1268,9 +1268,9 @@ def view_logs():
     )
 
 
-# ============================================
-# NOTIFICATIONS API
-# ============================================
+                                              
+                   
+                                              
 
 from flask import jsonify
 import math
@@ -1350,12 +1350,7 @@ def api_notifications():
         })
 
     return jsonify(notifications)
-
-
-# ============================================
-# ADMIN PROFILE
-# ============================================
-
+                                              
 from werkzeug.security import check_password_hash, generate_password_hash
 
 @admin_bp.route("/profile")
@@ -1406,7 +1401,7 @@ def update_profile():
                     WHERE id=%s
                 """, (firstname, middlename or None, surname, email, session['user_id']))
                 conn.commit()
-                # Update session name
+                                     
                 full = f"{firstname} {middlename} {surname}".replace('  ', ' ').strip()
                 session['fullname'] = full
                 flash('Profile updated successfully.', 'success')
@@ -1418,7 +1413,7 @@ def update_profile():
         new_password = request.form.get('new_password', '')
         confirm_password = request.form.get('confirm_password', '')
 
-        # Fetch current hash
+                            
         cursor.execute("SELECT password FROM users WHERE id=%s", (session['user_id'],))
         row = cursor.fetchone()
 
@@ -1449,6 +1444,6 @@ def update_profile():
     return redirect(url_for('admin.view_profile'))
 
 
-# ============================================
-# VOTER MANAGEMENT (ADMIN CREATES VOTERS)
-# ============================================
+                                              
+                                         
+                                              

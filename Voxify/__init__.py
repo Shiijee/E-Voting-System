@@ -64,19 +64,19 @@ def add_candidate_photo_column():
 def create_app():
     app = Flask(__name__, static_folder=None)
     
-    # Use a fixed secret key for development
+                                            
     app.secret_key = '04a5b29e6c18f7f5035af7fa603b3fc1'
 
-    # Session configuration
+                           
     app.config['SESSION_PERMANENT'] = True
-    app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
-    app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+    app.config['PERMANENT_SESSION_LIFETIME'] = 3600          
+    app.config['SESSION_COOKIE_SECURE'] = False                                        
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.config['SESSION_REFRESH_EACH_REQUEST'] = True
-    app.config['SESSION_COOKIE_NAME'] = 'evoting_session'  # Custom session name
+    app.config['SESSION_COOKIE_NAME'] = 'evoting_session'                       
 
-    # SMTP Configuration for OTP emails
+                                       
     app.config['SMTP_SERVER'] = 'smtp.gmail.com'
     app.config['SMTP_PORT'] = 587
     app.config['SMTP_USERNAME'] = os.getenv('SMTP_USERNAME', 'voxify.otpsender@gmail.com')
@@ -94,7 +94,7 @@ def create_app():
 
     app.config["get_db_connection"] = get_db_connection
 
-    # Create trusted_devices table on startup
+                                             
     with app.app_context():
         create_trusted_devices_table()
         add_candidate_photo_column()

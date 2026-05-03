@@ -6,6 +6,10 @@
 <link href="{{ url_for('voter.static', filename='css/ballot.css') }}" rel="stylesheet"/>
 {% endblock %}
 
+{% block extra_js %}
+<script src="{{ url_for('voter.static', filename='js/voter_ballot.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 <div class="ballot-header">
   <div class="ballot-title">{{ election.title if election and election.title else 'Election Ballot' }}</div>

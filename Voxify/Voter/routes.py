@@ -144,7 +144,7 @@ def ballot(election_id):
         votes_cast = 0
         for key, value in request.form.items():
             if key.startswith('position_'):
-                # FIX: skip positions where no candidate was selected
+                                                                     
                 if not value or not value.strip():
                     continue
                 position_id = int(key.split('_')[1])
@@ -319,7 +319,7 @@ def profile():
     cursor.close()
     conn.close()
 
-    # Restore submitted values after redirect errors
+                                                    
     profile_email_error = session.pop("profile_email_error", None)
     pw_error_restore = session.pop("pw_error_restore", None)
 
@@ -347,7 +347,7 @@ def update_profile():
             cursor.close(); conn.close()
             return redirect(url_for("voter.profile"))
 
-        # Check email uniqueness (excluding self)
+                                                 
         cursor.execute(
             "SELECT id FROM users WHERE email=%s AND id != %s",
             (email, session["user_id"])
@@ -364,7 +364,7 @@ def update_profile():
             (firstname, middlename or None, surname, email, session["user_id"])
         )
         conn.commit()
-        # Keep session name in sync
+                                   
         session["fullname"] = " ".join(filter(None, [firstname, middlename, surname])).strip()
         flash("Profile updated successfully.", "success")
 

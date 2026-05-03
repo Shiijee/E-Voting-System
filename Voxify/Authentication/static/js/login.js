@@ -32,3 +32,13 @@ function togglePassword(passwordId, iconId) {
     icon.alt = 'Show password';
   }
 }
+
+// Check if user is logged in when page loads
+window.addEventListener('load', function() {
+    // You can add a check here if needed
+});
+
+// Prevent form resubmission on page refresh
+if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+}

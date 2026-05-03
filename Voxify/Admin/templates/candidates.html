@@ -116,16 +116,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  window._candPaginator = new SvPaginator({
-    tableId:     'candidatesTable',
-    rowSelector: 'tbody tr',
-    perPage:     10,
-    infoId:      'candPagInfo',
-    listId:      'candPagList',
-    wrapId:      'candPagWrap'
-  });
-});
-</script>
+<script src="{{ url_for('admin.static', filename='js/candidates.js') }}"></script>
 {% endblock %}

@@ -6,6 +6,10 @@
 <link href="{{ url_for('super_admin.static', filename='css/manage_admins.css') }}" rel="stylesheet"/>
 {% endblock %}
 
+{% block extra_js %}
+<script src="{{ url_for('super_admin.static', filename='js/manage_colleges.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -14,7 +18,7 @@
     {% for category, message in messages %}
     <div class="flash-msg flash-{{ category }}">
       {{ message }}
-      <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+      <button class="flash-close" onclick="closeFlashMessage(this)">&times;</button>
     </div>
     {% endfor %}
   </div>
@@ -66,7 +70,7 @@
                 </button>
                 <a href="{{ url_for('super_admin.delete_college', college_id=college.id) }}"
                    class="btn-action btn-action-delete" title="Delete"
-                   onclick="return confirm('Delete this college? This cannot be undone.')">
+                   onclick="return confirmDelete()">
                   <i class="bi bi-trash3-fill"></i>
                 </a>
               </div>

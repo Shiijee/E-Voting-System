@@ -85,7 +85,7 @@
         <h5 class="card-panel-title"><i class="bi bi-pie-chart-fill me-2"></i>Voter Turnout</h5>
       </div>
       <div class="card-panel-body">
-        <div class="turnout-widget">
+        <div class="turnout-widget" data-total-votes="{{ total_votes }}" data-total-voters="{{ total_voters }}">
           <div class="turnout-ring-wrap">
             <svg class="turnout-ring" viewBox="0 0 100 100">
               <circle class="ring-bg" cx="50" cy="50" r="38" />
@@ -271,29 +271,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-(function() {
-  const votes = {{ total_votes }};
-  const total = {{ total_voters }};
-  const pctEl = document.getElementById('turnoutPct');
-  const arc = document.getElementById('turnoutArc');
-  if (!arc || !pctEl) return;
-
-  const pct = total > 0 ? Math.min((votes / total) * 100, 100) : 0;
-  const circumference = 2 * Math.PI * 38;
-
-  let current = 0;
-  const target = (pct / 100) * circumference;
-  const step = Math.max(target / 40, 0.3);
-
-  function tick() {
-    current = Math.min(current + step, target);
-    arc.setAttribute('stroke-dasharray', current.toFixed(2) + ' ' + (circumference + 1).toFixed(2));
-    const shown = total > 0 ? Math.round((current / circumference) * 100) : 0;
-    pctEl.textContent = shown + '%';
-    if (current < target) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-})();
-</script>
+<script src="{{ url_for('admin.static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
