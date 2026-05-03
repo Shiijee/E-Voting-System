@@ -4,6 +4,31 @@
 
 {% block extra_css %}
 <link href="{{ url_for('super_admin.static', filename='css/profile.css') }}" rel="stylesheet"/>
+<style>
+  .pform-hint { font-size:0.76rem; margin-top:5px; min-height:16px; display:flex; align-items:center; gap:5px; }
+  .pform-hint.error { color:#c62828; }
+  .pform-hint.ok    { color:#2e7d32; }
+
+  .strength-wrapper { margin-top:8px; }
+  .strength-bar-track { display:flex; gap:4px; margin-bottom:5px; }
+  .strength-bar-track .seg { flex:1; height:4px; border-radius:3px; background:#ddd; transition:background .3s; }
+  .seg.weak   { background:#e53935; }
+  .seg.medium { background:#f9a825; }
+  .seg.strong { background:#2e7d32; }
+
+  .strength-label { font-size:0.72rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; min-height:14px; }
+  .strength-label.weak   { color:#e53935; }
+  .strength-label.medium { color:#f9a825; }
+  .strength-label.strong { color:#2e7d32; }
+
+  .req-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px 12px; margin-top:8px; }
+  .req-item { display:flex; align-items:center; gap:5px; font-size:0.74rem; color:#999; transition:color .25s; }
+  .req-item .dot { width:6px; height:6px; border-radius:50%; background:#ddd; flex-shrink:0; transition:background .25s; }
+  .req-item.met { color:#2e7d32; }
+  .req-item.met .dot { background:#2e7d32; }
+
+  #pwSubmitBtn:disabled { opacity:.45; cursor:not-allowed; pointer-events:none; }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -64,43 +89,41 @@
   <!-- ── Right: Forms ── -->
   <div class="profile-main">
 
-    <!-- Personal Info -->
+    <!-- ── Personal Info (read-only) ── -->
     <div class="card-panel profile-card">
       <div class="profile-card-header">
         <div class="profile-card-title"><i class="bi bi-person-fill me-2"></i>Personal Information</div>
-        <div class="profile-card-subtitle">Update your name and email address.</div>
+        <div class="profile-card-subtitle">Your personal details on record.</div>
       </div>
-      <form method="POST" action="{{ url_for('super_admin.update_profile') }}" class="profile-form">
-        <input type="hidden" name="form_type" value="info"/>
+      <form class="profile-form">
         <div class="pform-row">
           <div class="pform-group">
             <label class="pform-label">First Name</label>
-            <input type="text" name="firstname" class="pform-input" value="{{ admin.firstname or '' }}" required/>
+            <input type="text" class="pform-input" value="{{ admin.firstname or '' }}" readonly
+                   style="background:#f5f5f5;cursor:not-allowed;color:#888;"/>
           </div>
           <div class="pform-group">
             <label class="pform-label">Middle Name <span class="pform-optional">(optional)</span></label>
-            <input type="text" name="middlename" class="pform-input" value="{{ admin.middlename or '' }}"/>
+            <input type="text" class="pform-input" value="{{ admin.middlename or '' }}" readonly
+                   style="background:#f5f5f5;cursor:not-allowed;color:#888;"/>
           </div>
           <div class="pform-group">
             <label class="pform-label">Surname</label>
-            <input type="text" name="surname" class="pform-input" value="{{ admin.surname or '' }}" required/>
+            <input type="text" class="pform-input" value="{{ admin.surname or '' }}" readonly
+                   style="background:#f5f5f5;cursor:not-allowed;color:#888;"/>
           </div>
         </div>
         <div class="pform-row">
           <div class="pform-group pform-group-wide">
             <label class="pform-label">Email Address</label>
-            <input type="email" name="email" class="pform-input" value="{{ admin.email or '' }}" required/>
+            <input type="text" class="pform-input" value="{{ admin.email or '' }}" readonly
+                   style="background:#f5f5f5;cursor:not-allowed;color:#888;"/>
           </div>
-        </div>
-        <div class="pform-actions">
-          <button type="submit" class="btn-primary-custom">
-            <i class="bi bi-check-lg me-2"></i>Save Changes
-          </button>
         </div>
       </form>
     </div>
 
-    <!-- Change Password -->
+    <!-- ── Change Password ── -->
     <div class="card-panel profile-card">
       <div class="profile-card-header">
         <div class="profile-card-title"><i class="bi bi-lock-fill me-2"></i>Change Password</div>
@@ -109,37 +132,75 @@
       <form method="POST" action="{{ url_for('super_admin.update_profile') }}" class="profile-form" id="pwForm">
         <input type="hidden" name="form_type" value="password"/>
         <div class="pform-row">
+
+          <!-- Current password -->
           <div class="pform-group">
             <label class="pform-label">Current Password</label>
             <div class="pform-pw-wrap">
-              <input type="password" name="current_password" id="cur_pw" class="pform-input" placeholder="Enter current password"/>
-              <button type="button" class="pform-pw-eye" onclick="togglePw('cur_pw','eye0')"><i class="bi bi-eye-fill" id="eye0"></i></button>
+              <input type="password" name="current_password" id="cur_pw" class="pform-input"
+                     placeholder="Enter current password"
+                     value="{{ pw_error_restore.current_password if pw_error_restore else '' }}"
+                     oninput="syncPwBtn()"/>
+              <button type="button" class="pform-pw-eye" onclick="togglePw('cur_pw','eye0')">
+                <i class="bi bi-eye-fill" id="eye0"></i>
+              </button>
             </div>
           </div>
+
+          <!-- New password + strength -->
           <div class="pform-group">
             <label class="pform-label">New Password</label>
             <div class="pform-pw-wrap">
-              <input type="password" name="new_password" id="new_pw" class="pform-input" placeholder="Min. 6 characters"/>
-              <button type="button" class="pform-pw-eye" onclick="togglePw('new_pw','eye1')"><i class="bi bi-eye-fill" id="eye1"></i></button>
+              <input type="password" name="new_password" id="new_pw" class="pform-input"
+                     placeholder="Min. 8 characters"
+                     value="{{ pw_error_restore.new_password if pw_error_restore else '' }}"
+                     oninput="updateStrength()"/>
+              <button type="button" class="pform-pw-eye" onclick="togglePw('new_pw','eye1')">
+                <i class="bi bi-eye-fill" id="eye1"></i>
+              </button>
+            </div>
+            <div class="strength-wrapper" id="strengthWrapper" style="display:none;">
+              <div class="strength-bar-track">
+                <div class="seg" id="seg1"></div>
+                <div class="seg" id="seg2"></div>
+                <div class="seg" id="seg3"></div>
+              </div>
+              <div class="strength-label" id="strengthLabel"></div>
+              <div class="req-grid">
+                <div class="req-item" id="req-len"><span class="dot"></span>8+ characters</div>
+                <div class="req-item" id="req-upper"><span class="dot"></span>Uppercase letter</div>
+                <div class="req-item" id="req-lower"><span class="dot"></span>Lowercase letter</div>
+                <div class="req-item" id="req-num"><span class="dot"></span>Number</div>
+                <div class="req-item" id="req-special"><span class="dot"></span>Special char</div>
+              </div>
             </div>
           </div>
+
+          <!-- Confirm password -->
           <div class="pform-group">
             <label class="pform-label">Confirm New Password</label>
             <div class="pform-pw-wrap">
-              <input type="password" name="confirm_password" id="conf_pw" class="pform-input" placeholder="Repeat new password"/>
-              <button type="button" class="pform-pw-eye" onclick="togglePw('conf_pw','eye2')"><i class="bi bi-eye-fill" id="eye2"></i></button>
+              <input type="password" name="confirm_password" id="conf_pw" class="pform-input"
+                     placeholder="Repeat new password"
+                     value="{{ pw_error_restore.confirm_password if pw_error_restore else '' }}"
+                     oninput="updateMatch()"/>
+              <button type="button" class="pform-pw-eye" onclick="togglePw('conf_pw','eye2')">
+                <i class="bi bi-eye-fill" id="eye2"></i>
+              </button>
             </div>
+            <div class="pform-hint" id="hintMatch"></div>
           </div>
+
         </div>
         <div class="pform-actions">
-          <button type="submit" class="btn-primary-custom">
+          <button type="submit" class="btn btn-primary-custom" id="pwSubmitBtn" disabled>
             <i class="bi bi-shield-lock-fill me-2"></i>Update Password
           </button>
         </div>
       </form>
     </div>
 
-    <!-- Account Details (read-only) -->
+    <!-- ── Account Details (read-only) ── -->
     <div class="card-panel profile-card">
       <div class="profile-card-header">
         <div class="profile-card-title"><i class="bi bi-info-circle-fill me-2"></i>Account Details</div>
@@ -183,25 +244,91 @@
 
 {% block extra_js %}
 <script>
+/* ── Toggle password visibility ── */
 function togglePw(inputId, iconId) {
   var inp = document.getElementById(inputId);
   var ico = document.getElementById(iconId);
   if (!inp) return;
   if (inp.type === 'password') {
     inp.type = 'text';
-    if (ico) { ico.classList.remove('bi-eye-fill'); ico.classList.add('bi-eye-slash-fill'); }
+    if (ico) { ico.classList.replace('bi-eye-fill','bi-eye-slash-fill'); }
   } else {
     inp.type = 'password';
-    if (ico) { ico.classList.remove('bi-eye-slash-fill'); ico.classList.add('bi-eye-fill'); }
+    if (ico) { ico.classList.replace('bi-eye-slash-fill','bi-eye-fill'); }
   }
 }
-document.getElementById('pwForm').addEventListener('submit', function(e) {
-  var np  = document.getElementById('new_pw').value;
-  var cp  = document.getElementById('conf_pw').value;
+
+/* ── Password strength ── */
+function evaluatePw(pw) {
+  return {
+    len:     pw.length >= 8,
+    upper:   /[A-Z]/.test(pw),
+    lower:   /[a-z]/.test(pw),
+    num:     /[0-9]/.test(pw),
+    special: /[^A-Za-z0-9]/.test(pw),
+  };
+}
+
+function updateStrength() {
+  var pw      = document.getElementById('new_pw').value;
+  var wrapper = document.getElementById('strengthWrapper');
+  var label   = document.getElementById('strengthLabel');
+  var segs    = ['seg1','seg2','seg3'].map(function(id){ return document.getElementById(id); });
+  var reqMap  = {
+    len:     document.getElementById('req-len'),
+    upper:   document.getElementById('req-upper'),
+    lower:   document.getElementById('req-lower'),
+    num:     document.getElementById('req-num'),
+    special: document.getElementById('req-special'),
+  };
+
+  if (!pw) {
+    wrapper.style.display = 'none';
+    segs.forEach(function(s){ s.className = 'seg'; });
+    label.className = 'strength-label'; label.textContent = '';
+    Object.values(reqMap).forEach(function(r){ r.classList.remove('met'); });
+    syncPwBtn(); return;
+  }
+
+  wrapper.style.display = 'block';
+  var checks = evaluatePw(pw);
+  var score  = Object.values(checks).filter(Boolean).length;
+  Object.keys(checks).forEach(function(k){ reqMap[k].classList.toggle('met', checks[k]); });
+
+  var level  = score <= 2 ? 'weak' : score <= 3 ? 'medium' : 'strong';
+  var text   = level === 'weak' ? 'Weak' : level === 'medium' ? 'Medium' : 'Very Strong';
+  var active = level === 'weak' ? 1 : level === 'medium' ? 2 : 3;
+  segs.forEach(function(s,i){ s.className = 'seg'; if (i < active) s.classList.add(level); });
+  label.className = 'strength-label ' + level; label.textContent = text;
+
+  updateMatch();
+}
+
+function updateMatch() {
+  var pw   = document.getElementById('new_pw').value;
+  var cpw  = document.getElementById('conf_pw').value;
+  var hint = document.getElementById('hintMatch');
+  if (!cpw) { hint.textContent = ''; hint.className = 'pform-hint'; }
+  else if (pw === cpw) { hint.innerHTML = '&#10003; Passwords match.'; hint.className = 'pform-hint ok'; }
+  else { hint.innerHTML = '&#10007; Passwords do not match.'; hint.className = 'pform-hint error'; }
+  syncPwBtn();
+}
+
+function syncPwBtn() {
+  var btn = document.getElementById('pwSubmitBtn');
   var cur = document.getElementById('cur_pw').value;
-  if (!cur) { e.preventDefault(); alert('Please enter your current password.'); return; }
-  if (np.length < 6) { e.preventDefault(); alert('New password must be at least 6 characters.'); return; }
-  if (np !== cp) { e.preventDefault(); alert('New passwords do not match.'); return; }
-});
+  var pw  = document.getElementById('new_pw').value;
+  var cpw = document.getElementById('conf_pw').value;
+  var checks = evaluatePw(pw);
+  var allMet = Object.values(checks).every(Boolean);
+  btn.disabled = !(cur.length > 0 && allMet && pw === cpw && cpw.length > 0);
+}
+
+/* Re-evaluate on load if fields were restored after error */
+(function init() {
+  var newPw = document.getElementById('new_pw');
+  if (newPw && newPw.value) { updateStrength(); }
+  syncPwBtn();
+})();
 </script>
 {% endblock %}

@@ -51,17 +51,45 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── Live Clock ──────────────────────────────────────────────────────
+  // ── Live Clock (12-hour AM/PM) ─────────────────────────────────────
   const clockEl = document.getElementById('topbarTime');
   if (clockEl) {
     const tick = () => {
       clockEl.textContent = new Date().toLocaleTimeString('en-US', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
       });
     };
     tick();
     setInterval(tick, 1000);
   }
+
+  // ── Format all DB timestamps to 12-hour AM/PM ───────────────────────
+  // Any element with class "db-ts" or data-ts attribute will be formatted.
+  // We also auto-detect plain text nodes inside .text-muted-sm <td> cells
+  // that look like a MySQL datetime (YYYY-MM-DD HH:MM:SS).
+  function formatDbTimestamp(raw) {
+    if (!raw) return raw;
+    // MySQL datetime: "2026-05-02 23:37:53"  →  "May 02, 2026, 11:37:53 PM"
+    const m = raw.trim().match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+    if (!m) return raw;
+    const dt = new Date(m[1], m[2]-1, m[3], m[4], m[5], m[6]);
+    if (isNaN(dt)) return raw;
+    return dt.toLocaleString('en-US', {
+      year: 'numeric', month: 'short', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+    });
+  }
+
+  // Walk all <td> and <span> elements and reformat any raw MySQL timestamps
+  document.querySelectorAll('td, span, .activity-time, code').forEach(el => {
+    // Only leaf-level text nodes (no child elements except <i>)
+    const children = Array.from(el.childNodes);
+    const hasElementChildren = children.some(n => n.nodeType === 1 && n.tagName !== 'I');
+    if (hasElementChildren) return;
+    const txt = el.textContent.trim();
+    const formatted = formatDbTimestamp(txt);
+    if (formatted !== txt) el.textContent = formatted;
+  });
 
   // ── Generic confirm modal wiring ────────────────────────────────────
   const confirmModal = document.getElementById('confirmModal');

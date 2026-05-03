@@ -7,6 +7,20 @@
 {% endblock %}
 
 {% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-wrap mb-3">
+    {% for category, message in messages %}
+    <div class="flash-msg flash-{{ category }}">
+      {{ message }}
+      <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
 <div class="page-header">
   <div>
     <h2 class="page-heading">College Management</h2>
@@ -38,7 +52,7 @@
         <tbody>
           {% for college in colleges %}
           <tr>
-            <td class="text-muted-sm">{{ loop.index }}</td>
+            <td class="text-muted-sm">{{ (page - 1) * per_page + loop.index }}</td>
             <td><div class="fw-600">{{ college.name }}</div></td>
             <td><span class="badge-status badge-super">{{ college.admin_count }}</span></td>
             <td><span class="badge-status badge-active">{{ college.voter_count }}</span></td>
@@ -86,6 +100,33 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination-wrapper">
+      <span class="pagination-info">
+        Showing {{ (page - 1) * per_page + 1 }}–{{ [(page * per_page), total_colleges] | min }} of {{ total_colleges }} colleges
+      </span>
+      <ul class="pagination-custom">
+        <li class="{{ 'disabled' if page == 1 else '' }}">
+          <a href="?page={{ page - 1 }}"><i class="bi bi-chevron-left"></i></a>
+        </li>
+        {% for p in range(1, total_pages + 1) %}
+          {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+          <li class="{{ 'active' if p == page else '' }}">
+            <a href="?page={{ p }}">{{ p }}</a>
+          </li>
+          {% elif p == page - 3 or p == page + 3 %}
+          <li class="ellipsis"><span>…</span></li>
+          {% endif %}
+        {% endfor %}
+        <li class="{{ 'disabled' if page == total_pages else '' }}">
+          <a href="?page={{ page + 1 }}"><i class="bi bi-chevron-right"></i></a>
+        </li>
+      </ul>
+    </div>
+    {% endif %}
+
     {% else %}
     <div class="empty-state">
       <i class="bi bi-building-x"></i>
