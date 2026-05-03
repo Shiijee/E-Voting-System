@@ -150,7 +150,7 @@
                     </button>
                     <a href="{{ url_for('admin.delete_position', position_id=position.id) }}"
                        class="btn-action btn-action-delete" title="Delete"
-                       onclick="return confirm('Are you sure you want to delete this position?')">
+                       onclick="return vxConfirm(event, 'Delete Position', 'Are you sure you want to delete this position? This cannot be undone.')">
                       <i class="bi bi-trash3-fill"></i>
                     </a>
                   </div>

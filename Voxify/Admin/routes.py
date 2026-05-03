@@ -449,15 +449,41 @@ def edit_election(election_id):
 def activate_election(election_id):
     college_id = get_admin_college_id()
     conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT status, start_date, end_date FROM elections WHERE id=%s", (election_id,))
+    election = cursor.fetchone()
+    is_draft = election and election['status'] == 'draft'
+
+    if is_draft:
+        # Determine what status to restore to based on dates
+        now = datetime.now()
+        start_date = election['start_date']
+        end_date = election['end_date']
+        if isinstance(start_date, str):
+            try: start_date = datetime.fromisoformat(start_date)
+            except: start_date = None
+        if isinstance(end_date, str):
+            try: end_date = datetime.fromisoformat(end_date)
+            except: end_date = None
+
+        if end_date and end_date < now:
+            new_status = 'completed'
+        elif start_date and start_date <= now:
+            new_status = 'active'
+        else:
+            new_status = 'upcoming'
+    else:
+        new_status = 'active'
+
     cursor = conn.cursor()
     if college_id is not None:
-        cursor.execute("UPDATE elections SET status='active' WHERE id=%s AND college_id=%s", (election_id, college_id))
+        cursor.execute("UPDATE elections SET status=%s WHERE id=%s AND (college_id=%s OR college_id IS NULL)", (new_status, election_id, college_id))
     else:
-        cursor.execute("UPDATE elections SET status='active' WHERE id=%s AND college_id IS NULL", (election_id,))
+        cursor.execute("UPDATE elections SET status=%s WHERE id=%s", (new_status, election_id))
     conn.commit()
     cursor.close()
     conn.close()
-    flash("Election activated!", "success")
+    flash(f"Election restored to {new_status}!", "success")
     return redirect(url_for('admin.view_elections'))
 
 @admin_bp.route("/elections/<int:election_id>/deactivate")
@@ -498,6 +524,22 @@ def resume_election(election_id):
     cursor.close()
     conn.close()
     flash("Election resumed!", "success")
+    return redirect(url_for('admin.view_elections'))
+
+@admin_bp.route("/elections/<int:election_id>/archive")
+@admin_required
+def archive_election(election_id):
+    college_id = get_admin_college_id()
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor()
+    if college_id is not None:
+        cursor.execute("UPDATE elections SET status='draft' WHERE id=%s AND (college_id=%s OR college_id IS NULL)", (election_id, college_id))
+    else:
+        cursor.execute("UPDATE elections SET status='draft' WHERE id=%s", (election_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Election moved to draft.", "success")
     return redirect(url_for('admin.view_elections'))
 
 @admin_bp.route("/elections/auto-update", methods=["POST"])
@@ -578,20 +620,22 @@ def view_positions():
             SELECT p.*, e.title as election_title 
             FROM positions p 
             JOIN elections e ON p.election_id = e.id 
-            WHERE e.college_id=%s OR e.college_id IS NULL
+            WHERE e.status NOT IN ('completed', 'draft')
+              AND (e.college_id=%s OR e.college_id IS NULL)
             ORDER BY e.created_at DESC, p.display_order
         """, (college_id,))
         positions = cursor.fetchall()
-        cursor.execute("SELECT id, title FROM elections WHERE status != 'completed' AND (college_id=%s OR college_id IS NULL)", (college_id,))
+        cursor.execute("SELECT id, title FROM elections WHERE status NOT IN ('completed', 'draft') AND (college_id=%s OR college_id IS NULL)", (college_id,))
     else:
         cursor.execute("""
             SELECT p.*, e.title as election_title 
             FROM positions p 
             JOIN elections e ON p.election_id = e.id 
+            WHERE e.status NOT IN ('completed', 'draft')
             ORDER BY e.created_at DESC, p.display_order
         """)
         positions = cursor.fetchall()
-        cursor.execute("SELECT id, title FROM elections WHERE status != 'completed'")
+        cursor.execute("SELECT id, title FROM elections WHERE status NOT IN ('completed', 'draft')")
     elections = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -1442,8 +1486,3 @@ def update_profile():
     cursor.close()
     conn.close()
     return redirect(url_for('admin.view_profile'))
-
-
-                                              
-                                         
-                                              

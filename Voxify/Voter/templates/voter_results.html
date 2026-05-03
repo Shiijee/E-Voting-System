@@ -23,96 +23,183 @@
   <div class="card-panel-body">
     <div class="results-selector">
       <label class="results-selector-label">Select Election:</label>
-      <form method="GET" action="{{ url_for('voter.results') }}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-        <select name="election_id" class="results-select" onchange="submitElectionForm(this)">
-          <option value="">Choose an election…</option>
-          {% for election in elections %}
-          <option value="{{ election.id }}" {% if election_id == election.id %}selected{% endif %}>
-            {{ election.title }}
-          </option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="btn-primary-custom" style="padding:8px 18px;font-size:0.85rem;">View Results</button>
+      <form method="GET" action="{{ url_for('voter.results') }}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;flex:1;">
+        <div class="results-select-wrap">
+          <i class="bi bi-bar-chart-fill results-select-icon"></i>
+          <select name="election_id" class="results-select" onchange="submitElectionForm(this)">
+            <option value="">Choose an election…</option>
+            {% for election in elections %}
+            <option value="{{ election.id }}" {% if election_id == election.id %}selected{% endif %}>
+              {{ election.title }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-primary-custom" style="padding:9px 20px;font-size:0.85rem;white-space:nowrap;">
+          View Results
+        </button>
       </form>
     </div>
   </div>
 </div>
 
 {% if selected_election %}
+
 <!-- Summary Stats -->
-<div class="results-stats-row">
-  <div class="results-stat-card">
-    <i class="bi bi-check2-square text-blue"></i>
+<div class="results-stats-row mb-4">
+  <div class="results-stat-card results-stat-navy">
+    <div class="results-stat-icon-wrap">
+      <i class="bi bi-people-fill"></i>
+    </div>
     <div>
       <span class="results-stat-num">{{ total_votes }}</span>
       <span class="results-stat-label">Voters Participated</span>
     </div>
   </div>
-  <div class="results-stat-card">
-    <i class="bi bi-layout-three-columns text-amber"></i>
+  <div class="results-stat-card results-stat-amber">
+    <div class="results-stat-icon-wrap">
+      <i class="bi bi-layout-three-columns"></i>
+    </div>
     <div>
       <span class="results-stat-num">{{ results|length }}</span>
       <span class="results-stat-label">Positions on Ballot</span>
     </div>
   </div>
-  {% if user_voted %}
-  <div class="results-stat-card">
-    <i class="bi bi-check2-circle" style="color:#16a34a;font-size:1.6rem;"></i>
+  <div class="results-stat-card results-stat-green">
+    <div class="results-stat-icon-wrap">
+      <i class="bi bi-trophy-fill"></i>
+    </div>
     <div>
-      <span class="results-stat-num" style="color:#16a34a;">✓</span>
-      <span class="results-stat-label">You Voted</span>
+      <span class="results-stat-num">{{ results|selectattr('total_votes','gt',0)|list|length }}</span>
+      <span class="results-stat-label">Decided Positions</span>
+    </div>
+  </div>
+  {% if user_voted %}
+  <div class="results-stat-card results-stat-voted">
+    <div class="results-stat-icon-wrap">
+      <i class="bi bi-check2-circle"></i>
+    </div>
+    <div>
+      <span class="results-stat-num" style="font-size:1.3rem;">Voted</span>
+      <span class="results-stat-label">Your Participation</span>
     </div>
   </div>
   {% endif %}
 </div>
 
 {% if results %}
+
+<!-- Search + Filter Toolbar -->
+<div class="results-toolbar mb-4">
+  <div class="results-search-wrap">
+    <i class="bi bi-search results-search-icon"></i>
+    <input type="text" id="candidateSearch" class="results-search-input"
+           placeholder="Search candidates by name…"
+           oninput="filterResults()" autocomplete="off">
+    <button class="results-search-clear" id="searchClearBtn" onclick="clearSearch()" style="display:none;" title="Clear">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+  <div class="results-tabs" id="positionTabs">
+    <button class="results-tab active" data-target="all" onclick="switchTab(this)">
+      <i class="bi bi-grid-3x3-gap" style="margin-right:5px;"></i>All
+    </button>
+    {% for result in results %}
+    <button class="results-tab" data-target="pos-{{ loop.index }}" onclick="switchTab(this)">
+      {{ result.position.title }}
+    </button>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- No search results message -->
+<div id="noSearchResults" style="display:none;" class="card-panel mb-4">
+  <div class="card-panel-body">
+    <div class="empty-state">
+      <i class="bi bi-search"></i>
+      <h5>No candidates found</h5>
+      <p>Try a different name or clear the search.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Position Cards -->
 {% for result in results %}
-<div class="card-panel result-position-card">
+<div class="card-panel result-position-card mb-4" id="pos-{{ loop.index }}" data-position-index="{{ loop.index }}">
   <div class="card-panel-header">
     <div class="result-position-header">
       <div class="result-position-title">
-        <i class="bi bi-trophy-fill text-amber" style="margin-right:8px;"></i>
-        <h5 class="card-panel-title">{{ result.position.title }}</h5>
+        <div class="result-position-icon">
+          <i class="bi bi-trophy-fill"></i>
+        </div>
+        <div>
+          <h5 class="card-panel-title" style="margin:0;">{{ result.position.title }}</h5>
+          <span style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;">
+            {{ result.total_votes }} vote{{ 's' if result.total_votes != 1 else '' }} cast
+          </span>
+        </div>
       </div>
-      <span class="text-muted-sm">{{ result.total_votes }} vote{{ 's' if result.total_votes != 1 else '' }}</span>
+      {% if result.total_votes > 0 and result.candidates %}
+      <span class="result-winner-pill">
+        <i class="bi bi-trophy-fill" style="font-size:0.68rem;margin-right:5px;"></i>
+        {{ result.candidates[0].candidate.full_name }}
+      </span>
+      {% endif %}
     </div>
   </div>
-  <div class="card-panel-body">
+  <div class="card-panel-body" style="padding-top:14px;">
     <div class="results-list">
       {% if result.candidates %}
       {% for item in result.candidates %}
-      <div class="result-row {% if loop.first and result.total_votes > 0 %}result-row-winner{% endif %}">
+      <div class="result-row {% if loop.first and result.total_votes > 0 %}result-row-winner{% endif %}"
+           data-candidate-name="{{ item.candidate.full_name|lower }}">
+
         <div class="result-rank">
           {% if loop.first and result.total_votes > 0 %}
-          <i class="bi bi-trophy-fill text-amber"></i>
+          <div class="result-rank-trophy"><i class="bi bi-trophy-fill"></i></div>
           {% else %}
-          <span>{{ loop.index }}</span>
+          <div class="result-rank-num">{{ loop.index }}</div>
           {% endif %}
         </div>
+
         <div class="result-candidate">
-          <div class="result-avatar">{{ item.candidate.full_name[0] if item.candidate.full_name else '?' }}</div>
+          <div class="result-avatar {% if loop.first and result.total_votes > 0 %}result-avatar-winner{% endif %}">
+            {% if item.candidate.photo %}
+            <img src="{{ url_for('admin.static', filename='uploads/candidates/' + item.candidate.photo) }}" alt="{{ item.candidate.full_name }}">
+            {% else %}
+            {{ item.candidate.full_name[0] if item.candidate.full_name else '?' }}
+            {% endif %}
+          </div>
           <div>
             <span class="result-candidate-name">{{ item.candidate.full_name }}</span>
-            <span class="result-candidate-party">ID: {{ item.candidate.student_id or '—' }}</span>
+            <span class="result-candidate-party">{{ item.candidate.student_id or '—' }}</span>
           </div>
         </div>
+
         <div class="result-votes">
-          <span class="result-count">{{ item.vote_count }}</span>
+          <span class="result-count {% if loop.first and result.total_votes > 0 %}result-count-winner{% endif %}">
+            {{ item.vote_count }}
+          </span>
           <span class="result-pct">{{ item.percentage }}%</span>
         </div>
+
         <div class="result-bar-wrap">
-          <div class="result-bar" style="width:{{ item.percentage }}%"></div>
+          <div class="result-bar {% if loop.first and result.total_votes > 0 %}result-bar-winner{% endif %}"
+               style="width:{{ item.percentage }}%"></div>
         </div>
       </div>
       {% endfor %}
       {% else %}
-      <div class="text-muted-sm" style="text-align:center;padding:20px 0;">No candidates registered for this position.</div>
+      <div style="text-align:center;padding:28px 0;color:var(--muted);font-size:0.88rem;">
+        <i class="bi bi-person-x" style="font-size:1.5rem;display:block;margin-bottom:8px;opacity:0.4;"></i>
+        No candidates registered for this position.
+      </div>
       {% endif %}
     </div>
   </div>
 </div>
 {% endfor %}
+
 {% else %}
 <div class="card-panel">
   <div class="card-panel-body">

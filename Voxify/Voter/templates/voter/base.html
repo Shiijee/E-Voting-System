@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}Voter Portal{% endblock %} — SecureVote</title>
+  <title>{% block title %}Voter Portal{% endblock %} — Voxify</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
@@ -15,9 +15,14 @@
 <!-- ── Sidebar ─────────────────────────────── -->
 <div class="sidebar" id="sidebar">
   <div class="sidebar-brand">
-    <div class="brand-icon"><i class="bi bi-shield-check-fill"></i></div>
+    <div class="brand-icon">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 2L33 10.5V25.5L18 34L3 25.5V10.5L18 2Z" fill="#C9A84C"/>
+        <path d="M11 18L15.5 22.5L25 13" stroke="#1a2744" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
     <div class="brand-text">
-      <span class="brand-name">SecureVote</span>
+      <span class="brand-name">Voxify</span>
       <span class="brand-sub">Voter Portal</span>
     </div>
   </div>
@@ -53,7 +58,8 @@
       <i class="bi bi-person-fill"></i>
       <span>My Profile</span>
     </a>
-    <a href="{{ url_for('auth.logout') }}" class="nav-item nav-item-danger">
+    <a href="{{ url_for('auth.logout') }}" class="nav-item nav-item-danger"
+       onclick="return vxConfirm(event, 'Logout', 'Are you sure you want to logout?')">
       <i class="bi bi-box-arrow-left"></i>
       <span>Logout</span>
     </a>
@@ -89,8 +95,120 @@
   </main>
 </div>
 
+{% block modals %}{% endblock %}
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('voter.static', filename='js/voter.js') }}"></script>
 {% block extra_js %}{% endblock %}
+
+<!-- Voxify Confirm Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+    <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(13,17,23,0.28);">
+      <div class="modal-header" style="background:var(--navy);padding:20px 24px 18px;border:none;position:relative;">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--navy-mid));"></div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div id="confirmModalIcon" style="width:38px;height:38px;border-radius:10px;background:rgba(212,168,67,0.18);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:1.15rem;flex-shrink:0;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <h5 class="modal-title" style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:#fff;margin:0;" id="confirmModalTitle">Confirm Action</h5>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="filter:invert(1) brightness(2);opacity:0.7;margin:0;"></button>
+      </div>
+      <div class="modal-body" style="padding:24px 24px 20px;color:var(--ink);font-size:0.92rem;line-height:1.6;background:#fff;" id="confirmModalBody">
+        Are you sure?
+      </div>
+      <div class="modal-footer" style="padding:14px 24px 20px;border-top:1px solid var(--border);background:#fff;gap:10px;justify-content:flex-end;">
+        <button type="button" class="btn" data-bs-dismiss="modal"
+          style="padding:9px 22px;border-radius:8px;font-weight:500;font-size:0.88rem;background:var(--paper);color:var(--ink);border:1px solid var(--border);">
+          Cancel
+        </button>
+        <button type="button" class="btn" id="confirmModalBtn"
+          style="padding:9px 22px;border-radius:8px;font-weight:600;font-size:0.88rem;background:var(--navy);color:#fff;border:none;">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function vxConfirm(e, title, message, opts) {
+  e.preventDefault();
+  var href = (e.currentTarget && e.currentTarget.href) ? e.currentTarget.href : null;
+  var options = opts || {};
+  var titleEl = document.getElementById('confirmModalTitle');
+  var bodyEl  = document.getElementById('confirmModalBody');
+  var iconEl  = document.getElementById('confirmModalIcon');
+  var btn     = document.getElementById('confirmModalBtn');
+  if (titleEl) titleEl.textContent = title || 'Confirm Action';
+  if (bodyEl)  bodyEl.textContent  = message || 'Are you sure?';
+  var danger = options.danger || /delete|remove|permanently/i.test(title + ' ' + message);
+  var warn   = options.warn   || /archive|logout|close|move/i.test(title + ' ' + message);
+  if (iconEl) {
+    if (danger) {
+      iconEl.style.background = 'rgba(200,57,43,0.12)';
+      iconEl.style.color      = '#c8392b';
+      iconEl.innerHTML        = '<i class="bi bi-shield-exclamation"></i>';
+    } else if (warn) {
+      iconEl.style.background = 'rgba(212,168,67,0.18)';
+      iconEl.style.color      = 'var(--gold)';
+      iconEl.innerHTML        = '<i class="bi bi-exclamation-triangle-fill"></i>';
+    } else {
+      iconEl.style.background = 'rgba(26,58,92,0.12)';
+      iconEl.style.color      = 'var(--navy)';
+      iconEl.innerHTML        = '<i class="bi bi-question-circle-fill"></i>';
+    }
+  }
+  if (btn) {
+    btn.style.background = danger ? '#c8392b' : warn ? 'var(--gold)' : 'var(--navy)';
+    btn.style.color      = (warn && !danger) ? 'var(--ink)' : '#fff';
+    btn.textContent      = options.confirmText || 'Confirm';
+    btn.onclick = function () {
+      bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+      if (href) window.location.href = href;
+      if (options.onConfirm) options.onConfirm();
+    };
+  }
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmModal')).show();
+  return false;
+}
+</script>
+
+<!-- Flash Toast Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}
+<style>
+#vx-toast-wrap { position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none; }
+.vx-toast { display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:10px;font-size:0.88rem;font-weight:500;min-width:280px;max-width:380px;box-shadow:0 8px 24px rgba(0,0,0,0.18);pointer-events:all;animation:vxSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;color:#fff;background:#1a2744;border-left:5px solid #C9A84C; }
+.vx-toast-icon { font-size:1rem;flex-shrink:0; }
+.vx-toast-msg  { flex:1;line-height:1.4; }
+.vx-toast-close { background:none;border:none;color:rgba(255,255,255,0.5);font-size:1rem;cursor:pointer;padding:0;line-height:1; }
+.vx-toast-close:hover { color:#fff; }
+@keyframes vxSlideIn { from{opacity:0;transform:translateX(60px)} to{opacity:1;transform:translateX(0)} }
+@keyframes vxSlideOut { from{opacity:1;transform:translateX(0);max-height:80px} to{opacity:0;transform:translateX(60px);max-height:0;padding:0;margin:0} }
+</style>
+<div id="vx-toast-wrap">
+{% for category, message in messages %}
+{% if category == 'success' %}{% set tc = 'vx-success' %}{% set icon = 'bi-check-circle-fill' %}
+{% elif category in ('error','danger') %}{% set tc = 'vx-error' %}{% set icon = 'bi-x-circle-fill' %}
+{% elif category == 'warning' %}{% set tc = 'vx-warning' %}{% set icon = 'bi-exclamation-triangle-fill' %}
+{% else %}{% set tc = 'vx-info' %}{% set icon = 'bi-info-circle-fill' %}{% endif %}
+<div class="vx-toast {{ tc }}" id="vxt-{{ loop.index }}">
+  <i class="bi {{ icon }} vx-toast-icon"></i>
+  <span class="vx-toast-msg">{{ message }}</span>
+  <button class="vx-toast-close" onclick="this.closest('.vx-toast').remove()">&#x2715;</button>
+</div>
+{% endfor %}
+</div>
+<script>
+  document.querySelectorAll('.vx-toast').forEach(function(t) {
+    setTimeout(function() {
+      t.style.animation = 'vxSlideOut 0.4s ease forwards';
+      setTimeout(function() { t.remove(); }, 400);
+    }, 5000);
+  });
+</script>
+{% endif %}{% endwith %}
+
 </body>
 </html>

@@ -152,7 +152,7 @@
               </span>
               {% endif %}
             </td>
-            <td class="col-created text-muted-sm">{{ admin.created_at }}</td>
+            <td class="col-created text-muted-sm">{{ admin.created_at.strftime('%b %d, %Y, %I:%M:%S %p') if admin.created_at else '—' }}</td>
             <td class="col-actions">
               <div class="action-buttons">
                 <a href="{{ url_for('super_admin.edit_admin', admin_id=admin.id) }}" class="btn-action btn-action-edit" title="Edit Admin">

@@ -122,7 +122,7 @@
   border-radius: 50%;
   opacity: 0.12;
 }
-.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+/* stat-card hover removed — cards are not clickable */
 .stat-card-purple { background: linear-gradient(135deg, #3b0764 0%, #4c1d95 100%); color: #fff; border-color: rgba(255,255,255,0.05); }
 .stat-card-blue   { background: linear-gradient(135deg, #1e3a5f 0%, #1a3a5c 100%); color: #fff; border-color: rgba(255,255,255,0.05); }
 .stat-card-green  { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); color: #fff; border-color: rgba(255,255,255,0.05); }
@@ -228,7 +228,7 @@
   color: var(--ink);
   vertical-align: middle;
 }
-.table-custom tbody tr:hover td { background: #fdf8f0; }
+/* row hover removed — rows are not clickable */
 .table-custom tbody tr:last-child td { border-bottom: none; }
 
 /* ── Badges ────────────────────────────────────────── */

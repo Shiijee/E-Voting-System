@@ -8,6 +8,79 @@
 
 {% block extra_js %}
 <script src="{{ url_for('voter.static', filename='js/voter_elections.js') }}"></script>
+<script>
+function openResultsModal(btn) {
+  var url   = btn.dataset.resultsUrl;
+  var title = btn.dataset.electionTitle;
+  document.getElementById('resultsModalTitle').textContent = title;
+  document.getElementById('resultsModalBody').innerHTML =
+    '<div style="text-align:center;padding:48px 0;"><div class="spinner-border spinner-border-sm" style="color:var(--gold);" role="status"></div><p style="margin-top:12px;font-size:0.85rem;color:var(--navy);opacity:0.6;">Loading results...</p></div>';
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('resultsModal')).show();
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var body = document.getElementById('resultsModalBody');
+      if (!data.positions || !data.positions.length) {
+        body.innerHTML = '<div style="text-align:center;padding:48px 0;"><i class="bi bi-inbox" style="font-size:2rem;color:var(--border);"></i><p style="margin-top:12px;font-size:0.88rem;color:var(--navy);opacity:0.5;">No results available yet.</p></div>';
+        return;
+      }
+
+      var html = '<div style="display:flex;gap:12px;margin-bottom:24px;">'
+        + '<div style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:16px 20px;text-align:center;">'
+        + '<div style="font-family:\'Playfair Display\',serif;font-size:1.8rem;font-weight:700;color:var(--navy);line-height:1;">' + data.total_voters_voted + '</div>'
+        + '<div style="font-size:0.7rem;color:var(--muted);margin-top:5px;letter-spacing:0.07em;">VOTERS PARTICIPATED</div>'
+        + '</div>'
+        + '<div style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:16px 20px;text-align:center;">'
+        + '<div style="font-family:\'Playfair Display\',serif;font-size:1.8rem;font-weight:700;color:var(--navy);line-height:1;">' + data.positions.length + '</div>'
+        + '<div style="font-size:0.7rem;color:var(--navy);opacity:0.55;margin-top:5px;letter-spacing:0.07em;">POSITIONS</div>'
+        + '</div></div>';
+
+      data.positions.forEach(function(pos) {
+        html += '<div style="border:1.5px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;background:#fff;">'
+          + '<div style="background:var(--navy);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;">'
+          + '<span style="font-family:\'Playfair Display\',serif;font-weight:700;color:#fff;font-size:0.92rem;">' + pos.title + '</span>'
+          + '<span style="font-size:0.72rem;color:rgba(255,255,255,0.45);background:rgba(255,255,255,0.08);padding:3px 10px;border-radius:20px;">'
+          + pos.total_votes + ' vote' + (pos.total_votes !== 1 ? 's' : '') + '</span>'
+          + '</div>';
+
+        if (!pos.candidates || !pos.candidates.length) {
+          html += '<div style="padding:18px;font-size:0.85rem;color:var(--navy);opacity:0.45;text-align:center;font-style:italic;">No candidates assigned.</div>';
+        } else {
+          html += '<div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;">';
+          pos.candidates.forEach(function(c, idx) {
+            var pct = pos.total_votes > 0 ? Math.round((c.vote_count / pos.total_votes) * 100) : 0;
+            var win = idx === 0 && pos.total_votes > 0;
+            html += '<div style="border-radius:10px;padding:12px 14px;background:' + (win ? 'rgba(212,168,67,0.1)' : 'var(--paper)') + ';border:1.5px solid ' + (win ? 'var(--gold)' : 'var(--border)') + ';">';
+            html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
+            if (win) {
+              html += '<div style="width:28px;height:28px;border-radius:8px;background:rgba(212,168,67,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'
+                + '<i class="bi bi-trophy-fill" style="color:var(--gold);font-size:0.8rem;"></i></div>';
+            } else {
+              html += '<div style="width:28px;height:28px;border-radius:8px;background:rgba(26,58,92,0.07);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem;font-weight:700;color:var(--navy);opacity:0.5;">' + (idx + 1) + '</div>';
+            }
+            html += '<span style="font-weight:700;font-size:0.9rem;color:var(--navy);flex:1;">' + c.name + '</span>';
+            html += '<span style="font-weight:700;font-size:0.88rem;color:' + (win ? 'var(--gold)' : 'var(--navy)') + ';opacity:' + (win ? '1' : '0.6') + ';">' + c.vote_count + ' <span style="font-weight:400;font-size:0.78rem;">(' + pct + '%)</span></span>';
+            html += '</div>';
+            html += '<div style="height:7px;background:var(--border);border-radius:4px;overflow:hidden;">'
+              + '<div style="height:100%;width:' + pct + '%;background:' + (win ? 'linear-gradient(90deg,var(--gold),#e8c060)' : 'var(--navy)') + ';border-radius:4px;opacity:' + (win ? '1' : '0.35') + ';transition:width 0.6s cubic-bezier(0.4,0,0.2,1);"></div>'
+              + '</div>';
+            html += '</div>';
+          });
+          html += '</div>';
+        }
+        html += '</div>';
+      });
+
+      body.innerHTML = html;
+    })
+    .catch(function(err) {
+      document.getElementById('resultsModalBody').innerHTML =
+        '<div style="text-align:center;padding:48px 0;"><i class="bi bi-exclamation-triangle" style="font-size:2rem;color:var(--accent);"></i><p style="margin-top:12px;font-size:0.88rem;color:var(--accent);">Failed to load results. Please try again.</p></div>';
+      console.error(err);
+    });
+}
+</script>
 {% endblock %}
 
 {% block content %}
@@ -18,22 +91,7 @@
   </div>
 </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-  <div style="margin-bottom:16px;">
-    {% for category, message in messages %}
-    <div class="flash-msg flash-{{ category }}" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-radius:8px;font-size:0.87rem;font-weight:500;margin-bottom:8px;
-      {% if category == 'success' %}background:#f0fdf4;color:#166534;border-left:4px solid #22c55e;
-      {% elif category == 'error' or category == 'danger' %}background:#fef2f2;color:#991b1b;border-left:4px solid #ef4444;
-      {% elif category == 'warning' %}background:#fffbeb;color:#92400e;border-left:4px solid #f59e0b;
-      {% else %}background:#eff6ff;color:#1e40af;border-left:4px solid #3b82f6;{% endif %}">
-      {{ message }}
-      <button onclick="closeFlashMessage(this)" style="background:none;border:none;cursor:pointer;font-size:1.1rem;opacity:0.5;padding:0 4px;">&times;</button>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-{% endwith %}
+
 
 {% if elections %}
 <div class="elections-grid">
@@ -71,9 +129,13 @@
     <div class="election-card-footer">
       {% if election.has_voted %}
       <span class="text-muted-sm"><i class="bi bi-check2-circle" style="margin-right:4px;color:#16a34a;"></i>You have voted</span>
-      <a href="{{ url_for('voter.results', election_id=election.id) }}" class="btn-outline-custom" style="padding:7px 16px;font-size:0.82rem;">
-        <i class="bi bi-bar-chart" style="margin-right:4px;"></i>Results
-      </a>
+      <button type="button"
+        data-results-url="{{ url_for('voter.quick_results', election_id=election.id) }}"
+        data-election-title="{{ election.title|e }}"
+        onclick="openResultsModal(this)"
+        style="padding:7px 16px;font-size:0.82rem;border:1px solid var(--navy);background:transparent;color:var(--navy);border-radius:8px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-family:inherit;">
+        <i class="bi bi-bar-chart"></i>Results
+      </button>
       {% elif election.status == 'active' %}
       <span class="text-muted-sm" style="color:var(--navy);font-weight:600;">Ready to vote</span>
       <a href="{{ url_for('voter.ballot', election_id=election.id) }}" class="btn-primary-custom" style="padding:8px 18px;font-size:0.82rem;">
@@ -84,9 +146,13 @@
       <span class="badge-status" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;"><i class="bi bi-pause-fill" style="margin-right:4px;"></i>Paused</span>
       {% elif election.status == 'completed' %}
       <span class="text-muted-sm">Election ended</span>
-      <a href="{{ url_for('voter.results', election_id=election.id) }}" class="btn-outline-custom" style="padding:7px 16px;font-size:0.82rem;">
-        <i class="bi bi-bar-chart" style="margin-right:4px;"></i>Results
-      </a>
+      <button type="button"
+        data-results-url="{{ url_for('voter.quick_results', election_id=election.id) }}"
+        data-election-title="{{ election.title|e }}"
+        onclick="openResultsModal(this)"
+        style="padding:7px 16px;font-size:0.82rem;border:1px solid var(--navy);background:transparent;color:var(--navy);border-radius:8px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-family:inherit;">
+        <i class="bi bi-bar-chart"></i>Results
+      </button>
       {% else %}
       <span class="text-muted-sm">Not yet open</span>
       <span class="badge-status badge-upcoming"><i class="bi bi-clock" style="margin-right:4px;"></i>Upcoming</span>
@@ -106,4 +172,51 @@
   </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block modals %}
+<!-- Results Quick View Modal -->
+<div class="modal fade" id="resultsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width:560px;">
+    <div class="modal-content" style="border:none;border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(13,17,23,0.32);background:var(--paper);">
+
+      <!-- Header -->
+      <div class="modal-header" style="background:var(--navy);padding:22px 28px 20px;border:none;position:relative;">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--navy-mid));"></div>
+        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
+          <div style="width:40px;height:40px;border-radius:12px;background:rgba(212,168,67,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-bar-chart-fill" style="color:var(--gold);font-size:1.1rem;"></i>
+          </div>
+          <div style="min-width:0;">
+            <div id="resultsModalTitle" style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+            <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:1px;letter-spacing:0.05em;">ELECTION RESULTS</div>
+          </div>
+        </div>
+        <button type="button" data-bs-dismiss="modal"
+          style="background:rgba(255,255,255,0.08);border:none;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.7);cursor:pointer;flex-shrink:0;font-size:1rem;transition:background 0.15s;"
+          onmouseover="this.style.background='rgba(255,255,255,0.18)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body" id="resultsModalBody" style="padding:24px;background:var(--paper);min-height:180px;">
+        <div style="text-align:center;padding:48px 0;color:var(--navy);">
+          <div class="spinner-border spinner-border-sm" role="status" style="color:var(--gold);"></div>
+          <p style="margin-top:12px;font-size:0.85rem;color:var(--navy);opacity:0.6;">Loading results...</p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer" style="border-top:1px solid var(--border);background:var(--paper);padding:14px 24px;">
+        <button type="button" data-bs-dismiss="modal"
+          style="padding:9px 24px;border-radius:9px;font-weight:600;font-size:0.88rem;background:var(--navy);color:#fff;border:none;cursor:pointer;font-family:inherit;transition:opacity 0.15s;"
+          onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

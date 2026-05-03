@@ -98,7 +98,7 @@ def elections():
                (SELECT COUNT(*) FROM votes v WHERE v.election_id = e.id AND v.voter_id = %s) as has_voted,
                (SELECT COUNT(*) FROM positions p WHERE p.election_id = e.id) as position_count
         FROM elections e
-        WHERE e.college_id = %s
+        WHERE e.college_id = %s AND e.status != 'draft'
         ORDER BY e.created_at DESC
     """, (session['user_id'], college_id))
     elections = cursor.fetchall()
@@ -291,6 +291,58 @@ def results():
     return render_template("voter_results.html", elections=elections, election_id=election_id,
                          selected_election=selected_election, results=results, 
                          total_votes=total_votes, user_voted=user_voted)
+
+@voter_bp.route("/elections/<int:election_id>/quick-results")
+@voter_required
+def quick_results(election_id):
+    from flask import jsonify
+    college_id = get_voter_college_id()
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM elections WHERE id=%s AND college_id=%s", (election_id, college_id))
+    election = cursor.fetchone()
+    if not election:
+        cursor.close(); conn.close()
+        return jsonify({'error': 'Not found'}), 404
+
+    cursor.execute("""
+        SELECT p.id AS position_id, p.title AS position_title,
+               c.id AS candidate_id,
+               CONCAT(COALESCE(c.firstname,''), ' ', COALESCE(c.middlename,''), ' ', COALESCE(c.surname,'')) AS full_name,
+               COUNT(v.id) AS vote_count
+        FROM positions p
+        LEFT JOIN candidates c ON c.position_id = p.id
+        LEFT JOIN votes v ON v.candidate_id = c.id AND v.election_id = %s
+        WHERE p.election_id = %s
+        GROUP BY p.id, p.title, c.id, c.firstname, c.middlename, c.surname
+        ORDER BY p.display_order, vote_count DESC
+    """, (election_id, election_id))
+    rows = cursor.fetchall()
+
+    cursor.execute("SELECT COUNT(DISTINCT voter_id) as total FROM votes WHERE election_id=%s", (election_id,))
+    total_voters_voted = cursor.fetchone()['total'] or 0
+
+    cursor.close(); conn.close()
+
+    positions = {}
+    for row in rows:
+        pos = positions.setdefault(row['position_id'], {
+            'title': row['position_title'],
+            'candidates': [],
+            'total_votes': 0
+        })
+        if row['candidate_id'] is not None:
+            pos['candidates'].append({
+                'name': row['full_name'].strip(),
+                'vote_count': row['vote_count'] or 0
+            })
+            pos['total_votes'] += row['vote_count'] or 0
+
+    return jsonify({
+        'positions': list(positions.values()),
+        'total_voters_voted': total_voters_voted
+    })
 
 @voter_bp.route("/profile")
 @voter_required

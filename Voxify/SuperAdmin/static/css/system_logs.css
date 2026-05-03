@@ -124,7 +124,7 @@
   color: var(--ink);
   vertical-align: middle;
 }
-.table-custom tbody tr:hover td { background: #fdf8f0; }
+/* row hover removed — rows are not clickable */
 .table-custom tbody tr:last-child td { border-bottom: none; }
 
 /* ── Badges ────────────────────────────────────────── */

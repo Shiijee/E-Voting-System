@@ -12,14 +12,8 @@
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
-  transition: transform var(--ease), box-shadow var(--ease);
   display: flex;
   flex-direction: column;
-}
-
-.election-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
 }
 
 .election-card-banner {

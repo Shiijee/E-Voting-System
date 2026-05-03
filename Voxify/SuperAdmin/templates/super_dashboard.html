@@ -87,7 +87,7 @@
                     <span class="badge-status badge-warning"><i class="bi bi-circle-fill me-1" style="font-size:6px"></i>Inactive</span>
                   {% endif %}
                 </td>
-                <td class="text-muted-sm">{{ admin.created_at }}</td>
+                <td class="text-muted-sm" style="white-space: nowrap;">{{ admin.created_at.strftime('%b %d, %Y, %I:%M:%S %p') if admin.created_at else '—' }}</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -122,7 +122,7 @@
                 {% if log.firstname %}{{ log.firstname }} {{ log.surname }}{% if log.role %} · {{ log.role.title() }}{% endif %}{% else %}—{% endif %}
               </span>
             </div>
-            <span class="activity-time">{{ log.created_at }}</span>
+            <span class="activity-time" style="white-space: nowrap;">{{ log.created_at.strftime('%b %d, %Y, %I:%M:%S %p') if log.created_at else '—' }}</span>
           </div>
           {% endfor %}
         </div>

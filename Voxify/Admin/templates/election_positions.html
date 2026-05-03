@@ -8,6 +8,7 @@
 {% endblock %}
 
 {% block content %}
+<div id="electionPosPageData" data-uploads-url="{{ url_for('admin.static', filename='uploads/candidates/') }}" style="display:none;"></div>
 <div class="page-header">
   <div>
     <h2 class="page-heading">{{ election.title }}</h2>

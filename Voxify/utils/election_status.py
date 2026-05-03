@@ -17,7 +17,7 @@ def sync_election_statuses(conn, college_id=None):
                 ELSE status
             END
             WHERE (college_id=%s OR college_id IS NULL)
-              AND status NOT IN ('paused', 'completed')
+              AND status NOT IN ('paused', 'completed', 'draft')
             """,
             (college_id,)
         )
@@ -31,7 +31,7 @@ def sync_election_statuses(conn, college_id=None):
                 WHEN start_date > NOW() THEN 'upcoming'
                 ELSE status
             END
-            WHERE status NOT IN ('paused', 'completed')
+            WHERE status NOT IN ('paused', 'completed', 'draft')
             """
         )
     conn.commit()

@@ -85,7 +85,7 @@
         <h5 class="card-panel-title"><i class="bi bi-pie-chart-fill me-2"></i>Voter Turnout</h5>
       </div>
       <div class="card-panel-body">
-        <div class="turnout-widget" data-total-votes="{{ total_votes }}" data-total-voters="{{ total_voters }}">
+        <div class="turnout-widget" data-total-votes="{{ turnout_votes_cast }}" data-total-voters="{{ total_voters }}">
           <div class="turnout-ring-wrap">
             <svg class="turnout-ring" viewBox="0 0 100 100">
               <circle class="ring-bg" cx="50" cy="50" r="38" />
@@ -99,11 +99,16 @@
               <span class="turnout-pct-label">turnout</span>
             </div>
           </div>
+          {% if turnout_election_title %}
+          <p class="text-muted small text-center mb-2" style="font-size:0.75rem;">
+            Based on: <strong>{{ turnout_election_title }}</strong>
+          </p>
+          {% endif %}
           <div class="turnout-legend">
             <div class="turnout-leg-item">
               <span class="leg-dot leg-dot-navy"></span>
               <div>
-                <span class="leg-val">{{ total_votes }}</span>
+                <span class="leg-val">{{ turnout_votes_cast }}</span>
                 <span class="leg-lbl">Votes Cast</span>
               </div>
             </div>

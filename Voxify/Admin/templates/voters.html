@@ -77,12 +77,12 @@
                 <a href="{{ url_for('admin.archive_voter', voter_id=voter.id) }}"
                    class="btn-action btn-action-warn"
                    title="Archive voter"
-                   onclick="return confirm('Archive this voter? They will no longer be able to vote.')">
+                   onclick="return vxConfirm(event, 'Archive Voter', 'Archive this voter? They will no longer be able to vote.')">
                   <i class="bi bi-archive-fill"></i>
                 </a>
                 <a href="{{ url_for('admin.delete_voter', voter_id=voter.id) }}"
                    class="btn-action btn-action-delete" title="Delete permanently"
-                   onclick="return confirm('Permanently delete this voter? This cannot be undone.')">
+                   onclick="return vxConfirm(event, 'Delete Voter', 'Permanently delete this voter? This cannot be undone.')">
                   <i class="bi bi-trash3-fill"></i>
                 </a>
               </div>
@@ -155,7 +155,7 @@
                 </a>
                 <a href="{{ url_for('admin.delete_voter', voter_id=voter.id) }}"
                    class="btn-action btn-action-delete" title="Delete permanently"
-                   onclick="return confirm('Permanently delete this voter? This cannot be undone.')">
+                   onclick="return vxConfirm(event, 'Delete Voter', 'Permanently delete this voter? This cannot be undone.')">
                   <i class="bi bi-trash3-fill"></i>
                 </a>
               </div>

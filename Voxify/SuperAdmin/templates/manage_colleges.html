@@ -44,24 +44,24 @@
       <table class="table-custom">
         <thead>
           <tr>
-            <th>#</th>
-            <th>College Name</th>
-            <th>Admins</th>
-            <th>Voters</th>
-            <th>Elections</th>
-            <th>Created</th>
-            <th>Actions</th>
+            <th class="col-num-sm">#</th>
+            <th class="col-college-name">College Name</th>
+            <th class="col-admins">Admins</th>
+            <th class="col-voters">Voters</th>
+            <th class="col-elections">Elections</th>
+            <th class="col-created">Created</th>
+            <th class="col-actions-sm">Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for college in colleges %}
           <tr>
-            <td class="text-muted-sm">{{ (page - 1) * per_page + loop.index }}</td>
-            <td><div class="fw-600">{{ college.name }}</div></td>
-            <td><span class="badge-status badge-super">{{ college.admin_count }}</span></td>
-            <td><span class="badge-status badge-active">{{ college.voter_count }}</span></td>
-            <td>{{ college.election_count }}</td>
-            <td class="text-muted-sm">{{ college.created_at }}</td>
+            <td class="col-num-sm text-muted-sm">{{ (page - 1) * per_page + loop.index }}</td>
+            <td class="col-college-name"><div class="fw-600">{{ college.name }}</div></td>
+            <td class="col-admins" style="text-align:center;"><span class="badge-status badge-super">{{ college.admin_count }}</span></td>
+            <td class="col-voters" style="text-align:center;"><span class="badge-status badge-active">{{ college.voter_count }}</span></td>
+            <td class="col-elections" style="text-align:center;">{{ college.election_count }}</td>
+            <td class="col-created text-muted-sm">{{ college.created_at.strftime('%b %d, %Y, %I:%M:%S %p') if college.created_at else '—' }}</td>
             <td>
               <div class="action-buttons">
                 <button class="btn-action btn-action-edit" title="Edit"
