@@ -80,7 +80,7 @@ def superadmin_required(f):
 @auth_bp.route("/voter-login", methods=["GET", "POST"])
 def voter_login():
     """Main voter login page - Default entry point"""
-                                                    
+    username = ""
     if 'user_id' in session:
         if session.get('role') == 'voter':
             return redirect(url_for('voter.dashboard'))
@@ -114,11 +114,11 @@ def voter_login():
                     
                     if not user.get('is_approved', False):
                         flash("Your account is pending approval. Please contact the administrator.", "error")
-                        return render_template("voter_login.html")
+                        return render_template("voter_login.html", prefill_username=username if username else "")
 
                     if not user.get('is_active', True):
                         flash("Your account has been archived. Please contact your college administrator.", "error")
-                        return render_template("voter_login.html")
+                        return render_template("voter_login.html", prefill_username=username if username else "")
                     
                                                                       
                     if check_trusted_device(user['id']):
@@ -128,6 +128,7 @@ def voter_login():
                         session['username'] = user['student_id']
                         session['fullname'] = f"{user['firstname']} {user['surname']}"
                         session.permanent = True
+                        log_activity(current_app.config["get_db_connection"], user['id'], "login", f"User logged in (trusted device) — {user['student_id']}")
                         flash(f"Welcome, {user['firstname']}!", "success")
                         return redirect(url_for('voter.dashboard'))
                     
@@ -135,7 +136,7 @@ def voter_login():
                     email = user.get('email')
                     if not email or '@' not in str(email):
                         flash("No valid email found for your account. Please contact the administrator.", "error")
-                        return render_template("voter_login.html")
+                        return render_template("voter_login.html", prefill_username=username if username else "")
 
                     if session.get('user_data_voter_login', {}).get('user_id') == user['id'] and is_otp_valid('voter_login'):
                         flash("An OTP has already been sent. Please check your email and verify.", "info")
@@ -185,12 +186,12 @@ def voter_login():
         
         flash("Invalid Student ID or password.", "error")
     
-    return render_template("voter_login.html")
+    return render_template("voter_login.html", prefill_username=username if username else "")
 
 @auth_bp.route("/admin-login", methods=["GET", "POST"])
 def admin_login():
     """Admin login page - Separate from voter login"""
-                                                    
+    username = ""
     if 'user_id' in session:
         if session.get('role') in ['admin', 'superadmin']:
             if session.get('role') == 'superadmin':
@@ -217,7 +218,7 @@ def admin_login():
         if user and check_password_hash(user['password'], password):
             if not user.get('is_active', True):
                 flash("Your account has been archived. Please contact the registrar.", "error")
-                return render_template("admin_login.html")
+                return render_template("admin_login.html", prefill_username=username if username else "")
 
                                                               
             if check_trusted_device(user['id']):
@@ -227,6 +228,7 @@ def admin_login():
                 session['username'] = user['student_id']
                 session['fullname'] = f"{user['firstname']} {user['surname']}"
                 session.permanent = True
+                log_activity(current_app.config["get_db_connection"], user['id'], "login", f"User logged in (trusted device) — {user['student_id']}")
                 flash(f"Welcome back, {user['firstname']}!", "success")
                 if user['role'] == 'superadmin':
                     return redirect(url_for('super_admin.dashboard'))
@@ -237,7 +239,7 @@ def admin_login():
             email = user.get('email')
             if not email or '@' not in str(email):
                 flash("No valid email found for your account. Please contact the administrator.", "error")
-                return render_template("admin_login.html")
+                return render_template("admin_login.html", prefill_username=username if username else "")
 
             if session.get('user_data_admin_login', {}).get('user_id') == user['id'] and is_otp_valid('admin_login'):
                 flash("An OTP has already been sent. Please check your email and verify.", "info")
@@ -265,7 +267,7 @@ def admin_login():
         
         flash("Invalid admin credentials.", "error")
     
-    return render_template("admin_login.html")                                                                          
+    return render_template("admin_login.html", prefill_username=username if username else "")                                                                          
 
 
 @auth_bp.route("/signup", methods=["GET", "POST"])
@@ -367,6 +369,8 @@ def verify_otp():
                 session['fullname'] = user_data['fullname']
                 session['login_time'] = datetime.now().isoformat()
                 session.permanent = True
+
+                log_activity(current_app.config["get_db_connection"], user_data['user_id'], "login", f"User logged in — {user_data['username']}")
 
                 response = make_response()
                 set_trusted_device(user_data['user_id'], response)

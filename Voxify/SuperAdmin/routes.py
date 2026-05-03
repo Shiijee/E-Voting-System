@@ -430,12 +430,12 @@ def system_logs():
     page = max(1, int(request.args.get('page', 1) or 1))
     per_page = 15
     search = request.args.get('search', '').strip()
-    action_filter = request.args.get('action', '').strip()
+    action_filter = request.args.get('action_type', '').strip()
 
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
 
-    base_where = "WHERE u.role IN ('admin', 'superadmin')"
+    base_where = "WHERE (u.role IN ('admin', 'superadmin') OR l.user_id IS NULL)"
     params = []
     if search:
         base_where += " AND (l.action LIKE %s OR l.details LIKE %s OR l.ip_address LIKE %s)"
@@ -443,7 +443,7 @@ def system_logs():
         params.extend([sp, sp, sp])
     if action_filter:
         base_where += " AND l.action = %s"
-        params.append(action_filter)
+        params.append(action_filter.lower())
 
     cursor.execute(f"SELECT COUNT(*) as total FROM system_logs l LEFT JOIN users u ON l.user_id = u.id {base_where}", params)
     total_logs = cursor.fetchone()['total']
@@ -461,7 +461,13 @@ def system_logs():
     """, params + [per_page, (page - 1) * per_page])
     logs = cursor.fetchall()
 
-    cursor.execute("SELECT DISTINCT action FROM system_logs WHERE action IS NOT NULL ORDER BY action")
+    cursor.execute("""
+        SELECT DISTINCT l.action FROM system_logs l
+        LEFT JOIN users u ON l.user_id = u.id
+        WHERE (u.role IN ('admin', 'superadmin') OR l.user_id IS NULL)
+        AND l.action IS NOT NULL
+        ORDER BY l.action
+    """)
     action_types = [r['action'] for r in cursor.fetchall()]
 
     cursor.close()

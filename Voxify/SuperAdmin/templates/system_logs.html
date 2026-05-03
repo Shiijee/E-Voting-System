@@ -23,7 +23,7 @@
              placeholder="Search actions, details, IP addresses…"
              value="{{ search or '' }}"/>
     </div>
-    <select name="action" class="form-select form-control-custom w-auto">
+    <select name="action_type" class="form-select form-control-custom w-auto">
       <option value="">All Actions</option>
       {% if action_types %}
         {% for action_type in action_types %}
@@ -101,21 +101,21 @@
       </span>
       <ul class="pagination-custom">
         <li class="{{ 'disabled' if page == 1 else '' }}">
-          <a href="?search={{ search }}&action={{ action_filter }}&page={{ page - 1 }}">
+          <a href="?search={{ search }}&action_type={{ action_filter }}&page={{ page - 1 }}">
             <i class="bi bi-chevron-left"></i>
           </a>
         </li>
         {% for p in range(1, total_pages + 1) %}
           {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
           <li class="{{ 'active' if p == page else '' }}">
-            <a href="?search={{ search }}&action={{ action_filter }}&page={{ p }}">{{ p }}</a>
+            <a href="?search={{ search }}&action_type={{ action_filter }}&page={{ p }}">{{ p }}</a>
           </li>
           {% elif p == page - 3 or p == page + 3 %}
           <li class="ellipsis"><span>…</span></li>
           {% endif %}
         {% endfor %}
         <li class="{{ 'disabled' if page == total_pages else '' }}">
-          <a href="?search={{ search }}&action={{ action_filter }}&page={{ page + 1 }}">
+          <a href="?search={{ search }}&action_type={{ action_filter }}&page={{ page + 1 }}">
             <i class="bi bi-chevron-right"></i>
           </a>
         </li>

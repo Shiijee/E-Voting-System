@@ -1172,12 +1172,18 @@ def view_results():
         cursor.execute("SELECT id, title FROM elections WHERE status IN ('active', 'completed') ORDER BY created_at DESC")
     elections = cursor.fetchall()
     
+    # Auto-select the first (latest) election if none specified
+    if not election_id and elections:
+        election_id = elections[0]["id"]
+    
     selected_election = None
     results = []
     total_votes = 0
     total_voters_voted = 0
     total_eligible_voters = 0
     total_voters_not_voted = 0
+    voters_voted = []
+    voters_not_voted = []
     
     if election_id:
         if college_id is not None:
@@ -1242,7 +1248,6 @@ def view_results():
             cursor.execute("SELECT COUNT(DISTINCT voter_id) as total FROM votes WHERE election_id=%s", (election_id,))
             total_voters_voted = cursor.fetchone()['total'] or 0
 
-                                                                     
             election_college_id = selected_election.get('college_id')
             if election_college_id:
                 cursor.execute("""
@@ -1257,6 +1262,62 @@ def view_results():
                 """)
             total_eligible_voters = cursor.fetchone()['total'] or 0
             total_voters_not_voted = max(0, total_eligible_voters - total_voters_voted)
+
+            # Fetch list of voters who DID vote
+            cursor.execute("""
+                SELECT DISTINCT
+                    u.id,
+                    CONCAT(COALESCE(u.firstname,''), ' ', COALESCE(u.middlename,''), ' ', COALESCE(u.surname,'')) AS full_name,
+                    u.email,
+                    u.student_id
+                FROM users u
+                INNER JOIN votes v ON v.voter_id = u.id
+                WHERE v.election_id = %s AND u.role = 'voter'
+                ORDER BY u.surname, u.firstname
+            """, (election_id,))
+            voters_voted = [
+                {**v, 'full_name': ' '.join(v['full_name'].split())}
+                for v in cursor.fetchall()
+            ]
+
+            # Fetch list of eligible voters who did NOT vote
+            if election_college_id:
+                cursor.execute("""
+                    SELECT
+                        u.id,
+                        CONCAT(COALESCE(u.firstname,''), ' ', COALESCE(u.middlename,''), ' ', COALESCE(u.surname,'')) AS full_name,
+                        u.email,
+                        u.student_id
+                    FROM users u
+                    WHERE u.role = 'voter'
+                      AND u.is_approved = 1
+                      AND u.is_active = 1
+                      AND u.college_id = %s
+                      AND u.id NOT IN (
+                          SELECT DISTINCT voter_id FROM votes WHERE election_id = %s
+                      )
+                    ORDER BY u.surname, u.firstname
+                """, (election_college_id, election_id))
+            else:
+                cursor.execute("""
+                    SELECT
+                        u.id,
+                        CONCAT(COALESCE(u.firstname,''), ' ', COALESCE(u.middlename,''), ' ', COALESCE(u.surname,'')) AS full_name,
+                        u.email,
+                        u.student_id
+                    FROM users u
+                    WHERE u.role = 'voter'
+                      AND u.is_approved = 1
+                      AND u.is_active = 1
+                      AND u.id NOT IN (
+                          SELECT DISTINCT voter_id FROM votes WHERE election_id = %s
+                      )
+                    ORDER BY u.surname, u.firstname
+                """, (election_id,))
+            voters_not_voted = [
+                {**v, 'full_name': ' '.join(v['full_name'].split())}
+                for v in cursor.fetchall()
+            ]
     
     cursor.close()
     conn.close()
@@ -1265,7 +1326,9 @@ def view_results():
                          selected_election=selected_election, results=results,
                          total_votes=total_votes, total_voters_voted=total_voters_voted,
                          total_eligible_voters=total_eligible_voters,
-                         total_voters_not_voted=total_voters_not_voted)
+                         total_voters_not_voted=total_voters_not_voted,
+                         voters_voted=voters_voted,
+                         voters_not_voted=voters_not_voted)
 
 @admin_bp.route("/logs")
 @admin_required

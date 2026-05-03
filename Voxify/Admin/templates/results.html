@@ -4,32 +4,281 @@
 
 {% block extra_css %}
 <link href="{{ url_for('admin.static', filename='css/results.css') }}" rel="stylesheet"/>
+<style>
+  /* ── Tabs ───────────────────────────── */
+  .results-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 28px;
+  }
+  .results-tab-btn {
+    padding: 10px 22px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--muted);
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: color 0.18s, border-color 0.18s;
+    letter-spacing: 0.2px;
+  }
+  .results-tab-btn:hover { color: var(--navy); }
+  .results-tab-btn.active {
+    color: var(--navy);
+    border-bottom-color: var(--gold);
+  }
+  .results-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    padding: 1px 7px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    color: var(--navy);
+    line-height: 1.6;
+  }
+  .results-tab-btn.active .results-tab-badge {
+    background: var(--navy);
+    color: #fff;
+    border-color: var(--navy);
+  }
+  .results-tab-panel { display: none; }
+  .results-tab-panel.active { display: block; }
+
+  /* ── Voter List Table ───────────────── */
+  .voter-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.87rem;
+  }
+  .voter-list-table th {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--border);
+    background: var(--paper);
+    text-align: left;
+  }
+  .voter-list-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink);
+    vertical-align: middle;
+  }
+  .voter-list-table tr:last-child td { border-bottom: none; }
+  .voter-list-table tbody tr:hover { background: #fafafa; }
+
+  .voter-avatar-sm {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: var(--gold);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+  }
+  .voter-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .badge-voted {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 0.7rem; font-weight: 700;
+    background: #dcfce7; color: #166534;
+  }
+  .badge-not-voted {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 0.7rem; font-weight: 700;
+    background: #fee2e2; color: #991b1b;
+  }
+  .voter-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .voter-search-input {
+    padding: 8px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.87rem;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    outline: none;
+    width: 280px;
+    transition: border-color 0.2s;
+  }
+  .voter-search-input:focus {
+    border-color: var(--navy);
+    background: #fff;
+  }
+  .voter-section-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .col-md-3 { width: 25%; }
+  @media (max-width: 768px) { .col-md-3 { width: 50%; } }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div>
     <h2 class="page-heading">Election Results</h2>
-    <p class="page-subheading">View vote counts and candidate standings.</p>
+    <p class="page-subheading">View vote counts, candidate standings, and voter participation.</p>
   </div>
 </div>
 
 <!-- Election Selector -->
 <div class="card-panel mb-4">
   <div class="card-panel-body">
-    <form method="get" action="{{ url_for('admin.view_results') }}" class="d-flex gap-3 align-items-center flex-wrap">
+    <form method="get" action="{{ url_for('admin.view_results') }}" id="election-form" class="d-flex gap-3 align-items-center flex-wrap">
       <label class="form-label-custom mb-0">Select Election:</label>
-      <select name="election_id" class="form-select form-control-custom w-auto" onchange="this.form.submit()">
-        <option value="">Choose an election…</option>
-        {% for election in elections %}
-        <option value="{{ election.id }}" {% if election_id == election.id %}selected{% endif %}>
-          {{ election.title }}
-        </option>
-        {% endfor %}
-      </select>
+      <div style="position:relative; min-width:280px;">
+        <input
+          type="text"
+          id="election-search"
+          class="form-control-custom"
+          placeholder="Search elections…"
+          autocomplete="off"
+          style="width:100%; padding-right:32px;"
+          oninput="filterElections(this.value)"
+          onfocus="openDropdown()"
+        />
+        <i class="bi bi-search" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; font-size:0.82rem;"></i>
+      </div>
+      <input type="hidden" name="election_id" id="election-id-input" value="{{ election_id or '' }}">
     </form>
   </div>
 </div>
+
+<!-- Dropdown rendered outside card so overflow:hidden never clips it -->
+<div id="election-dropdown" style="
+  display:none;
+  position:fixed;
+  background:#fff;
+  border:1.5px solid var(--border);
+  border-radius:8px;
+  box-shadow:0 6px 24px rgba(13,17,23,0.15);
+  z-index:99999;
+  max-height:90px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  min-width:280px;
+">
+  <div id="election-options">
+    <div class="election-opt" data-value="" onclick="selectElection('', '')"
+         style="padding:9px 14px; cursor:pointer; font-size:0.87rem; color:var(--muted);">
+      Choose an election…
+    </div>
+    {% for election in elections %}
+    <div class="election-opt"
+         data-value="{{ election.id }}"
+         data-label="{{ election.title }}"
+         onclick="selectElection('{{ election.id }}', '{{ election.title }}')"
+         style="padding:9px 14px; cursor:pointer; font-size:0.87rem; color:var(--ink); border-top:1px solid var(--border);">
+      {{ election.title }}
+    </div>
+    {% endfor %}
+  </div>
+  <div id="election-no-results" style="display:none; padding:10px 14px; font-size:0.85rem; color:var(--muted);">
+    No elections found.
+  </div>
+</div>
+
+<script>
+  (function () {
+    const currentId = "{{ election_id or '' }}";
+    if (currentId) {
+      document.querySelectorAll('.election-opt').forEach(opt => {
+        if (opt.dataset.value === currentId) {
+          document.getElementById('election-search').value = opt.dataset.label || opt.textContent.trim();
+        }
+      });
+    }
+  })();
+
+  function positionDropdown() {
+    const input = document.getElementById('election-search');
+    const dd = document.getElementById('election-dropdown');
+    const rect = input.getBoundingClientRect();
+    dd.style.top  = (rect.bottom + 4) + 'px';
+    dd.style.left = rect.left + 'px';
+    dd.style.width = rect.width + 'px';
+  }
+
+  function openDropdown() {
+    positionDropdown();
+    document.getElementById('election-dropdown').style.display = 'block';
+    filterElections(document.getElementById('election-search').value);
+  }
+
+  function filterElections(query) {
+    const q = query.toLowerCase().trim();
+    const opts = document.querySelectorAll('.election-opt');
+    let visible = 0;
+    opts.forEach(opt => {
+      const label = (opt.dataset.label || opt.textContent).toLowerCase();
+      const show = !q || label.includes(q);
+      opt.style.display = show ? '' : 'none';
+      if (show && opt.dataset.value) visible++;
+    });
+    document.getElementById('election-no-results').style.display = (visible === 0 && q) ? 'block' : 'none';
+    positionDropdown();
+    document.getElementById('election-dropdown').style.display = 'block';
+  }
+
+  function selectElection(id, label) {
+    document.getElementById('election-id-input').value = id;
+    document.getElementById('election-search').value = id ? label : '';
+    document.getElementById('election-dropdown').style.display = 'none';
+    if (id) document.getElementById('election-form').submit();
+  }
+
+  document.addEventListener('click', function(e) {
+    const dd = document.getElementById('election-dropdown');
+    const input = document.getElementById('election-search');
+    if (!dd.contains(e.target) && e.target !== input) {
+      dd.style.display = 'none';
+    }
+  });
+
+  window.addEventListener('scroll', function() {
+    if (document.getElementById('election-dropdown').style.display === 'block') {
+      positionDropdown();
+    }
+  }, true);
+
+  document.querySelectorAll('.election-opt').forEach(opt => {
+    opt.addEventListener('mouseenter', () => opt.style.background = 'var(--paper)');
+    opt.addEventListener('mouseleave', () => opt.style.background = '');
+  });
+</script>
+
 
 {% if selected_election %}
 <!-- Summary Stats -->
@@ -71,6 +320,7 @@
     </div>
   </div>
 </div>
+
 <!-- Voter Turnout Bar -->
 {% if total_eligible_voters > 0 %}
 {% set turnout_pct = ((total_voters_voted / total_eligible_voters) * 100) | round(1) %}
@@ -91,58 +341,193 @@
 </div>
 {% endif %}
 
-{% if results %}
-  {% for result in results %}
+<!-- Tabs -->
+<div class="results-tabs">
+  <button class="results-tab-btn active" onclick="switchTab('vote-results', this)">
+    <i class="bi bi-bar-chart-fill"></i> Vote Results
+    <span class="results-tab-badge">{{ results|length }}</span>
+  </button>
+  <button class="results-tab-btn" onclick="switchTab('voters-voted', this)">
+    <i class="bi bi-person-check-fill"></i> Voted
+    <span class="results-tab-badge">{{ voters_voted|length }}</span>
+  </button>
+  <button class="results-tab-btn" onclick="switchTab('voters-not-voted', this)">
+    <i class="bi bi-person-x-fill"></i> Did Not Vote
+    <span class="results-tab-badge">{{ voters_not_voted|length }}</span>
+  </button>
+</div>
+
+<!-- Tab: Vote Results -->
+<div id="tab-vote-results" class="results-tab-panel active">
+  {% if results %}
+    {% for result in results %}
+    <div class="card-panel mb-4">
+      <div class="card-panel-header">
+        <div>
+          <h5 class="card-panel-title">
+            <i class="bi bi-trophy-fill me-2 text-amber"></i>{{ result.position.title }}
+          </h5>
+          <span class="text-muted-sm">{{ result.total_votes }} vote{{ 's' if result.total_votes != 1 }}</span>
+        </div>
+        <span class="badge-count">{{ result.candidates|length }} candidate{{ 's' if result.candidates|length != 1 }}</span>
+      </div>
+      <div class="card-panel-body">
+        <div class="results-table">
+          {% for item in result.candidates %}
+          <div class="result-row {{ 'result-row-winner' if loop.first and result.total_votes > 0 }}">
+            <div class="result-rank">
+              {% if loop.first and result.total_votes > 0 %}
+              <i class="bi bi-trophy-fill text-amber"></i>
+              {% else %}
+              <span>{{ loop.index }}</span>
+              {% endif %}
+            </div>
+            <div class="result-candidate">
+              <div class="result-avatar">{{ item.candidate.full_name[0] }}</div>
+              <div>
+                <div class="fw-600">{{ item.candidate.full_name }}</div>
+                <div class="text-muted-sm">{{ item.candidate.partylist or 'Independent' }}</div>
+              </div>
+            </div>
+            <div class="result-votes">
+              <span class="result-count">{{ item.vote_count }}</span>
+              <span class="result-pct">{{ item.percentage }}%</span>
+            </div>
+            <div class="result-bar-wrap">
+              <div class="result-bar" style="width: {{ item.percentage }}%"></div>
+            </div>
+          </div>
+          {% else %}
+          <div class="text-muted-sm text-center py-3">No candidates for this position.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">
+      <i class="bi bi-bar-chart"></i>
+      <h5>No Results Yet</h5>
+      <p>No votes have been cast for this election yet.</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Tab: Voters Who Voted -->
+<div id="tab-voters-voted" class="results-tab-panel">
   <div class="card-panel mb-4">
     <div class="card-panel-header">
       <div>
         <h5 class="card-panel-title">
-          <i class="bi bi-trophy-fill me-2 text-amber"></i>{{ result.position.title }}
+          <i class="bi bi-person-check-fill me-2 text-green"></i>Voters Who Voted
         </h5>
-        <span class="text-muted-sm">{{ result.total_votes }} vote{{ 's' if result.total_votes != 1 }}</span>
+        <span class="text-muted-sm">{{ voters_voted|length }} voter{{ 's' if voters_voted|length != 1 }} participated</span>
       </div>
-      <span class="badge-count">{{ result.candidates|length }} candidate{{ 's' if result.candidates|length != 1 }}</span>
     </div>
     <div class="card-panel-body">
-      <div class="results-table">
-        {% for item in result.candidates %}
-        <div class="result-row {{ 'result-row-winner' if loop.first and result.total_votes > 0 }}">
-          <div class="result-rank">
-            {% if loop.first and result.total_votes > 0 %}
-            <i class="bi bi-trophy-fill text-amber"></i>
-            {% else %}
-            <span>{{ loop.index }}</span>
-            {% endif %}
-          </div>
-          <div class="result-candidate">
-            <div class="result-avatar">{{ item.candidate.full_name[0] }}</div>
-            <div>
-              <div class="fw-600">{{ item.candidate.full_name }}</div>
-              <div class="text-muted-sm">{{ item.candidate.partylist or 'Independent' }}</div>
-            </div>
-          </div>
-          <div class="result-votes">
-            <span class="result-count">{{ item.vote_count }}</span>
-            <span class="result-pct">{{ item.percentage }}%</span>
-          </div>
-          <div class="result-bar-wrap">
-            <div class="result-bar" style="width: {{ item.percentage }}%"></div>
-          </div>
-        </div>
-        {% else %}
-        <div class="text-muted-sm text-center py-3">No candidates for this position.</div>
-        {% endfor %}
+      {% if voters_voted %}
+      <div class="voter-search-bar">
+        <input type="text" class="voter-search-input" id="search-voted"
+               placeholder="Search by name or student ID…"
+               oninput="filterTable('table-voted', this.value)">
+        <span class="text-muted-sm" id="voted-count-label">{{ voters_voted|length }} voter{{ 's' if voters_voted|length != 1 }}</span>
       </div>
+      <table class="voter-list-table" id="table-voted">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Voter</th>
+            <th>Student ID</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for voter in voters_voted %}
+          <tr>
+            <td style="color:var(--muted); font-size:0.8rem;">{{ loop.index }}</td>
+            <td>
+              <div class="voter-name-cell">
+                <div class="voter-avatar-sm">{{ voter.full_name[0] if voter.full_name else '?' }}</div>
+                <div>
+                  <div style="font-weight:600;">{{ voter.full_name }}</div>
+                  <div class="text-muted-sm">{{ voter.email or '' }}</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-family:monospace; font-size:0.83rem;">{{ voter.student_id or '—' }}</td>
+            <td><span class="badge-voted"><i class="bi bi-check-circle-fill"></i> Voted</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state" style="padding:40px 24px;">
+        <i class="bi bi-person-check"></i>
+        <h5>No Votes Yet</h5>
+        <p>No voters have cast their ballot for this election yet.</p>
+      </div>
+      {% endif %}
     </div>
   </div>
-  {% endfor %}
-{% else %}
-  <div class="empty-state">
-    <i class="bi bi-bar-chart"></i>
-    <h5>No Results Yet</h5>
-    <p>No votes have been cast for this election yet.</p>
+</div>
+
+<!-- Tab: Did Not Vote -->
+<div id="tab-voters-not-voted" class="results-tab-panel">
+  <div class="card-panel mb-4">
+    <div class="card-panel-header">
+      <div>
+        <h5 class="card-panel-title">
+          <i class="bi bi-person-x-fill me-2" style="color:#ef4444;"></i>Did Not Vote
+        </h5>
+        <span class="text-muted-sm">{{ voters_not_voted|length }} voter{{ 's' if voters_not_voted|length != 1 }} have not participated</span>
+      </div>
+    </div>
+    <div class="card-panel-body">
+      {% if voters_not_voted %}
+      <div class="voter-search-bar">
+        <input type="text" class="voter-search-input" id="search-not-voted"
+               placeholder="Search by name or student ID…"
+               oninput="filterTable('table-not-voted', this.value)">
+        <span class="text-muted-sm" id="not-voted-count-label">{{ voters_not_voted|length }} voter{{ 's' if voters_not_voted|length != 1 }}</span>
+      </div>
+      <table class="voter-list-table" id="table-not-voted">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Voter</th>
+            <th>Student ID</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for voter in voters_not_voted %}
+          <tr>
+            <td style="color:var(--muted); font-size:0.8rem;">{{ loop.index }}</td>
+            <td>
+              <div class="voter-name-cell">
+                <div class="voter-avatar-sm" style="background:#fee2e2; color:#991b1b;">{{ voter.full_name[0] if voter.full_name else '?' }}</div>
+                <div>
+                  <div style="font-weight:600;">{{ voter.full_name }}</div>
+                  <div class="text-muted-sm">{{ voter.email or '' }}</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-family:monospace; font-size:0.83rem;">{{ voter.student_id or '—' }}</td>
+            <td><span class="badge-not-voted"><i class="bi bi-x-circle-fill"></i> Not Voted</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state" style="padding:40px 24px;">
+        <i class="bi bi-people-fill"></i>
+        <h5>Everyone Voted!</h5>
+        <p>All eligible voters have cast their ballot for this election.</p>
+      </div>
+      {% endif %}
+    </div>
   </div>
-{% endif %}
+</div>
 
 {% else %}
 <div class="empty-state">
@@ -151,4 +536,27 @@
   <p>Choose an election from the dropdown above to view its results.</p>
 </div>
 {% endif %}
+
+<script>
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.results-tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.results-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+function filterTable(tableId, query) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const rows = table.querySelectorAll('tbody tr');
+  const q = query.toLowerCase();
+  let visible = 0;
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    const show = text.includes(q);
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+}
+</script>
 {% endblock %}

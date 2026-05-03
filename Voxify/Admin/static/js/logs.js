@@ -18,7 +18,7 @@
     const action = (actionSelect ? actionSelect.value.trim().toLowerCase() : '');
 
     filteredRows = allRows.filter(row => {
-      const matchAction = !action || row.dataset.action.includes(action);
+      const matchAction = !action || row.dataset.action === action;
       const matchSearch = !q      || row.dataset.text.includes(q);
       return matchAction && matchSearch;
     });
