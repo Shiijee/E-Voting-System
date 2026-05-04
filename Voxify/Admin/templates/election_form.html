@@ -43,13 +43,15 @@
           <div class="row g-3 mb-4">
             <div class="col-md-6">
               <label class="form-label-custom">Start Date & Time</label>
-              <input type="datetime-local" name="start_date" class="form-control form-control-custom"
+              <input type="datetime-local" id="start_date" name="start_date" class="form-control form-control-custom"
                      value="{{ election.start_date.strftime('%Y-%m-%dT%H:%M') if election and election.start_date else '' }}" required/>
+              <div class="invalid-feedback" id="start_date_error" style="display:none; color:#dc3545; font-size:0.875em;"></div>
             </div>
             <div class="col-md-6">
               <label class="form-label-custom">End Date & Time</label>
-              <input type="datetime-local" name="end_date" class="form-control form-control-custom"
+              <input type="datetime-local" id="end_date" name="end_date" class="form-control form-control-custom"
                      value="{{ election.end_date.strftime('%Y-%m-%dT%H:%M') if election and election.end_date else '' }}" required/>
+              <div class="invalid-feedback" id="end_date_error" style="display:none; color:#dc3545; font-size:0.875em;"></div>
             </div>
           </div>
 
@@ -61,6 +63,71 @@
             </button>
           </div>
         </form>
+
+<script>
+  (function () {
+    const startInput = document.getElementById('start_date');
+    const endInput   = document.getElementById('end_date');
+    const startErr   = document.getElementById('start_date_error');
+    const endErr     = document.getElementById('end_date_error');
+
+    function nowString() {
+      const now = new Date();
+      now.setSeconds(0, 0);
+      return now.toISOString().slice(0, 16);
+    }
+
+    function showError(el, msg) {
+      el.style.display = 'block';
+      el.textContent = msg;
+    }
+    function clearError(el) {
+      el.style.display = 'none';
+      el.textContent = '';
+    }
+
+    function validateDates() {
+      let valid = true;
+      const now = new Date();
+      now.setSeconds(0, 0);
+      const startVal = startInput.value ? new Date(startInput.value) : null;
+      const endVal   = endInput.value   ? new Date(endInput.value)   : null;
+
+      clearError(startErr);
+      clearError(endErr);
+
+      if (startVal && startVal < now) {
+        showError(startErr, 'Start date and time cannot be in the past.');
+        valid = false;
+      }
+      if (startVal && endVal && endVal <= startVal) {
+        showError(endErr, 'End date and time must be after the start date and time.');
+        valid = false;
+      }
+      return valid;
+    }
+
+    // Set minimum to current datetime on load
+    startInput.min = nowString();
+    endInput.min   = nowString();
+
+    // Keep end min in sync with start
+    startInput.addEventListener('change', function () {
+      if (startInput.value) {
+        endInput.min = startInput.value;
+      }
+      validateDates();
+    });
+    endInput.addEventListener('change', validateDates);
+
+    // Block form submit if invalid
+    startInput.closest('form').addEventListener('submit', function (e) {
+      if (!validateDates()) {
+        e.preventDefault();
+      }
+    });
+  })();
+</script>
       </div>
     </div>
   </div>

@@ -282,7 +282,22 @@ def create_election():
         description = request.form["description"]
         start_date = request.form["start_date"]
         end_date = request.form["end_date"]
-        
+
+        try:
+            start_dt = datetime.fromisoformat(start_date)
+            end_dt = datetime.fromisoformat(end_date)
+        except ValueError:
+            flash("Invalid date format.", "error")
+            return render_template('election_form.html', action='add', election=None)
+
+        now = datetime.now()
+        if start_dt < now:
+            flash("Start date and time cannot be in the past.", "error")
+            return render_template('election_form.html', action='add', election=None)
+        if end_dt <= start_dt:
+            flash("End date and time must be after the start date and time.", "error")
+            return render_template('election_form.html', action='add', election=None)
+
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor()
         cursor.execute(
@@ -419,6 +434,22 @@ def edit_election(election_id):
         description = request.form["description"]
         start_date = request.form["start_date"]
         end_date = request.form["end_date"]
+
+        try:
+            start_dt = datetime.fromisoformat(start_date)
+            end_dt = datetime.fromisoformat(end_date)
+        except ValueError:
+            flash("Invalid date format.", "error")
+            return redirect(url_for('admin.edit_election', election_id=election_id))
+
+        now = datetime.now()
+        if start_dt < now:
+            flash("Start date and time cannot be in the past.", "error")
+            return redirect(url_for('admin.edit_election', election_id=election_id))
+        if end_dt <= start_dt:
+            flash("End date and time must be after the start date and time.", "error")
+            return redirect(url_for('admin.edit_election', election_id=election_id))
+
         if college_id is not None:
             cursor.execute(
                 "UPDATE elections SET title=%s, description=%s, start_date=%s, end_date=%s WHERE id=%s AND college_id=%s",
@@ -476,14 +507,14 @@ def activate_election(election_id):
         new_status = 'active'
 
     cursor = conn.cursor()
-    if college_id is not None:
-        cursor.execute("UPDATE elections SET status=%s WHERE id=%s AND (college_id=%s OR college_id IS NULL)", (new_status, election_id, college_id))
-    else:
-        cursor.execute("UPDATE elections SET status=%s WHERE id=%s", (new_status, election_id))
+    cursor.execute("UPDATE elections SET status=%s WHERE id=%s", (new_status, election_id))
     conn.commit()
     cursor.close()
     conn.close()
-    flash(f"Election restored to {new_status}!", "success")
+    if is_draft:
+        flash(f"Election restored to {new_status}!", "success")
+    else:
+        flash("Election activated!", "success")
     return redirect(url_for('admin.view_elections'))
 
 @admin_bp.route("/elections/<int:election_id>/deactivate")

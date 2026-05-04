@@ -19,6 +19,7 @@
   --muted:     #8a8070;
   --border:    #ddd5c4;
   --sidebar-w: 260px;
+  --sidebar-collapsed-w: 64px;
   --topbar-h:  64px;
   --radius:    10px;
   --shadow-sm: 0 2px 8px rgba(13,17,23,0.08);
@@ -57,7 +58,7 @@ img { display: block; max-width: 100%; }
   position: fixed;
   top: 0; left: 0;
   z-index: 200;
-  transition: transform var(--ease);
+  transition: transform var(--ease), width var(--ease);
   box-shadow: 4px 0 24px rgba(13,17,23,0.25);
   overflow: hidden;
 }
@@ -107,6 +108,7 @@ img { display: block; max-width: 100%; }
   flex-direction: column;
   gap: 2px;
   overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
   z-index: 2;
 }
@@ -201,6 +203,7 @@ img { display: block; max-width: 100%; }
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  transition: margin-left var(--ease);
 }
 
 .topbar {
@@ -234,12 +237,77 @@ img { display: block; max-width: 100%; }
 }
 .sidebar-toggle:hover { background: var(--paper); color: var(--navy); }
 
-/* ── Desktop sidebar collapse ───────────────────────────────────────── */
+/* ── Desktop sidebar collapse — icon rail ───────────────────────────── */
 .sidebar.collapsed {
-  transform: translateX(-100%);
+  width: var(--sidebar-collapsed-w);
 }
 .main-wrapper.sidebar-collapsed {
-  margin-left: 0;
+  margin-left: var(--sidebar-collapsed-w);
+}
+
+/* Hide text labels & section headings when collapsed */
+.sidebar.collapsed .brand-text,
+.sidebar.collapsed .nav-item span,
+.sidebar.collapsed .admin-info {
+  display: none;
+}
+
+.sidebar.collapsed .nav-section-label {
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+
+/* Centre the brand icon */
+.sidebar.collapsed .sidebar-brand {
+  padding: 28px 0 24px;
+  justify-content: center;
+}
+
+/* Centre each nav item and remove gap */
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 11px 0;
+  gap: 0;
+}
+
+/* Centre the footer avatar */
+.sidebar.collapsed .sidebar-footer {
+  padding: 18px 0;
+  justify-content: center;
+}
+
+/* Hide overflow scrollbar on collapsed nav rail */
+.sidebar.collapsed .sidebar-nav {
+  overflow: hidden;
+}
+
+/* Tooltip on hover when collapsed */
+.sidebar.collapsed .nav-item {
+  position: relative;
+}
+.sidebar.collapsed .nav-item::after {
+  content: attr(data-label);
+  position: absolute;
+  left: calc(var(--sidebar-collapsed-w) + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--navy);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+.sidebar.collapsed .nav-item:hover::after {
+  opacity: 1;
 }
 
 .topbar-title {

@@ -10,6 +10,15 @@
   <link href="{{ url_for('admin.static', filename='css/admin.css') }}" rel="stylesheet"/>
   <link href="{{ url_for('admin.static', filename='css/enhancements.css') }}" rel="stylesheet"/>
   {% block extra_css %}{% endblock %}
+  <style>
+    .sidebar-init-collapsed #sidebar { width: 64px !important; transition: none !important; }
+    .sidebar-init-collapsed #mainWrapper { margin-left: 64px !important; transition: none !important; }
+  </style>
+  <script>
+    if (localStorage.getItem('sidebarCollapsed') === 'true' && window.innerWidth > 768) {
+      document.documentElement.classList.add('sidebar-init-collapsed');
+    }
+  </script>
 </head>
 <body>
 
@@ -31,53 +40,62 @@
   <nav class="sidebar-nav">
     <div class="nav-section-label">Main</div>
     <a href="{{ url_for('admin.dashboard') }}"
-       class="nav-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}"
+       data-label="Dashboard">
       <i class="bi bi-grid-1x2-fill"></i>
       <span>Dashboard</span>
     </a>
 
     <div class="nav-section-label">Management</div>
     <a href="{{ url_for('admin.view_elections') }}"
-       class="nav-item {% if request.endpoint in ['admin.view_elections', 'admin.create_election', 'admin.edit_election', 'admin.election_positions'] %}active{% endif %}">
+       class="nav-item {% if request.endpoint in ['admin.view_elections', 'admin.create_election', 'admin.edit_election', 'admin.election_positions'] %}active{% endif %}"
+       data-label="Elections">
       <i class="bi bi-calendar2-event-fill"></i>
       <span>Elections</span>
     </a>
     <a href="{{ url_for('admin.view_positions') }}"
-       class="nav-item {% if request.endpoint in ['admin.view_positions', 'admin.create_position', 'admin.edit_position'] %}active{% endif %}">
+       class="nav-item {% if request.endpoint in ['admin.view_positions', 'admin.create_position', 'admin.edit_position'] %}active{% endif %}"
+       data-label="Positions">
       <i class="bi bi-layout-three-columns"></i>
       <span>Positions</span>
     </a>
     <a href="{{ url_for('admin.view_candidates') }}"
-       class="nav-item {% if request.endpoint in ['admin.view_candidates', 'admin.create_candidate', 'admin.edit_candidate'] %}active{% endif %}">
+       class="nav-item {% if request.endpoint in ['admin.view_candidates', 'admin.create_candidate', 'admin.edit_candidate'] %}active{% endif %}"
+       data-label="Candidates">
       <i class="bi bi-person-badge-fill"></i>
       <span>Candidates</span>
     </a>
     <a href="{{ url_for('admin.view_voters') }}"
-       class="nav-item {% if request.endpoint in ['admin.view_voters', 'admin.create_voter', 'admin.edit_voter'] %}active{% endif %}">
+       class="nav-item {% if request.endpoint in ['admin.view_voters', 'admin.create_voter', 'admin.edit_voter'] %}active{% endif %}"
+       data-label="Voters">
       <i class="bi bi-people-fill"></i>
       <span>Voters</span>
     </a>
 
     <div class="nav-section-label">Reports</div>
     <a href="{{ url_for('admin.view_results') }}"
-       class="nav-item {% if request.endpoint == 'admin.view_results' %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'admin.view_results' %}active{% endif %}"
+       data-label="Results">
       <i class="bi bi-bar-chart-fill"></i>
       <span>Results</span>
     </a>
     <a href="{{ url_for('admin.view_logs') }}"
-       class="nav-item {% if request.endpoint == 'admin.view_logs' %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'admin.view_logs' %}active{% endif %}"
+       data-label="Audit Logs">
       <i class="bi bi-journal-text"></i>
       <span>Audit Logs</span>
     </a>
 
     <div class="nav-section-label">Account</div>
     <a href="{{ url_for('admin.view_profile') }}"
-       class="nav-item {% if request.endpoint == 'admin.view_profile' %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'admin.view_profile' %}active{% endif %}"
+       data-label="My Profile">
       <i class="bi bi-person-circle"></i>
       <span>My Profile</span>
     </a>
    <a href="{{ url_for('auth.logout') }}"
       class="nav-item nav-item-danger"
+      data-label="Logout"
       onclick="return vxConfirm(event, 'Logout', 'Are you sure you want to logout?')">
       <i class="bi bi-box-arrow-left"></i>
       <span>Logout</span>
@@ -92,9 +110,27 @@
     </div>
   </div>
 </div>
+<script>
+  // Runs synchronously the moment #sidebar is in the DOM — before any paint
+  (function() {
+    if (localStorage.getItem('sidebarCollapsed') === 'true' && window.innerWidth > 768) {
+      var s = document.getElementById('sidebar');
+      if (s) { s.classList.add('collapsed'); s.style.transition = 'none'; }
+    }
+  })();
+</script>
 
 <!-- ── Main Content ────────────────────────── -->
 <div class="main-wrapper" id="mainWrapper">
+<script>
+  // Runs synchronously the moment #mainWrapper is in the DOM — before any paint
+  (function() {
+    if (localStorage.getItem('sidebarCollapsed') === 'true' && window.innerWidth > 768) {
+      var w = document.getElementById('mainWrapper');
+      if (w) { w.classList.add('sidebar-collapsed'); w.style.transition = 'none'; }
+    }
+  })();
+</script>
   <!-- Top bar -->
   <header class="topbar">
     <button class="sidebar-toggle" id="sidebarToggle" type="button">

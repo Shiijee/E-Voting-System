@@ -9,6 +9,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <link href="{{ url_for('voter.static', filename='css/voter.css') }}" rel="stylesheet"/>
   {% block extra_css %}{% endblock %}
+  <style>
+    .sidebar-init-collapsed #sidebar { width: 64px !important; transition: none !important; }
+    .sidebar-init-collapsed #mainWrapper { margin-left: 64px !important; transition: none !important; }
+  </style>
+  <script>
+    if (localStorage.getItem('voterSidebarCollapsed') === 'true' && window.innerWidth > 768) {
+      document.documentElement.classList.add('sidebar-init-collapsed');
+    }
+  </script>
 </head>
 <body>
 
@@ -30,35 +39,41 @@
   <nav class="sidebar-nav">
     <div class="nav-section-label">Main</div>
     <a href="{{ url_for('voter.dashboard') }}"
-       class="nav-item {% if request.endpoint == 'voter.dashboard' %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'voter.dashboard' %}active{% endif %}"
+       data-label="Dashboard">
       <i class="bi bi-grid-1x2-fill"></i>
       <span>Dashboard</span>
     </a>
 
     <div class="nav-section-label">Voting</div>
     <a href="{{ url_for('voter.elections') }}"
-       class="nav-item {% if request.endpoint == 'voter.elections' %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'voter.elections' %}active{% endif %}"
+       data-label="Active Elections">
       <i class="bi bi-calendar2-event-fill"></i>
       <span>Active Elections</span>
     </a>
     <a href="{{ url_for('voter.my_votes') }}"
-       class="nav-item {% if request.endpoint == 'voter.my_votes' %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'voter.my_votes' %}active{% endif %}"
+       data-label="My Votes">
       <i class="bi bi-check2-square"></i>
       <span>My Votes</span>
     </a>
     <a href="{{ url_for('voter.results') }}"
-       class="nav-item {% if request.endpoint == 'voter.results' %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'voter.results' %}active{% endif %}"
+       data-label="Results">
       <i class="bi bi-bar-chart-fill"></i>
       <span>Results</span>
     </a>
 
     <div class="nav-section-label">Account</div>
     <a href="{{ url_for('voter.profile') }}"
-       class="nav-item {% if request.endpoint == 'voter.profile' %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'voter.profile' %}active{% endif %}"
+       data-label="My Profile">
       <i class="bi bi-person-fill"></i>
       <span>My Profile</span>
     </a>
     <a href="{{ url_for('auth.logout') }}" class="nav-item nav-item-danger"
+       data-label="Logout"
        onclick="return vxConfirm(event, 'Logout', 'Are you sure you want to logout?')">
       <i class="bi bi-box-arrow-left"></i>
       <span>Logout</span>
@@ -73,9 +88,25 @@
     </div>
   </div>
 </div>
+<script>
+  (function() {
+    if (localStorage.getItem('voterSidebarCollapsed') === 'true' && window.innerWidth > 768) {
+      var s = document.getElementById('sidebar');
+      if (s) { s.classList.add('collapsed'); s.style.transition = 'none'; }
+    }
+  })();
+</script>
 
 <!-- ── Main Content ────────────────────────── -->
 <div class="main-wrapper" id="mainWrapper">
+<script>
+  (function() {
+    if (localStorage.getItem('voterSidebarCollapsed') === 'true' && window.innerWidth > 768) {
+      var w = document.getElementById('mainWrapper');
+      if (w) { w.classList.add('sidebar-collapsed'); w.style.transition = 'none'; }
+    }
+  })();
+</script>
   <header class="topbar">
     <button class="sidebar-toggle" id="sidebarToggle" type="button">
       <i class="bi bi-list"></i>

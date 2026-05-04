@@ -19,6 +19,19 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // ── Restore collapsed state from localStorage on page load ──────
+    if (!isMobile() && localStorage.getItem('sidebarCollapsed') === 'true') {
+      sidebar.classList.add('collapsed');
+      if (mainWrapper) mainWrapper.classList.add('sidebar-collapsed');
+    }
+    // Remove the pre-paint no-transition helper class now that JS has taken over
+    document.documentElement.classList.remove('sidebar-init-collapsed');
+    // Re-enable transitions after the instant state is painted (no flash)
+    requestAnimationFrame(() => {
+      sidebar.style.transition = '';
+      if (mainWrapper) mainWrapper.style.transition = '';
+    });
+
     sidebarToggle.addEventListener('click', () => {
       if (isMobile()) {
         const isOpen = sidebar.classList.toggle('open');
@@ -38,8 +51,12 @@ window.addEventListener('DOMContentLoaded', () => {
           closeBackdrop();
         }
       } else {
+        sidebar.classList.add('transitioning');
         const isCollapsed = sidebar.classList.toggle('collapsed');
+        setTimeout(() => sidebar.classList.remove('transitioning'), 250);
         if (mainWrapper) mainWrapper.classList.toggle('sidebar-collapsed', isCollapsed);
+        // ── Persist state so nav clicks don't reset it ──────────────
+        localStorage.setItem('sidebarCollapsed', isCollapsed ? 'true' : 'false');
       }
     });
 

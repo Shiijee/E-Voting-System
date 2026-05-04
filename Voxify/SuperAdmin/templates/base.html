@@ -9,6 +9,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <link href="{{ url_for('super_admin.static', filename='css/base.css') }}" rel="stylesheet"/>
   {% block extra_css %}{% endblock %}
+  <style>
+    .sidebar-init-collapsed #sidebar { width: 64px !important; transition: none !important; }
+    .sidebar-init-collapsed #mainWrapper { margin-left: 64px !important; transition: none !important; }
+  </style>
+  <script>
+    if (localStorage.getItem('saSidebarCollapsed') === 'true' && window.innerWidth > 768) {
+      document.documentElement.classList.add('sidebar-init-collapsed');
+    }
+  </script>
 </head>
 <body>
 
@@ -30,38 +39,44 @@
   <nav class="sidebar-nav">
     <div class="nav-section-label">Main</div>
     <a href="{{ url_for('super_admin.dashboard') }}"
-       class="nav-item {% if request.endpoint == 'super_admin.dashboard' %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'super_admin.dashboard' %}active{% endif %}"
+       data-label="Dashboard">
       <i class="bi bi-grid-1x2-fill"></i>
       <span>Dashboard</span>
     </a>
 
     <div class="nav-section-label">Administration</div>
     <a href="{{ url_for('super_admin.manage_colleges') }}"
-       class="nav-item {% if request.endpoint in ['super_admin.manage_colleges', 'super_admin.create_college', 'super_admin.edit_college', 'super_admin.delete_college'] %}active{% endif %}">
+       class="nav-item {% if request.endpoint in ['super_admin.manage_colleges', 'super_admin.create_college', 'super_admin.edit_college', 'super_admin.delete_college'] %}active{% endif %}"
+       data-label="Colleges">
       <i class="bi bi-building"></i>
       <span>Colleges</span>
     </a>
     <a href="{{ url_for('super_admin.manage_admins') }}"
-       class="nav-item {% if request.endpoint in ['super_admin.manage_admins', 'super_admin.create_admin', 'super_admin.edit_admin', 'super_admin.delete_admin', 'super_admin.archive_admin'] %}active{% endif %}">
+       class="nav-item {% if request.endpoint in ['super_admin.manage_admins', 'super_admin.create_admin', 'super_admin.edit_admin', 'super_admin.delete_admin', 'super_admin.archive_admin'] %}active{% endif %}"
+       data-label="Manage Admins">
       <i class="bi bi-person-gear"></i>
       <span>Manage Admins</span>
     </a>
 
     <div class="nav-section-label">Reports</div>
     <a href="{{ url_for('super_admin.system_logs') }}"
-       class="nav-item {% if request.endpoint == 'super_admin.system_logs' %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'super_admin.system_logs' %}active{% endif %}"
+       data-label="System Logs">
       <i class="bi bi-journal-text"></i>
       <span>System Logs</span>
     </a>
 
     <div class="nav-section-label">Account</div>
     <a href="{{ url_for('super_admin.profile') }}"
-       class="nav-item {% if request.endpoint == 'super_admin.profile' %}active{% endif %}">
+       class="nav-item {% if request.endpoint == 'super_admin.profile' %}active{% endif %}"
+       data-label="My Profile">
       <i class="bi bi-person-fill"></i>
       <span>My Profile</span>
     </a>
     <a href="{{ url_for('auth.logout') }}"
        class="nav-item nav-item-danger"
+       data-label="Logout"
        onclick="return vxConfirm(event, 'Logout', 'Are you sure you want to logout?')">
       <i class="bi bi-box-arrow-left"></i>
       <span>Logout</span>
@@ -76,9 +91,25 @@
     </div>
   </div>
 </div>
+<script>
+  (function() {
+    if (localStorage.getItem('saSidebarCollapsed') === 'true' && window.innerWidth > 768) {
+      var s = document.getElementById('sidebar');
+      if (s) { s.classList.add('collapsed'); s.style.transition = 'none'; }
+    }
+  })();
+</script>
 
 <!-- ── Main Content ────────────────────────── -->
 <div class="main-wrapper" id="mainWrapper">
+<script>
+  (function() {
+    if (localStorage.getItem('saSidebarCollapsed') === 'true' && window.innerWidth > 768) {
+      var w = document.getElementById('mainWrapper');
+      if (w) { w.classList.add('sidebar-collapsed'); w.style.transition = 'none'; }
+    }
+  })();
+</script>
   <!-- Top bar -->
   <header class="topbar">
     <button class="sidebar-toggle" id="sidebarToggle" type="button">

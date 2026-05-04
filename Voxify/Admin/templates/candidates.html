@@ -129,9 +129,9 @@
         <i class="bi bi-person-badge"></i>
         <h5>No Candidates Found</h5>
         <p>Add candidates to your elections to get started.</p>
-        <a href="{{ url_for('admin.create_candidate') }}" class="btn btn-primary-custom">
+        <span class="btn btn-primary-custom" style="cursor:default;pointer-events:none;opacity:0.85;">
           <i class="bi bi-person-plus-fill me-2"></i>Add Candidate
-        </a>
+        </span>
       {% endif %}
     </div>
     {% endif %}

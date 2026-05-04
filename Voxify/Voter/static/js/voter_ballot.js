@@ -3,13 +3,18 @@ function selectCandidate(card, positionId, candidateId) {
   var positionInput = document.getElementById('position_input_' + positionId);
   var cards = document.querySelectorAll('.candidate-card[data-group="' + group + '"]');
   var selectedCount = 0;
+  var isAlreadySelected = card.classList.contains('selected');
 
   cards.forEach(function(c) {
     c.classList.remove('selected');
   });
 
-  card.classList.add('selected');
-  positionInput.value = candidateId;
+  if (isAlreadySelected) {
+    positionInput.value = '';
+  } else {
+    card.classList.add('selected');
+    positionInput.value = candidateId;
+  }
 
   // Update selected count
   var allInputs = document.querySelectorAll('input[type="hidden"][name^="position_"]');

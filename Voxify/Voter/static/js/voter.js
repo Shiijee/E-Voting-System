@@ -17,6 +17,18 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // ── Restore collapsed state ──────────────────────────────────────
+    if (!isMobile() && localStorage.getItem('voterSidebarCollapsed') === 'true') {
+      sidebar.classList.add('collapsed');
+      if (mainWrapper) mainWrapper.classList.add('sidebar-collapsed');
+    }
+    // Remove pre-paint helper class and re-enable transitions
+    document.documentElement.classList.remove('sidebar-init-collapsed');
+    requestAnimationFrame(() => {
+      sidebar.style.transition = '';
+      if (mainWrapper) mainWrapper.style.transition = '';
+    });
+
     sidebarToggle.addEventListener('click', () => {
       if (isMobile()) {
         const isOpen = sidebar.classList.toggle('open');
@@ -36,8 +48,12 @@ window.addEventListener('DOMContentLoaded', () => {
           closeBackdrop();
         }
       } else {
+        sidebar.classList.add('transitioning');
         const isCollapsed = sidebar.classList.toggle('collapsed');
+        setTimeout(() => sidebar.classList.remove('transitioning'), 250);
         if (mainWrapper) mainWrapper.classList.toggle('sidebar-collapsed', isCollapsed);
+        // Persist state so nav clicks don't reset it
+        localStorage.setItem('voterSidebarCollapsed', isCollapsed ? 'true' : 'false');
       }
     });
 
