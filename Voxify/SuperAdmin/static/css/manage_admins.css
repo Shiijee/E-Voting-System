@@ -341,3 +341,15 @@
   .status-tabs { gap: 2px; }
   .status-tab { padding: 8px 12px; font-size: 0.8rem; }
 }
+/* ── Admin form validation ──────────────────────────── */
+.form-error-text {
+  display: block;
+  color: #c62828;
+  font-size: 0.76rem;
+  margin-top: 4px;
+  min-height: 16px;
+}
+.form-control-error {
+  border-color: #e53935 !important;
+  box-shadow: 0 0 0 3px rgba(229,57,53,0.12) !important;
+}

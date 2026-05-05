@@ -36,3 +36,8 @@ function clearAllSelections() {
   document.getElementById('selectedCount').textContent = '0';
   document.getElementById('voteConfirmBar').style.display = 'none';
 }
+function toggleInstructions(btn) {
+  const body = document.getElementById('instructionsBody');
+  const isCollapsed = body.classList.toggle('collapsed');
+  btn.classList.toggle('collapsed', isCollapsed);
+}

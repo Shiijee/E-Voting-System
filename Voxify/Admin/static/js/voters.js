@@ -157,6 +157,17 @@ document.addEventListener('DOMContentLoaded', function () {
       if (el) el.addEventListener('input', function () { clearErr(id + '-err'); });
     });
   }
+
+  document.querySelectorAll('[id^="editVoterForm"]').forEach(function(form) {
+    var vid = form.id.replace('editVoterForm', '');
+    form.addEventListener('submit', function(e) {
+      if (!validateEditVoterForm(vid)) e.preventDefault();
+    });
+    ['firstname','middlename','surname','email','password','confirm-password'].forEach(function(field) {
+      var el = document.getElementById('ev-' + vid + '-' + field);
+      if (el) el.addEventListener('input', function() { evClearErr(vid, field); });
+    });
+  });
 });
 
 function openModal(id) {
@@ -223,10 +234,113 @@ new SvPaginator({
 var saved = sessionStorage.getItem('voterTab');
 if (saved) switchTab(saved);
 
-// Auto-open Add Voter modal and restore strength if there was a create error
 var votersPageData = document.getElementById('votersPageData');
 if (votersPageData && votersPageData.dataset.createVoterRestore === 'true') {
   openModal('addVoterModal');
   var avPw = document.getElementById('av-password');
   if (avPw && avPw.value) { avUpdateStrength(); }
+}
+
+// ── EDIT VOTER VALIDATION ─────────────────────────────────────────────
+
+function evSetErr(vid, field, msg) {
+  var el  = document.getElementById('ev-' + vid + '-' + field + '-err');
+  var inp = document.getElementById('ev-' + vid + '-' + field);
+  if (el)  el.textContent = msg;
+  if (inp) inp.classList.toggle('vform-input-error', !!msg);
+}
+
+function evClearErr(vid, field) { evSetErr(vid, field, ''); }
+
+function evUpdateStrength(vid) {
+  var pw      = document.getElementById('ev-' + vid + '-password');
+  var wrapper = document.getElementById('ev-' + vid + '-strength-wrapper');
+  var label   = document.getElementById('ev-' + vid + '-strength-label');
+  var segs    = [1,2,3].map(function(n){ return document.getElementById('ev-' + vid + '-seg' + n); });
+  if (!pw || !wrapper) return;
+  var val = pw.value;
+  if (!val) {
+    wrapper.style.display = 'none';
+    segs.forEach(function(s){ if(s) s.style.background = '#ddd'; });
+    if (label) { label.textContent = ''; label.style.color = ''; }
+    evUpdateMatch(vid);
+    return;
+  }
+  wrapper.style.display = 'block';
+  var checks = avEvalPw(val);
+  var score  = Object.values(checks).filter(Boolean).length;
+  ['len','upper','lower','num','special'].forEach(function(k) {
+    var r = document.getElementById('ev-' + vid + '-req-' + k);
+    if (!r) return;
+    var dot = r.querySelector('.av-dot');
+    if (checks[k]) { r.style.color = '#2e7d32'; if (dot) dot.style.background = '#2e7d32'; }
+    else            { r.style.color = '#999';    if (dot) dot.style.background = '#ddd';    }
+  });
+  var level = score <= 2 ? 'weak' : score <= 3 ? 'medium' : 'strong';
+  var color = level === 'weak' ? '#e53935' : level === 'medium' ? '#f9a825' : '#2e7d32';
+  var bars  = level === 'weak' ? 1 : level === 'medium' ? 2 : 3;
+  var text  = level === 'weak' ? 'Weak' : level === 'medium' ? 'Medium' : 'Very Strong';
+  segs.forEach(function(s, i){ if(s) s.style.background = i < bars ? color : '#ddd'; });
+  if (label) { label.textContent = text; label.style.color = color; }
+  evUpdateMatch(vid);
+}
+
+function evUpdateMatch(vid) {
+  var pw   = document.getElementById('ev-' + vid + '-password');
+  var cpw  = document.getElementById('ev-' + vid + '-confirm-password');
+  var hint = document.getElementById('ev-' + vid + '-match-hint');
+  if (!pw || !cpw || !hint) return;
+  if (!cpw.value) { hint.textContent = ''; hint.style.color = ''; }
+  else if (pw.value === cpw.value) { hint.textContent = '✓ Passwords match.'; hint.style.color = '#2e7d32'; }
+  else { hint.textContent = '✗ Passwords do not match.'; hint.style.color = '#c62828'; }
+}
+
+function validateEditVoterForm(vid) {
+  var ok = true;
+
+  var fnEl = document.getElementById('ev-' + vid + '-firstname');
+  if (!fnEl) return true;
+  var fnVal = fnEl.value.trim();
+  if (!fnVal) { evSetErr(vid, 'firstname', 'First name is required.'); ok = false; }
+  else if (!nameRe.test(fnVal)) { evSetErr(vid, 'firstname', 'Letters only (no numbers or special characters).'); ok = false; }
+  else evClearErr(vid, 'firstname');
+
+  var mnEl  = document.getElementById('ev-' + vid + '-middlename');
+  var mnVal = mnEl ? mnEl.value.trim() : '';
+  if (mnVal && !nameRe.test(mnVal)) { evSetErr(vid, 'middlename', 'Letters only (no numbers or special characters).'); ok = false; }
+  else evClearErr(vid, 'middlename');
+
+  var snEl  = document.getElementById('ev-' + vid + '-surname');
+  var snVal = snEl ? snEl.value.trim() : '';
+  if (!snVal) { evSetErr(vid, 'surname', 'Surname is required.'); ok = false; }
+  else if (!nameRe.test(snVal)) { evSetErr(vid, 'surname', 'Letters only (no numbers or special characters).'); ok = false; }
+  else evClearErr(vid, 'surname');
+
+  var emEl  = document.getElementById('ev-' + vid + '-email');
+  var emVal = emEl ? emEl.value.trim() : '';
+  if (!emVal) { evSetErr(vid, 'email', 'Email is required.'); ok = false; }
+  else if (!gmailRe.test(emVal)) { evSetErr(vid, 'email', 'Only Gmail addresses are allowed (e.g. name@gmail.com).'); ok = false; }
+  else evClearErr(vid, 'email');
+
+  var pwEl   = document.getElementById('ev-' + vid + '-password');
+  var cpwEl  = document.getElementById('ev-' + vid + '-confirm-password');
+  var pwVal  = pwEl  ? pwEl.value  : '';
+  var cpwVal = cpwEl ? cpwEl.value : '';
+
+  if (pwVal) {
+    var checks = avEvalPw(pwVal);
+    if (!Object.values(checks).every(Boolean)) {
+      evSetErr(vid, 'password', 'Password must meet all requirements above.'); ok = false;
+    } else evClearErr(vid, 'password');
+
+    if (!cpwVal) { evSetErr(vid, 'confirm-password', 'Please confirm the new password.'); ok = false; }
+    else if (pwVal !== cpwVal) { evSetErr(vid, 'confirm-password', 'Passwords do not match.'); ok = false; }
+    else evClearErr(vid, 'confirm-password');
+  } else {
+    evClearErr(vid, 'password');
+    if (cpwVal) { evSetErr(vid, 'confirm-password', 'Enter a new password first.'); ok = false; }
+    else evClearErr(vid, 'confirm-password');
+  }
+
+  return ok;
 }

@@ -20,6 +20,56 @@
   </div>
 </div>
 
+<!-- Voting Instructions -->
+<div class="voting-instructions-panel">
+  <div class="voting-instructions-header">
+    <i class="bi bi-info-circle-fill"></i>
+    <span>How to Vote — Please Read Before Proceeding</span>
+    <button type="button" class="instructions-toggle" onclick="toggleInstructions(this)" aria-label="Toggle instructions">
+      <i class="bi bi-chevron-up"></i>
+    </button>
+  </div>
+  <div class="voting-instructions-body" id="instructionsBody">
+    <div class="instructions-grid">
+      <div class="instruction-step">
+        <div class="step-icon"><i class="bi bi-1-circle-fill"></i></div>
+        <div class="step-text">
+          <strong>Review All Positions</strong>
+          <span>Scroll through the entire ballot and review all candidates before making your selections.</span>
+        </div>
+      </div>
+      <div class="instruction-step">
+        <div class="step-icon"><i class="bi bi-2-circle-fill"></i></div>
+        <div class="step-text">
+          <strong>Select One Candidate Per Position</strong>
+          <span>Click on a candidate card to select them. You may only choose <em>one candidate</em> per position.</span>
+        </div>
+      </div>
+      <div class="instruction-step">
+        <div class="step-icon"><i class="bi bi-3-circle-fill"></i></div>
+        <div class="step-text">
+          <strong>Review Your Choices</strong>
+          <span>Once selections are made, review the confirmation bar at the bottom. You can clear and re-select before submitting.</span>
+        </div>
+      </div>
+      <div class="instruction-step">
+        <div class="step-icon"><i class="bi bi-4-circle-fill"></i></div>
+        <div class="step-text">
+          <strong>Submit Your Ballot</strong>
+          <span>Click <strong>Submit Ballot</strong> when you are satisfied with your choices. <em>Submitted ballots cannot be changed.</em></span>
+        </div>
+      </div>
+    </div>
+    <div class="vote-wisely-banner">
+      <i class="bi bi-shield-check"></i>
+      <div class="vote-wisely-text">
+        <strong>Vote Wisely — Your Vote Matters!</strong>
+        <span>Choose leaders who represent your values and the community's best interests. An informed vote is a powerful vote. Take your time, vote with confidence, and make your voice count.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% if positions %}
 <form method="POST" id="ballotForm">
 {% for position in positions %}

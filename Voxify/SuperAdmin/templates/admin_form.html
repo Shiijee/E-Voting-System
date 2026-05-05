@@ -21,23 +21,26 @@
 
 <div class="card-panel">
   <div class="card-panel-body">
-    <form method="POST">
+    <form method="POST" id="adminForm" novalidate>
       <div class="mb-3">
         <label class="form-label-custom required">Full Name</label>
-        <input type="text" name="full_name" class="form-control-custom" value="{{ admin.firstname + ' ' + admin.surname if admin else '' }}" required/>
+        <input type="text" name="full_name" id="af-fullname" class="form-control-custom" value="{{ admin.firstname + ' ' + admin.surname if admin else '' }}" autocomplete="off"/>
+        <small class="form-error-text" id="af-fullname-err"></small>
       </div>
       <div class="mb-3">
         <label class="form-label-custom required">Email</label>
-        <input type="email" name="email" class="form-control-custom" value="{{ admin.email if admin else '' }}" required/>
+        <input type="text" name="email" id="af-email" class="form-control-custom" value="{{ admin.email if admin else '' }}" autocomplete="off"/>
+        <small class="form-error-text" id="af-email-err"></small>
       </div>
       <div class="mb-3">
         <label class="form-label-custom required">College/Department</label>
-        <select name="college_id" class="form-select form-control-custom" required>
+        <select name="college_id" id="af-college" class="form-select form-control-custom">
           <option value="">Select a college...</option>
           {% for college in colleges %}
           <option value="{{ college.id }}" {{ 'selected' if admin and admin.college_id == college.id else '' }}>{{ college.name }}</option>
           {% endfor %}
         </select>
+        <small class="form-error-text" id="af-college-err"></small>
       </div>
       {% if action == 'edit' %}
       <div class="mb-3">
@@ -46,12 +49,57 @@
         <small class="form-text text-muted">Cannot be changed</small>
       </div>
       {% endif %}
-      <div class="mb-3">
-        <label class="form-label-custom required">Password {{ '(leave blank to keep current)' if action == 'edit' else '' }}</label>
-        <input type="password" name="password" class="form-control-custom" placeholder="Minimum 8 characters" {{ 'required' if not admin else '' }}/>
+
+      <!-- Password row -->
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="flex:1;">
+          <label class="form-label-custom {% if action != 'edit' %}required{% endif %}">
+            Password {% if action == 'edit' %}<small style="font-weight:400;text-transform:none;font-size:0.78rem;color:#6b7280;">(leave blank to keep current)</small>{% endif %}
+          </label>
+          <div style="position:relative;">
+            <input type="password" name="password" id="af-password" class="form-control-custom" placeholder="Minimum 8 characters" style="padding-right:40px;" oninput="afUpdateStrength()"/>
+            <button type="button" onclick="afTogglePw('af-password','af-pw-icon')" tabindex="-1"
+              style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#6b7280;padding:0;">
+              <i class="bi bi-eye-fill" id="af-pw-icon"></i>
+            </button>
+          </div>
+          <!-- Strength bar -->
+          <div id="af-strength-wrapper" style="display:none;margin-top:8px;">
+            <div style="display:flex;gap:4px;margin-bottom:4px;">
+              <div id="af-seg1" style="flex:1;height:4px;border-radius:3px;background:#ddd;transition:background .3s;"></div>
+              <div id="af-seg2" style="flex:1;height:4px;border-radius:3px;background:#ddd;transition:background .3s;"></div>
+              <div id="af-seg3" style="flex:1;height:4px;border-radius:3px;background:#ddd;transition:background .3s;"></div>
+            </div>
+            <div id="af-strength-label" style="font-size:0.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;min-height:14px;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin-top:6px;">
+              <div id="af-req-len"     style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="af-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>8+ characters</div>
+              <div id="af-req-upper"   style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="af-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>Uppercase letter</div>
+              <div id="af-req-lower"   style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="af-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>Lowercase letter</div>
+              <div id="af-req-num"     style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="af-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>Number</div>
+              <div id="af-req-special" style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="af-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>Special char</div>
+            </div>
+          </div>
+          <small class="form-error-text" id="af-password-err"></small>
+        </div>
+
+        <div style="flex:1;">
+          <label class="form-label-custom {% if action != 'edit' %}required{% endif %}">
+            Confirm Password {% if action == 'edit' %}<small style="font-weight:400;text-transform:none;font-size:0.78rem;color:#6b7280;visibility:hidden;">placeholder</small>{% endif %}
+          </label>
+          <div style="position:relative;">
+            <input type="password" name="confirm_password" id="af-confirm-password" class="form-control-custom" placeholder="Repeat password" style="padding-right:40px;" oninput="afUpdateMatch()"/>
+            <button type="button" onclick="afTogglePw('af-confirm-password','af-cpw-icon')" tabindex="-1"
+              style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#6b7280;padding:0;">
+              <i class="bi bi-eye-fill" id="af-cpw-icon"></i>
+            </button>
+          </div>
+          <small id="af-match-hint" style="font-size:0.76rem;margin-top:4px;display:block;min-height:16px;"></small>
+          <small class="form-error-text" id="af-confirm-password-err"></small>
+        </div>
       </div>
-      <div class="d-flex gap-3">
-        <button type="submit" class="btn-primary-custom">
+
+      <div class="d-flex gap-3" style="margin-top:24px;">
+        <button type="submit" class="btn-primary-custom" id="af-submit-btn">
           <i class="bi bi-{{ 'pencil' if action == 'edit' else 'person-plus' }}"></i>
           {{ 'Update' if action == 'edit' else 'Create' }} Admin
         </button>
@@ -61,4 +109,142 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var AF_IS_EDIT = {{ 'true' if action == 'edit' else 'false' }};
+var afNameRe  = /^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$/;
+var afGmailRe = /^[a-zA-Z0-9._%+\-]+@gmail\.com$/i;
+
+function afTogglePw(inputId, iconId) {
+  var inp = document.getElementById(inputId);
+  var ico = document.getElementById(iconId);
+  if (!inp) return;
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    if (ico) { ico.classList.remove('bi-eye-fill'); ico.classList.add('bi-eye-slash-fill'); }
+  } else {
+    inp.type = 'password';
+    if (ico) { ico.classList.remove('bi-eye-slash-fill'); ico.classList.add('bi-eye-fill'); }
+  }
+}
+
+function afSetErr(id, msg) {
+  var el  = document.getElementById(id + '-err');
+  var inp = document.getElementById(id);
+  if (el)  el.textContent = msg;
+  if (inp) inp.classList.toggle('form-control-error', !!msg);
+}
+function afClearErr(id) { afSetErr(id, ''); }
+
+function afEvalPw(pw) {
+  return {
+    len:     pw.length >= 8,
+    upper:   /[A-Z]/.test(pw),
+    lower:   /[a-z]/.test(pw),
+    num:     /[0-9]/.test(pw),
+    special: /[^A-Za-z0-9]/.test(pw),
+  };
+}
+
+function afUpdateStrength() {
+  var pw      = document.getElementById('af-password').value;
+  var wrapper = document.getElementById('af-strength-wrapper');
+  var label   = document.getElementById('af-strength-label');
+  var segs    = [1,2,3].map(function(n){ return document.getElementById('af-seg' + n); });
+  var reqIds  = { len:'af-req-len', upper:'af-req-upper', lower:'af-req-lower', num:'af-req-num', special:'af-req-special' };
+
+  if (!pw) {
+    wrapper.style.display = 'none';
+    segs.forEach(function(s){ if(s) s.style.background = '#ddd'; });
+    label.textContent = ''; label.style.color = '';
+    Object.values(reqIds).forEach(function(rid){
+      var r = document.getElementById(rid);
+      if (r) { r.style.color = '#999'; var dot = r.querySelector('.af-dot'); if (dot) dot.style.background = '#ddd'; }
+    });
+    afUpdateMatch(); return;
+  }
+
+  wrapper.style.display = 'block';
+  var checks = afEvalPw(pw);
+  var score  = Object.values(checks).filter(Boolean).length;
+  Object.keys(checks).forEach(function(k) {
+    var r = document.getElementById(reqIds[k]);
+    if (!r) return;
+    var dot = r.querySelector('.af-dot');
+    if (checks[k]) { r.style.color = '#2e7d32'; if (dot) dot.style.background = '#2e7d32'; }
+    else            { r.style.color = '#999';    if (dot) dot.style.background = '#ddd';    }
+  });
+
+  var level = score <= 2 ? 'weak' : score <= 3 ? 'medium' : 'strong';
+  var text  = level === 'weak' ? 'Weak' : level === 'medium' ? 'Medium' : 'Very Strong';
+  var color = level === 'weak' ? '#e53935' : level === 'medium' ? '#f9a825' : '#2e7d32';
+  var bars  = level === 'weak' ? 1 : level === 'medium' ? 2 : 3;
+  segs.forEach(function(s, i){ if(s) s.style.background = i < bars ? color : '#ddd'; });
+  label.textContent = text; label.style.color = color;
+  afUpdateMatch();
+}
+
+function afUpdateMatch() {
+  var pw   = document.getElementById('af-password').value;
+  var cpw  = document.getElementById('af-confirm-password').value;
+  var hint = document.getElementById('af-match-hint');
+  if (!hint) return;
+  if (!cpw) { hint.textContent = ''; hint.style.color = ''; }
+  else if (pw === cpw) { hint.textContent = '✓ Passwords match.'; hint.style.color = '#2e7d32'; }
+  else { hint.textContent = '✗ Passwords do not match.'; hint.style.color = '#c62828'; }
+}
+
+function afValidate() {
+  var ok = true;
+
+  var fn = document.getElementById('af-fullname').value.trim();
+  if (!fn) { afSetErr('af-fullname', 'Full name is required.'); ok = false; }
+  else if (!afNameRe.test(fn)) { afSetErr('af-fullname', 'Letters only (no numbers or special characters).'); ok = false; }
+  else afClearErr('af-fullname');
+
+  var em = document.getElementById('af-email').value.trim();
+  if (!em) { afSetErr('af-email', 'Email is required.'); ok = false; }
+  else if (!afGmailRe.test(em)) { afSetErr('af-email', 'Only Gmail addresses are allowed (e.g. name@gmail.com).'); ok = false; }
+  else afClearErr('af-email');
+
+  var col = document.getElementById('af-college').value;
+  if (!col) { afSetErr('af-college', 'Please select a college/department.'); ok = false; }
+  else afClearErr('af-college');
+
+  var pw  = document.getElementById('af-password').value;
+  var cpw = document.getElementById('af-confirm-password').value;
+
+  if (pw) {
+    var checks = afEvalPw(pw);
+    if (!Object.values(checks).every(Boolean)) { afSetErr('af-password', 'Password must meet all requirements above.'); ok = false; }
+    else afClearErr('af-password');
+    if (!cpw) { afSetErr('af-confirm-password', 'Please confirm the password.'); ok = false; }
+    else if (pw !== cpw) { afSetErr('af-confirm-password', 'Passwords do not match.'); ok = false; }
+    else afClearErr('af-confirm-password');
+  } else if (!AF_IS_EDIT) {
+    afSetErr('af-password', 'Password is required.'); ok = false;
+  } else {
+    afClearErr('af-password');
+    if (cpw) { afSetErr('af-confirm-password', 'Enter a new password first.'); ok = false; }
+    else afClearErr('af-confirm-password');
+  }
+
+  return ok;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  var form = document.getElementById('adminForm');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      if (!afValidate()) e.preventDefault();
+    });
+    ['af-fullname','af-email','af-college','af-password','af-confirm-password'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('input', function() { afClearErr(id); });
+    });
+  }
+});
+</script>
 {% endblock %}

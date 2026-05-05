@@ -302,20 +302,23 @@
       <h5><i class="bi bi-pencil-fill" style="margin-right:8px;"></i>Edit Voter</h5>
       <button class="vmodal-close" onclick="closeModal('editVoterModal{{ voter.id }}')">&times;</button>
     </div>
-    <form method="POST" action="{{ url_for('admin.edit_voter', voter_id=voter.id) }}">
+    <form method="POST" action="{{ url_for('admin.edit_voter', voter_id=voter.id) }}" id="editVoterForm{{ voter.id }}" novalidate>
       <div class="vmodal-body">
         <div class="vform-row">
           <div class="vform-col">
             <label class="vform-label required">First Name</label>
-            <input type="text" name="firstname" class="vform-input" value="{{ voter.firstname }}" required/>
+            <input type="text" name="firstname" id="ev-{{ voter.id }}-firstname" class="vform-input" value="{{ voter.firstname }}" autocomplete="off"/>
+            <small class="vform-error" id="ev-{{ voter.id }}-firstname-err"></small>
           </div>
           <div class="vform-col">
             <label class="vform-label">Middle Name</label>
-            <input type="text" name="middlename" class="vform-input" value="{{ voter.middlename or '' }}"/>
+            <input type="text" name="middlename" id="ev-{{ voter.id }}-middlename" class="vform-input" value="{{ voter.middlename or '' }}" autocomplete="off"/>
+            <small class="vform-error" id="ev-{{ voter.id }}-middlename-err"></small>
           </div>
           <div class="vform-col">
             <label class="vform-label required">Surname</label>
-            <input type="text" name="surname" class="vform-input" value="{{ voter.surname }}" required/>
+            <input type="text" name="surname" id="ev-{{ voter.id }}-surname" class="vform-input" value="{{ voter.surname }}" autocomplete="off"/>
+            <small class="vform-error" id="ev-{{ voter.id }}-surname-err"></small>
           </div>
         </div>
         <div class="vform-row">
@@ -326,13 +329,50 @@
           </div>
           <div class="vform-col-half">
             <label class="vform-label required">Email</label>
-            <input type="email" name="email" class="vform-input" value="{{ voter.email or '' }}" required/>
+            <input type="text" name="email" id="ev-{{ voter.id }}-email" class="vform-input" value="{{ voter.email or '' }}" autocomplete="off"/>
+            <small class="vform-error" id="ev-{{ voter.id }}-email-err"></small>
           </div>
         </div>
         <div class="vform-row">
-          <div class="vform-col-full">
-            <label class="vform-label">New Password <small class="vform-hint-inline">(leave blank to keep current)</small></label>
-            <input type="password" name="password" class="vform-input" placeholder="Enter new password"/>
+          <div class="vform-col-half">
+            <label class="vform-label">New Password</label>
+            <small class="vform-hint">Leave blank to keep current</small>
+            <div style="position:relative;margin-top:4px;">
+              <input type="password" name="password" id="ev-{{ voter.id }}-password" class="vform-input" placeholder="Enter new password" style="padding-right:40px;" oninput="evUpdateStrength('{{ voter.id }}')"/>
+              <button type="button" onclick="togglePw('ev-{{ voter.id }}-password','ev-{{ voter.id }}-pw-icon')" tabindex="-1"
+                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#6b7280;padding:0;">
+                <i class="bi bi-eye-fill" id="ev-{{ voter.id }}-pw-icon"></i>
+              </button>
+            </div>
+            <div id="ev-{{ voter.id }}-strength-wrapper" style="display:none;margin-top:8px;">
+              <div style="display:flex;gap:4px;margin-bottom:4px;">
+                <div id="ev-{{ voter.id }}-seg1" style="flex:1;height:4px;border-radius:3px;background:#ddd;transition:background .3s;"></div>
+                <div id="ev-{{ voter.id }}-seg2" style="flex:1;height:4px;border-radius:3px;background:#ddd;transition:background .3s;"></div>
+                <div id="ev-{{ voter.id }}-seg3" style="flex:1;height:4px;border-radius:3px;background:#ddd;transition:background .3s;"></div>
+              </div>
+              <div id="ev-{{ voter.id }}-strength-label" style="font-size:0.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;min-height:14px;"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin-top:6px;">
+                <div class="av-req" id="ev-{{ voter.id }}-req-len"     style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="av-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>8+ characters</div>
+                <div class="av-req" id="ev-{{ voter.id }}-req-upper"   style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="av-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>Uppercase letter</div>
+                <div class="av-req" id="ev-{{ voter.id }}-req-lower"   style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="av-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>Lowercase letter</div>
+                <div class="av-req" id="ev-{{ voter.id }}-req-num"     style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="av-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>Number</div>
+                <div class="av-req" id="ev-{{ voter.id }}-req-special" style="display:flex;align-items:center;gap:5px;font-size:0.74rem;color:#999;"><span class="av-dot" style="width:6px;height:6px;border-radius:50%;background:#ddd;flex-shrink:0;"></span>Special char</div>
+              </div>
+            </div>
+            <small class="vform-error" id="ev-{{ voter.id }}-password-err"></small>
+          </div>
+          <div class="vform-col-half">
+            <label class="vform-label">Confirm New Password</label>
+            <small class="vform-hint" style="visibility:hidden;">placeholder</small>
+            <div style="position:relative;margin-top:4px;">
+              <input type="password" name="confirm_password" id="ev-{{ voter.id }}-confirm-password" class="vform-input" placeholder="Repeat new password" style="padding-right:40px;" oninput="evUpdateMatch('{{ voter.id }}')"/>
+              <button type="button" onclick="togglePw('ev-{{ voter.id }}-confirm-password','ev-{{ voter.id }}-cpw-icon')" tabindex="-1"
+                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#6b7280;padding:0;">
+                <i class="bi bi-eye-fill" id="ev-{{ voter.id }}-cpw-icon"></i>
+              </button>
+            </div>
+            <small id="ev-{{ voter.id }}-match-hint" style="font-size:0.76rem;margin-top:4px;display:block;min-height:16px;"></small>
+            <small class="vform-error" id="ev-{{ voter.id }}-confirm-password-err"></small>
           </div>
         </div>
       </div>
