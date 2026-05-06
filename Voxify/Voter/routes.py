@@ -125,13 +125,13 @@ def ballot(election_id):
         flash("This election has been temporarily paused by the administrator. Please check back later.", "warning")
         return redirect(url_for('voter.elections'))
 
-    if election['status'] != 'active':
+    if election["status"] != "active":
         flash("This election is not currently active.", "warning")
         return redirect(url_for('voter.elections'))
 
     now = datetime.now()
-    if election['start_date'] > now or election['end_date'] < now:
-        flash("This election is not currently open. Please check the election schedule.", "warning")
+    if election['end_date'] < now:
+        flash("This election has already ended.", "warning")
         return redirect(url_for('voter.elections'))
     
     cursor.execute("SELECT COUNT(*) as voted FROM votes WHERE election_id=%s AND voter_id=%s", 
