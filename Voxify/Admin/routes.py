@@ -500,28 +500,32 @@ def activate_election(election_id):
     college_id = get_admin_college_id()
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT status, start_date, end_date FROM elections WHERE id=%s", (election_id,))
+    cursor.execute("SELECT status, start_date, end_date, previous_status FROM elections WHERE id=%s", (election_id,))
     election = cursor.fetchone()
     is_draft = election and election['status'] == 'draft'
 
     if is_draft:
-        # Determine what status to restore to based on dates
-        now = datetime.now()
-        start_date = election['start_date']
-        end_date = election['end_date']
-        if isinstance(start_date, str):
-            try: start_date = datetime.fromisoformat(start_date)
-            except: start_date = None
-        if isinstance(end_date, str):
-            try: end_date = datetime.fromisoformat(end_date)
-            except: end_date = None
-
-        if end_date and end_date < now:
-            new_status = 'completed'
-        elif start_date and start_date <= now:
-            new_status = 'active'
+        # Use saved previous_status if available
+        if election.get('previous_status'):
+            new_status = election['previous_status']
         else:
-            new_status = 'upcoming'
+            # Fallback: determine status based on dates
+            now = datetime.now()
+            start_date = election['start_date']
+            end_date = election['end_date']
+            if isinstance(start_date, str):
+                try: start_date = datetime.fromisoformat(start_date)
+                except: start_date = None
+            if isinstance(end_date, str):
+                try: end_date = datetime.fromisoformat(end_date)
+                except: end_date = None
+
+            if end_date and end_date < now:
+                new_status = 'completed'
+            elif start_date and start_date <= now:
+                new_status = 'active'
+            else:
+                new_status = 'upcoming'
     else:
         new_status = 'active'
 
@@ -581,11 +585,15 @@ def resume_election(election_id):
 def archive_election(election_id):
     college_id = get_admin_college_id()
     conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT status FROM elections WHERE id=%s", (election_id,))
+    election = cursor.fetchone()
+    previous_status = election['status'] if election else 'upcoming'
     cursor = conn.cursor()
     if college_id is not None:
-        cursor.execute("UPDATE elections SET status='draft' WHERE id=%s AND (college_id=%s OR college_id IS NULL)", (election_id, college_id))
+        cursor.execute("UPDATE elections SET status='draft', previous_status=%s WHERE id=%s AND (college_id=%s OR college_id IS NULL)", (previous_status, election_id, college_id))
     else:
-        cursor.execute("UPDATE elections SET status='draft' WHERE id=%s", (election_id,))
+        cursor.execute("UPDATE elections SET status='draft', previous_status=%s WHERE id=%s", (previous_status, election_id))
     conn.commit()
     cursor.close()
     conn.close()
