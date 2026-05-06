@@ -11,6 +11,79 @@ function mTogglePw(inputId, iconId) {
   }
 }
 
+function mValidateName(name) {
+  // No numbers, minimum 2 letters
+  return /^[a-zA-Z]{2,}$/.test(name.trim());
+}
+
+function mValidateEmail(email) {
+  var trimmed = email.trim();
+  if (!trimmed.includes('@')) return false;
+  if (trimmed !== trimmed.toLowerCase()) return false; // must be lowercase
+  var domain = trimmed.split('@')[1].toLowerCase();
+  var allowedDomains = [
+    'gmail.com', 'yahoo.com', 'ymail.com', 'rocketmail.com',
+    'outlook.com', 'hotmail.com', 'live.com', 'msn.com', 'icloud.com',
+    'me.com', 'mac.com', 'proton.me', 'protonmail.com', 'zoho.com',
+    'zoho.eu', 'aol.com', 'fastmail.com', 'gmx.com', 'mail.com', 'yandex.com',
+    'pldtmail.com', 'pldtdsl.net', 'globe.com.ph', 'smart.com.ph'
+  ];
+  var isAllowed = allowedDomains.includes(domain) ||
+                  domain.endsWith('.edu') ||
+                  domain.endsWith('.ph') ||
+                  domain.endsWith('.edu.ph') ||
+                  domain.endsWith('.gov.ph') ||
+                  domain.endsWith('.microsoft.com');
+  return isAllowed;
+}
+
+function mSetErr(id, msg) {
+  var el = document.getElementById(id + '-err');
+  var inp = document.getElementById(id);
+  if (el) el.textContent = msg;
+  if (inp) inp.classList.toggle('form-control-error', !!msg);
+}
+function mClearErr(id) { mSetErr(id, ''); }
+
+function mValidateForm() {
+  var ok = true;
+  var firstname = document.getElementById('addAdminForm').elements['firstname'].value.trim();
+  var surname = document.getElementById('addAdminForm').elements['surname'].value.trim();
+  var email = document.getElementById('addAdminForm').elements['email'].value.trim();
+
+  if (!firstname) {
+    mSetErr('m-firstname', 'First name is required.');
+    ok = false;
+  } else if (!mValidateName(firstname)) {
+    mSetErr('m-firstname', 'First name must be at least 2 letters and contain no numbers.');
+    ok = false;
+  } else {
+    mClearErr('m-firstname');
+  }
+
+  if (!surname) {
+    mSetErr('m-surname', 'Last name is required.');
+    ok = false;
+  } else if (!mValidateName(surname)) {
+    mSetErr('m-surname', 'Last name must be at least 2 letters and contain no numbers.');
+    ok = false;
+  } else {
+    mClearErr('m-surname');
+  }
+
+  if (!email) {
+    mSetErr('m-email', 'Email is required.');
+    ok = false;
+  } else if (!mValidateEmail(email)) {
+    mSetErr('m-email', 'Email must be lowercase and from an accepted provider (e.g., Gmail, Outlook, Yahoo, or .edu/.ph domains).');
+    ok = false;
+  } else {
+    mClearErr('m-email');
+  }
+
+  return ok;
+}
+
 function mEvaluatePw(pw) {
   return {
     len:     pw.length >= 8,
@@ -69,9 +142,10 @@ function mSyncBtn() {
   var btn    = document.getElementById('createAdminBtn');
   var pw     = document.getElementById('m_new_pw').value;
   var cpw    = document.getElementById('m_conf_pw').value;
-  var checks = mEvaluatePw(pw);
-  var allMet = Object.values(checks).every(Boolean);
-  btn.disabled = !(allMet && pw === cpw && cpw.length > 0);
+  var pwChecks = mEvaluatePw(pw);
+  var pwAllMet = Object.values(pwChecks).every(Boolean);
+  var formValid = mValidateForm();
+  btn.disabled = !(pwAllMet && pw === cpw && cpw.length > 0 && formValid);
 }
 
 document.getElementById('addAdminModal').addEventListener('hidden.bs.modal', function () {
@@ -83,5 +157,17 @@ document.getElementById('addAdminModal').addEventListener('hidden.bs.modal', fun
   ['mreq-len','mreq-upper','mreq-lower','mreq-num','mreq-special'].forEach(function(id){
     document.getElementById(id).classList.remove('met');
   });
+  ['m-firstname','m-surname','m-email'].forEach(function(id){ mClearErr(id); });
   document.getElementById('createAdminBtn').disabled = true;
+});
+
+// Add input listeners for validation
+document.addEventListener('DOMContentLoaded', function() {
+  var form = document.getElementById('addAdminForm');
+  if (form) {
+    ['firstname', 'surname', 'email'].forEach(function(name) {
+      var el = form.elements[name];
+      if (el) el.addEventListener('input', function() { mClearErr('m-' + name); mSyncBtn(); });
+    });
+  }
 });

@@ -239,6 +239,38 @@ def create_admin():
         flash("All fields except middle name are required.", "error")
         return redirect(url_for('super_admin.manage_admins'))
 
+    # Validate names: no numbers, minimum 2 letters
+    import re
+    if not re.match(r'^[a-zA-Z]{2,}$', firstname):
+        flash("First name must be at least 2 letters and contain no numbers.", "error")
+        return redirect(url_for('super_admin.manage_admins'))
+    if not re.match(r'^[a-zA-Z]{2,}$', surname):
+        flash("Last name must be at least 2 letters and contain no numbers.", "error")
+        return redirect(url_for('super_admin.manage_admins'))
+    if middlename and not re.match(r'^[a-zA-Z]{2,}$', middlename):
+        flash("Middle name must be at least 2 letters and contain no numbers.", "error")
+        return redirect(url_for('super_admin.manage_admins'))
+
+    # Validate email: lowercase, has @, valid domain
+    if email != email.lower():
+        flash("Email must be in lowercase.", "error")
+        return redirect(url_for('super_admin.manage_admins'))
+    if '@' not in email:
+        flash("Email must contain '@'.", "error")
+        return redirect(url_for('super_admin.manage_admins'))
+    domain = email.split('@')[1].lower()
+    allowed_domains = [
+        'gmail.com', 'yahoo.com', 'ymail.com', 'rocketmail.com',
+        'outlook.com', 'hotmail.com', 'live.com', 'msn.com', 'icloud.com',
+        'me.com', 'mac.com', 'proton.me', 'protonmail.com', 'zoho.com',
+        'zoho.eu', 'aol.com', 'fastmail.com', 'gmx.com', 'mail.com', 'yandex.com',
+        'pldtmail.com', 'pldtdsl.net', 'globe.com.ph', 'smart.com.ph'
+    ]
+    is_allowed = domain in allowed_domains or domain.endswith(('.edu', '.ph', '.edu.ph', '.gov.ph', '.microsoft.com'))
+    if not is_allowed:
+        flash("Email must be from an accepted provider (e.g., Gmail, Outlook, Yahoo, or .edu/.ph domains).", "error")
+        return redirect(url_for('super_admin.manage_admins'))
+
     if len(password) < 8:
         flash("Password must be at least 8 characters.", "error")
         return redirect(url_for('super_admin.manage_admins'))
@@ -328,8 +360,40 @@ def edit_admin(admin_id):
             return redirect(request.url)
 
         name_parts = full_name.split()
+        if len(name_parts) < 2:
+            flash("Full name must include at least first and last name.", "error")
+            return redirect(request.url)
         firstname = name_parts[0]
-        surname = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+        surname = " ".join(name_parts[1:])
+
+        # Validate names
+        import re
+        if not re.match(r'^[a-zA-Z]{2,}$', firstname):
+            flash("First name must be at least 2 letters and contain no numbers.", "error")
+            return redirect(request.url)
+        if not re.match(r'^[a-zA-Z]{2,}$', surname.replace(' ', '')):  # remove spaces for validation
+            flash("Last name must be at least 2 letters and contain no numbers.", "error")
+            return redirect(request.url)
+
+        # Validate email
+        if email != email.lower():
+            flash("Email must be in lowercase.", "error")
+            return redirect(request.url)
+        if '@' not in email:
+            flash("Email must contain '@'.", "error")
+            return redirect(request.url)
+        domain = email.split('@')[1].lower()
+        allowed_domains = [
+            'gmail.com', 'yahoo.com', 'ymail.com', 'rocketmail.com',
+            'outlook.com', 'hotmail.com', 'live.com', 'msn.com', 'icloud.com',
+            'me.com', 'mac.com', 'proton.me', 'protonmail.com', 'zoho.com',
+            'zoho.eu', 'aol.com', 'fastmail.com', 'gmx.com', 'mail.com', 'yandex.com',
+            'pldtmail.com', 'pldtdsl.net', 'globe.com.ph', 'smart.com.ph'
+        ]
+        is_allowed = domain in allowed_domains or domain.endswith(('.edu', '.ph', '.edu.ph', '.gov.ph', '.microsoft.com'))
+        if not is_allowed:
+            flash("Email must be from an accepted provider (e.g., Gmail, Outlook, Yahoo, or .edu/.ph domains).", "error")
+            return redirect(request.url)
 
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor()

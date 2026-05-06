@@ -114,7 +114,7 @@
 {% block extra_js %}
 <script>
 var AF_IS_EDIT = {{ 'true' if action == 'edit' else 'false' }};
-var afNameRe = /^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$/;
+var afNameRe = /^[A-Za-z]{2,}$/; // No numbers, min 2 letters, no spaces for individual names
 
 // ── EMAIL DOMAIN VALIDATION ───────────────────────────────────────────
 var afAuthorizedExplicit = [
@@ -134,14 +134,16 @@ var afAuthorizedExplicit = [
 ];
 
 function afIsValidEmail(email) {
-  var basicRe = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+  var basicRe = /^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$/; // must be lowercase
   if (!basicRe.test(email)) return false;
+  if (email !== email.toLowerCase()) return false; // enforce lowercase
   var domain = email.split('@')[1].toLowerCase();
   var isExplicitMatch = afAuthorizedExplicit.indexOf(domain) !== -1;
   var isEduOrPh = domain.endsWith('.edu') ||
                   domain.endsWith('.ph') ||
                   domain.endsWith('.edu.ph') ||
-                  domain.endsWith('.gov.ph');
+                  domain.endsWith('.gov.ph') ||
+                  domain.endsWith('.microsoft.com');
   return isExplicitMatch || isEduOrPh;
 }
 // ─────────────────────────────────────────────────────────────────────
@@ -230,12 +232,19 @@ function afValidate() {
 
   var fn = document.getElementById('af-fullname').value.trim();
   if (!fn) { afSetErr('af-fullname', 'Full name is required.'); ok = false; }
-  else if (!afNameRe.test(fn)) { afSetErr('af-fullname', 'Letters only (no numbers or special characters).'); ok = false; }
-  else afClearErr('af-fullname');
+  else {
+    var parts = fn.split(/\s+/);
+    if (parts.length < 2) { afSetErr('af-fullname', 'Full name must include at least first and last name.'); ok = false; }
+    else {
+      var valid = parts.every(function(p){ return afNameRe.test(p); });
+      if (!valid) { afSetErr('af-fullname', 'Each name part must be at least 2 letters and contain no numbers.'); ok = false; }
+      else afClearErr('af-fullname');
+    }
+  }
 
   var em = document.getElementById('af-email').value.trim();
   if (!em) { afSetErr('af-email', 'Email is required.'); ok = false; }
-  else if (!afIsValidEmail(em)) { afSetErr('af-email', 'Please enter a valid email from an accepted provider (e.g. Gmail, Outlook, Yahoo, or a .ph / .edu email).'); ok = false; }
+  else if (!afIsValidEmail(em)) { afSetErr('af-email', 'Email must be lowercase and from an accepted provider (e.g., Gmail, Outlook, Yahoo, or .edu/.ph domains).'); ok = false; }
   else afClearErr('af-email');
 
   var col = document.getElementById('af-college').value;
