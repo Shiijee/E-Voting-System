@@ -129,7 +129,7 @@
               <div class="admin-cell">
                 <div class="admin-avatar-sm">{{ (admin.firstname ~ admin.surname)|first|upper if admin.firstname else 'A' }}</div>
                 <div class="admin-info">
-                  <div class="fw-600">{{ admin.firstname }} {{ admin.surname }}</div>
+                  <div class="fw-600">{{ admin.firstname }}{% if admin.middlename %} {{ admin.middlename }}{% endif %} {{ admin.surname }}</div>
                   <div class="text-muted-sm">{{ admin.email }}</div>
                 </div>
               </div>

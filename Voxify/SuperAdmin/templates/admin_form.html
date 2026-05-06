@@ -141,7 +141,15 @@ function afFormatName(name) {
     .join(' ');
 }
 
-var afNameRe = /^[A-Za-zÀ-ÖØ-öø-ÿ]{2,}$/; // Each name part must be at least 2 letters
+// Each space-separated part must be at least 1 letter; overall name at least 2 chars
+function afValidateName(name) {
+  var normalized = name.trim().replace(/\s+/g, ' ');
+  if (normalized.length < 2) return false;
+  var parts = normalized.split(' ');
+  return parts.every(function(part) {
+    return /^[A-Za-zÀ-ÖØ-öø-ÿ]+$/.test(part) && part.length >= 1;
+  });
+}
 
 // ── EMAIL DOMAIN VALIDATION ───────────────────────────────────────────
 var afAuthorizedExplicit = [
@@ -260,18 +268,18 @@ function afValidate() {
   var fnEl = document.getElementById('af-firstname');
   var fn = fnEl ? afNormalizeName(fnEl.value) : '';
   if (!fn) { afSetErr('af-firstname', 'First name is required.'); ok = false; }
-  else if (!afNameRe.test(fn)) { afSetErr('af-firstname', 'First name must be at least 2 letters and contain only letters and spaces.'); ok = false; }
+  else if (!afValidateName(fn)) { afSetErr('af-firstname', 'First name must be at least 2 letters and contain only letters and spaces.'); ok = false; }
   else afClearErr('af-firstname');
 
   var mnEl = document.getElementById('af-middlename');
   var mn = mnEl ? afNormalizeName(mnEl.value) : '';
-  if (mn && !afNameRe.test(mn)) { afSetErr('af-middlename', 'Middle name must be at least 2 letters and contain only letters and spaces.'); ok = false; }
+  if (mn && !afValidateName(mn)) { afSetErr('af-middlename', 'Middle name must be at least 2 letters and contain only letters and spaces.'); ok = false; }
   else afClearErr('af-middlename');
 
   var snEl = document.getElementById('af-surname');
   var sn = snEl ? afNormalizeName(snEl.value) : '';
   if (!sn) { afSetErr('af-surname', 'Last name is required.'); ok = false; }
-  else if (!afNameRe.test(sn)) { afSetErr('af-surname', 'Last name must be at least 2 letters and contain only letters and spaces.'); ok = false; }
+  else if (!afValidateName(sn)) { afSetErr('af-surname', 'Last name must be at least 2 letters and contain only letters and spaces.'); ok = false; }
   else afClearErr('af-surname');
 
   var em = document.getElementById('af-email').value.trim();

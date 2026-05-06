@@ -41,7 +41,7 @@ def dashboard():
     total_colleges = cursor.fetchone()['total']
 
     cursor.execute("""
-        SELECT u.id, u.firstname, u.surname, u.email, u.student_id, u.created_at, u.is_active,
+        SELECT u.id, u.firstname, u.middlename, u.surname, u.email, u.student_id, u.created_at, u.is_active,
                c.name as college_name
         FROM users u LEFT JOIN colleges c ON u.college_id = c.id
         WHERE u.role='admin' ORDER BY u.created_at DESC LIMIT 5
@@ -94,7 +94,7 @@ def manage_admins():
         'archived': archived_admins
     }
 
-    base_query = "SELECT u.id, u.firstname, u.surname, u.student_id, u.email, u.role, u.created_at, u.is_active, COALESCE(u.is_archived, FALSE) AS is_archived, c.name as college_name FROM users u LEFT JOIN colleges c ON u.college_id = c.id WHERE u.role='admin'"
+    base_query = "SELECT u.id, u.firstname, u.middlename, u.surname, u.student_id, u.email, u.role, u.created_at, u.is_active, COALESCE(u.is_archived, FALSE) AS is_archived, c.name as college_name FROM users u LEFT JOIN colleges c ON u.college_id = c.id WHERE u.role='admin'"
     count_query = "SELECT COUNT(*) as total FROM users u LEFT JOIN colleges c ON u.college_id = c.id WHERE u.role='admin'"
     params = []
 
