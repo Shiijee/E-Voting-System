@@ -491,7 +491,8 @@ def edit_election(election_id):
     election = cursor.fetchone()
     cursor.close()
     conn.close()
-    return render_template('election_form.html', action='edit', election=election)
+    from datetime import datetime as _dt
+    return render_template('election_form.html', action='edit', election=election, now=_dt.now())
 
 @admin_bp.route("/elections/<int:election_id>/activate")
 @admin_required

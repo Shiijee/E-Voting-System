@@ -42,7 +42,8 @@
 
           {% set election_status = election.status if (action == 'edit' and election) else '' %}
           {% set is_paused = election_status == 'paused' %}
-          {% set lock_both = election_status in ['draft', 'completed', 'active'] and action == 'edit' %}
+          {% set draft_already_ended = election_status == 'draft' and election and election.end_date and election.end_date < now %}
+          {% set lock_both = (election_status in ['completed', 'active'] or draft_already_ended) and action == 'edit' %}
           <div class="row g-3 mb-4">
             <div class="col-md-6">
               <label class="form-label-custom">Start Date & Time</label>
