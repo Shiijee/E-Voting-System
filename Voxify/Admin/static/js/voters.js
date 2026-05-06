@@ -11,8 +11,37 @@ function togglePw(inputId, iconId) {
   }
 }
 
-var nameRe  = /^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$/;
-var gmailRe = /^[a-zA-Z0-9._%+\-]+@gmail\.com$/i;
+var nameRe = /^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$/;
+
+// ── EMAIL DOMAIN VALIDATION ───────────────────────────────────────────
+var authorizedExplicit = [
+  "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "rocketmail.com",
+  "outlook.com", "hotmail.com", "live.com", "msn.com", "icloud.com",
+  "me.com", "mac.com", "proton.me", "protonmail.com", "zoho.com",
+  "zoho.eu", "aol.com", "fastmail.com", "gmx.com", "mail.com", "yandex.com",
+  "pldtmail.com", "pldtdsl.net", "globe.com.ph", "smart.com.ph",
+  "aspmx.l.google.com", "alt1.aspmx.l.google.com", "alt2.aspmx.l.google.com",
+  "alt3.aspmx.l.google.com", "alt4.aspmx.l.google.com",
+  "mail.protection.outlook.com", "mx.zoho.com", "mx2.zoho.com", "mx3.zoho.com",
+  "mail.protonmail.ch", "mailsec.protonmail.ch", "mta5.am0.yahoodns.net",
+  "mta6.am0.yahoodns.net", "mta7.am0.yahoodns.net",
+  "in1-smtp.messagingengine.com", "in2-smtp.messagingengine.com",
+  "inbound-smtp.us-east-1.amazonaws.com", "inbound-smtp.us-west-2.amazonaws.com",
+  "mail.domain.com", "smtp.domain.com", "mx.domain.com"
+];
+
+function isValidEmail(email) {
+  var basicRe = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+  if (!basicRe.test(email)) return false;
+  var domain = email.split('@')[1].toLowerCase();
+  var isExplicitMatch = authorizedExplicit.indexOf(domain) !== -1;
+  var isEduOrPh = domain.endsWith('.edu') ||
+                  domain.endsWith('.ph') ||
+                  domain.endsWith('.edu.ph') ||
+                  domain.endsWith('.gov.ph');
+  return isExplicitMatch || isEduOrPh;
+}
+// ─────────────────────────────────────────────────────────────────────
 
 function setErr(id, msg) {
   var el = document.getElementById(id);
@@ -125,7 +154,7 @@ function validateAddVoterForm() {
 
   var em = document.getElementById('av-email').value.trim();
   if (!em) { setErr('av-email-err', 'Email is required.'); ok = false; }
-  else if (!gmailRe.test(em)) { setErr('av-email-err', 'Only Gmail addresses are allowed (e.g. name@gmail.com).'); ok = false; }
+  else if (!isValidEmail(em)) { setErr('av-email-err', 'Please enter a valid email from an accepted provider (e.g. Gmail, Outlook, Yahoo, or a .ph / .edu email).'); ok = false; }
   else clearErr('av-email-err');
 
   var pw = document.getElementById('av-password').value;
@@ -319,7 +348,7 @@ function validateEditVoterForm(vid) {
   var emEl  = document.getElementById('ev-' + vid + '-email');
   var emVal = emEl ? emEl.value.trim() : '';
   if (!emVal) { evSetErr(vid, 'email', 'Email is required.'); ok = false; }
-  else if (!gmailRe.test(emVal)) { evSetErr(vid, 'email', 'Only Gmail addresses are allowed (e.g. name@gmail.com).'); ok = false; }
+  else if (!isValidEmail(emVal)) { evSetErr(vid, 'email', 'Please enter a valid email from an accepted provider (e.g. Gmail, Outlook, Yahoo, or a .ph / .edu email).'); ok = false; }
   else evClearErr(vid, 'email');
 
   var pwEl   = document.getElementById('ev-' + vid + '-password');
