@@ -155,6 +155,20 @@ def ballot(election_id):
                 """, (session['user_id'], election_id, position_id, candidate_id))
                 votes_cast += 1
         conn.commit()
+
+        # Log the vote action to audit logs
+        ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+        cursor.execute(
+            "INSERT INTO system_logs (user_id, action, details, ip_address) VALUES (%s, %s, %s, %s)",
+            (
+                session['user_id'],
+                'vote_cast',
+                f"Voted in election: {election['title']} — {votes_cast} position(s)",
+                ip_address
+            )
+        )
+        conn.commit()
+
         flash(f"Your vote has been cast successfully! You voted for {votes_cast} position(s).", "success")
         cursor.close()
         conn.close()
