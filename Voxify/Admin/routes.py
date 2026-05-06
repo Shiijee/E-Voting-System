@@ -1367,7 +1367,7 @@ def view_logs():
     college_id = get_admin_college_id()
     search = request.args.get('search', '').strip()
     action_filter = request.args.get('action_filter', '').strip() or None
-    action_types = ['login', 'logout', 'vote', 'create_election', 'create_position', 'edit_election', 'delete_election']
+    action_types = ['login', 'logout']
 
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor(dictionary=True)
