@@ -579,6 +579,117 @@ def system_logs():
                            action_types=action_types, page=page, total_pages=total_pages,
                            total_logs=total_logs, per_page=per_page, current_page=page)
 
+@superadmin_bp.route("/audit-logs")
+@superadmin_required
+def audit_logs():
+    page = max(1, int(request.args.get('page', 1) or 1))
+    per_page = 15
+    search = request.args.get('search', '').strip()
+    action_filter = request.args.get('action_type', '').strip()
+    admin_filter = request.args.get('admin_id', '').strip()
+    date_from = request.args.get('date_from', '').strip()
+    date_to = request.args.get('date_to', '').strip()
+
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+
+    base_where = "WHERE u.role = 'admin'"
+    params = []
+
+    if search:
+        base_where += " AND (al.action LIKE %s OR al.details LIKE %s OR u.firstname LIKE %s OR u.surname LIKE %s OR u.student_id LIKE %s)"
+        sp = f"%{search}%"
+        params.extend([sp, sp, sp, sp, sp])
+    if action_filter:
+        base_where += " AND al.action = %s"
+        params.append(action_filter)
+    if admin_filter:
+        base_where += " AND al.user_id = %s"
+        params.append(admin_filter)
+    if date_from:
+        base_where += " AND DATE(al.timestamp) >= %s"
+        params.append(date_from)
+    if date_to:
+        base_where += " AND DATE(al.timestamp) <= %s"
+        params.append(date_to)
+
+    cursor.execute(
+        f"SELECT COUNT(*) as total FROM audit_logs al LEFT JOIN users u ON al.user_id = u.id {base_where}",
+        params
+    )
+    total_logs = cursor.fetchone()['total']
+    total_pages = max(1, (total_logs + per_page - 1) // per_page)
+    page = min(page, total_pages)
+
+    cursor.execute(f"""
+        SELECT al.id, al.action, al.details, al.target_type, al.target_id, al.timestamp,
+               u.firstname, u.surname, u.student_id, u.role,
+               CONCAT(COALESCE(u.firstname,''), ' ', COALESCE(u.surname,'')) AS admin_name,
+               c.name AS college_name
+        FROM audit_logs al
+        LEFT JOIN users u ON al.user_id = u.id
+        LEFT JOIN colleges c ON u.college_id = c.id
+        {base_where}
+        ORDER BY al.timestamp DESC
+        LIMIT %s OFFSET %s
+    """, params + [per_page, (page - 1) * per_page])
+    logs = cursor.fetchall()
+
+    PREDEFINED_ACTION_TYPES = [
+        "create_election",
+        "update_election",
+        "delete_election",
+        "publish_election",
+        "close_election",
+        "archive_election",
+        "restore_election",
+        "add_candidate",
+        "update_candidate",
+        "delete_candidate",
+        "add_voter",
+        "update_voter",
+        "delete_voter",
+        "add_position",
+        "update_position",
+        "delete_position",
+        "view_results",
+    ]
+
+    cursor.execute("""
+        SELECT DISTINCT al.action FROM audit_logs al
+        LEFT JOIN users u ON al.user_id = u.id
+        WHERE u.role = 'admin' AND al.action IS NOT NULL
+        ORDER BY al.action
+    """)
+    db_action_types = [r['action'] for r in cursor.fetchall()]
+    action_types = sorted(set(PREDEFINED_ACTION_TYPES) | set(db_action_types))
+
+    cursor.execute("""
+        SELECT u.id, CONCAT(u.firstname, ' ', u.surname) AS fullname, u.student_id
+        FROM users u WHERE u.role = 'admin'
+        ORDER BY u.firstname
+    """)
+    admins_list = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('audit_logs.html',
+                           logs=logs,
+                           search=search,
+                           action_filter=action_filter,
+                           admin_filter=admin_filter,
+                           date_from=date_from,
+                           date_to=date_to,
+                           action_types=action_types,
+                           admins_list=admins_list,
+                           page=page,
+                           total_pages=total_pages,
+                           total_logs=total_logs,
+                           per_page=per_page,
+                           current_page=page)
+
+
 @superadmin_bp.route("/profile")
 @superadmin_required
 def profile():

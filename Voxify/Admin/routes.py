@@ -324,6 +324,12 @@ def create_election():
             (title, description, start_date, end_date, session['user_id'], college_id)
         )
         conn.commit()
+        new_election_id = cursor.lastrowid
+        cursor.execute(
+            "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+            (session['user_id'], 'CREATE_ELECTION', f"Created election: {title}", 'Election', new_election_id)
+        )
+        conn.commit()
         cursor.close()
         conn.close()
         flash("Election created successfully!", "success")
@@ -479,6 +485,11 @@ def edit_election(election_id):
                 (title, description, start_date, end_date, election_id)
             )
         conn.commit()
+        cursor.execute(
+            "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+            (session['user_id'], 'EDIT_ELECTION', f"Updated election: {title}", 'Election', election_id)
+        )
+        conn.commit()
         cursor.close()
         conn.close()
         flash("Election updated successfully!", "success")
@@ -532,6 +543,11 @@ def activate_election(election_id):
     cursor = conn.cursor()
     cursor.execute("UPDATE elections SET status=%s WHERE id=%s", (new_status, election_id))
     conn.commit()
+    cursor.execute(
+        "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+        (session['user_id'], 'ACTIVATE_ELECTION', f"Election set to status: {new_status} (ID: {election_id})", 'Election', election_id)
+    )
+    conn.commit()
     cursor.close()
     conn.close()
     if is_draft:
@@ -551,6 +567,11 @@ def deactivate_election(election_id):
     else:
         cursor.execute("UPDATE elections SET status='completed' WHERE id=%s AND college_id IS NULL", (election_id,))
     conn.commit()
+    cursor.execute(
+        "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+        (session['user_id'], 'CLOSE_ELECTION', f"Closed election ID: {election_id}", 'Election', election_id)
+    )
+    conn.commit()
     cursor.close()
     conn.close()
     flash("Election completed!", "success")
@@ -563,6 +584,11 @@ def pause_election(election_id):
     cursor = conn.cursor()
     cursor.execute("UPDATE elections SET status='paused' WHERE id=%s", (election_id,))
     conn.commit()
+    cursor.execute(
+        "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+        (session['user_id'], 'PAUSE_ELECTION', f"Paused election ID: {election_id}", 'Election', election_id)
+    )
+    conn.commit()
     cursor.close()
     conn.close()
     flash("Election paused!", "success")
@@ -574,6 +600,11 @@ def resume_election(election_id):
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor()
     cursor.execute("UPDATE elections SET status='active' WHERE id=%s", (election_id,))
+    conn.commit()
+    cursor.execute(
+        "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+        (session['user_id'], 'RESUME_ELECTION', f"Resumed election ID: {election_id}", 'Election', election_id)
+    )
     conn.commit()
     cursor.close()
     conn.close()
@@ -594,6 +625,11 @@ def archive_election(election_id):
         cursor.execute("UPDATE elections SET status='draft', previous_status=%s WHERE id=%s AND (college_id=%s OR college_id IS NULL)", (previous_status, election_id, college_id))
     else:
         cursor.execute("UPDATE elections SET status='draft', previous_status=%s WHERE id=%s", (previous_status, election_id))
+    conn.commit()
+    cursor.execute(
+        "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+        (session['user_id'], 'ARCHIVE_ELECTION', f"Archived election ID: {election_id} (was: {previous_status})", 'Election', election_id)
+    )
     conn.commit()
     cursor.close()
     conn.close()
@@ -657,6 +693,11 @@ def delete_election(election_id):
         cursor.execute("DELETE FROM elections WHERE id=%s AND college_id=%s", (election_id, college_id))
     else:
         cursor.execute("DELETE FROM elections WHERE id=%s AND college_id IS NULL", (election_id,))
+    conn.commit()
+    cursor.execute(
+        "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+        (session['user_id'], 'DELETE_ELECTION', f"Deleted election ID: {election_id}", 'Election', election_id)
+    )
     conn.commit()
     cursor.close()
     conn.close()
@@ -728,6 +769,12 @@ def create_position():
             (election_id, title, description, max_votes, display_order, college_id)
         )
         conn.commit()
+        new_position_id = cursor.lastrowid
+        cursor.execute(
+            "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+            (session['user_id'], 'CREATE_POSITION', f"Created position: {title} (Election ID: {election_id})", 'Position', new_position_id)
+        )
+        conn.commit()
         cursor.close()
         conn.close()
         flash("Position created successfully!", "success")
@@ -770,6 +817,11 @@ def edit_position(position_id):
             (title, description, max_votes, display_order, election_id, position_id)
         )
     conn.commit()
+    cursor.execute(
+        "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+        (session['user_id'], 'EDIT_POSITION', f"Updated position: {title} (ID: {position_id})", 'Position', position_id)
+    )
+    conn.commit()
     cursor.close()
     conn.close()
     flash("Position updated successfully!", "success")
@@ -788,6 +840,11 @@ def delete_position(position_id):
         )
     else:
         cursor.execute("DELETE FROM positions WHERE id=%s", (position_id,))
+    conn.commit()
+    cursor.execute(
+        "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+        (session['user_id'], 'DELETE_POSITION', f"Deleted position ID: {position_id}", 'Position', position_id)
+    )
     conn.commit()
     cursor.close()
     conn.close()
@@ -885,6 +942,12 @@ def create_candidate():
             (position_id, student_id, firstname, middlename, surname, platform, partylist, college_id, photo_filename)
         )
         conn.commit()
+        new_candidate_id = cursor.lastrowid
+        cursor.execute(
+            "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+            (session['user_id'], 'CREATE_CANDIDATE', f"Added candidate: {firstname} {surname} (Position ID: {position_id})", 'Candidate', new_candidate_id)
+        )
+        conn.commit()
         cursor.close()
         conn.close()
         flash("Candidate added successfully!", "success")
@@ -956,6 +1019,11 @@ def edit_candidate(candidate_id):
             """UPDATE candidates SET position_id=%s, student_id=%s, firstname=%s, middlename=%s, 
                surname=%s, platform=%s, partylist=%s, photo=%s WHERE id=%s AND college_id=%s""",
             (position_id, student_id, firstname, middlename, surname, platform, partylist, photo_filename, candidate_id, college_id)
+        )
+        conn.commit()
+        cursor.execute(
+            "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+            (session['user_id'], 'EDIT_CANDIDATE', f"Updated candidate: {firstname} {surname} (ID: {candidate_id})", 'Candidate', candidate_id)
         )
         conn.commit()
         cursor.close()
@@ -1037,6 +1105,11 @@ def delete_candidate(candidate_id):
         cursor.execute("DELETE FROM candidates WHERE id=%s AND college_id=%s", (candidate_id, college_id))
     else:
         cursor.execute("DELETE FROM candidates WHERE id=%s", (candidate_id,))
+    conn.commit()
+    cursor.execute(
+        "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+        (session['user_id'], 'DELETE_CANDIDATE', f"Deleted candidate ID: {candidate_id}", 'Candidate', candidate_id)
+    )
     conn.commit()
     cursor.close()
     conn.close()
@@ -1149,6 +1222,12 @@ def create_voter():
              generate_password_hash(password), college_id)
         )
         conn.commit()
+        new_voter_id = cursor.lastrowid
+        cursor.execute(
+            "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+            (session['user_id'], 'CREATE_VOTER', f"Created voter: {firstname} {surname} (ID: {student_id})", 'Voter', new_voter_id)
+        )
+        conn.commit()
         email_sent = False
         if email and '@' in email:
                                                                         
@@ -1235,6 +1314,11 @@ def edit_voter(voter_id):
                 (firstname, middlename, surname, email, voter_id, college_id)
             )
         conn.commit()
+        cursor.execute(
+            "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+            (session['user_id'], 'EDIT_VOTER', f"Updated voter: {firstname} {surname} (ID: {voter_id})", 'Voter', voter_id)
+        )
+        conn.commit()
         flash("Voter updated successfully!", "success")
     except Exception as e:
         flash(f"Error: {str(e)}", "error")
@@ -1256,6 +1340,13 @@ def archive_voter(voter_id):
         cursor.execute("UPDATE users SET is_active=%s WHERE id=%s AND role='voter' AND college_id=%s",
                        (new_status, voter_id, college_id))
         conn.commit()
+        action_label = 'ARCHIVE_VOTER' if not new_status else 'RESTORE_VOTER'
+        action_detail = f"{'Archived' if not new_status else 'Restored'} voter ID: {voter_id}"
+        cursor.execute(
+            "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+            (session['user_id'], action_label, action_detail, 'Voter', voter_id)
+        )
+        conn.commit()
         flash("Voter archived!" if not new_status else "Voter restored!", "success")
     cursor.close()
     conn.close()
@@ -1268,6 +1359,11 @@ def delete_voter(voter_id):
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM users WHERE id=%s AND role='voter' AND college_id=%s", (voter_id, college_id))
+    conn.commit()
+    cursor.execute(
+        "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+        (session['user_id'], 'DELETE_VOTER', f"Permanently deleted voter ID: {voter_id}", 'Voter', voter_id)
+    )
     conn.commit()
     cursor.close()
     conn.close()

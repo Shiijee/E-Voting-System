@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Audit Logs{% endblock %}
+{% block page_title %}Audit Logs{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('super_admin.static', filename='css/audit_logs.css') }}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-heading">Admin Audit Logs</h2>
+    <p class="page-subheading">Complete record of all admin actions — elections, voters, candidates, and more.</p>
+  </div>
+  <div class="audit-summary-pills">
+    <span class="summary-pill pill-total">
+      <i class="bi bi-list-ul"></i>
+      <strong>{{ total_logs }}</strong> Total
+    </span>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar mb-3">
+  <form method="GET" class="d-flex gap-2 align-items-center flex-wrap w-100">
+    <div class="search-input-wrap flex-grow-1">
+      <i class="bi bi-search search-icon"></i>
+      <input type="text" name="search" class="form-control form-control-custom search-input"
+             placeholder="Search actions, admin names, details…"
+             value="{{ search or '' }}"/>
+    </div>
+
+    <select name="action_type" class="form-select form-control-custom w-auto">
+      <option value="">All Actions</option>
+      {% for at in action_types %}
+      <option value="{{ at }}" {% if action_filter == at %}selected{% endif %}>
+        {{ at.replace('_', ' ').title() }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <select name="admin_id" class="form-select form-control-custom w-auto">
+      <option value="">All Admins</option>
+      {% for adm in admins_list %}
+      <option value="{{ adm.id }}" {% if admin_filter == adm.id|string %}selected{% endif %}>
+        {{ adm.fullname }} ({{ adm.student_id }})
+      </option>
+      {% endfor %}
+    </select>
+
+    <input type="date" name="date_from" class="form-control form-control-custom w-auto"
+           title="From date" value="{{ date_from or '' }}"/>
+    <input type="date" name="date_to" class="form-control form-control-custom w-auto"
+           title="To date" value="{{ date_to or '' }}"/>
+
+    <button type="submit" class="btn-primary-custom">
+      <i class="bi bi-funnel-fill"></i>Filter
+    </button>
+    {% if search or action_filter or admin_filter or date_from or date_to %}
+    <a href="{{ url_for('super_admin.audit_logs') }}" class="btn-clear-custom">
+      <i class="bi bi-x-circle"></i>Clear
+    </a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card-panel">
+  <div class="card-panel-body p-0">
+    {% if logs %}
+    <div class="table-responsive">
+      <table class="table-custom">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Timestamp</th>
+            <th>Admin</th>
+            <th>College</th>
+            <th>Action</th>
+            <th>Target</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td class="text-muted-sm">{{ (page - 1) * per_page + loop.index }}</td>
+            <td class="text-muted-sm text-nowrap">
+              {{ log.timestamp.strftime('%b %d, %Y, %I:%M:%S %p') if log.timestamp else '—' }}
+            </td>
+            <td>
+              <div class="admin-cell">
+                <div class="admin-avatar-sm">{{ (log.firstname or 'A')[0]|upper }}</div>
+                <div>
+                  <span class="fw-500">{{ log.admin_name.strip() if log.admin_name and log.admin_name.strip() else 'Unknown' }}</span>
+                  <br>
+                  <span class="text-muted-sm" style="font-size:0.75rem;">{{ log.student_id or '' }}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="text-muted-sm">{{ log.college_name or '—' }}</span>
+            </td>
+            <td>
+              <span class="log-action-badge
+                {% if log.action and ('create' in log.action.lower() or 'add' in log.action.lower() or 'register' in log.action.lower()) %}log-action-green
+                {% elif log.action and ('delete' in log.action.lower() or 'remove' in log.action.lower()) %}log-action-red
+                {% elif log.action and ('edit' in log.action.lower() or 'update' in log.action.lower() or 'change' in log.action.lower()) %}log-action-amber
+                {% elif log.action and ('archive' in log.action.lower() or 'restore' in log.action.lower()) %}log-action-orange
+                {% elif log.action and ('publish' in log.action.lower() or 'activate' in log.action.lower()) %}log-action-blue
+                {% elif log.action and ('deactivate' in log.action.lower() or 'close' in log.action.lower()) %}log-action-gray
+                {% else %}log-action-purple{% endif %}">
+                {{ log.action.replace('_', ' ') if log.action else '—' }}
+              </span>
+            </td>
+            <td>
+              {% if log.target_type %}
+              <span class="target-badge target-{{ log.target_type.lower() }}">
+                <i class="bi
+                  {% if log.target_type.lower() == 'election' %}bi-calendar-event
+                  {% elif log.target_type.lower() == 'voter' %}bi-person
+                  {% elif log.target_type.lower() == 'candidate' %}bi-person-badge
+                  {% elif log.target_type.lower() == 'position' %}bi-tag
+                  {% elif log.target_type.lower() == 'result' %}bi-bar-chart
+                  {% else %}bi-file-text{% endif %}"></i>
+                {{ log.target_type }}
+                {% if log.target_id %}<span class="target-id">#{{ log.target_id }}</span>{% endif %}
+              </span>
+              {% else %}
+              <span class="text-muted-sm">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="text-muted-sm detail-cell">
+                {{ log.details[:120] if log.details else '—' }}{% if log.details and log.details|length > 120 %}…{% endif %}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination-wrapper">
+      <span class="pagination-info">
+        Showing {{ (page - 1) * per_page + 1 }}–{{ [page * per_page, total_logs] | min }} of {{ total_logs }} entries
+      </span>
+      <ul class="pagination-custom">
+        <li class="{{ 'disabled' if page == 1 else '' }}">
+          <a href="?search={{ search }}&action_type={{ action_filter }}&admin_id={{ admin_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ page - 1 }}">
+            <i class="bi bi-chevron-left"></i>
+          </a>
+        </li>
+        {% for p in range(1, total_pages + 1) %}
+          {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+          <li class="{{ 'active' if p == page else '' }}">
+            <a href="?search={{ search }}&action_type={{ action_filter }}&admin_id={{ admin_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ p }}">{{ p }}</a>
+          </li>
+          {% elif p == page - 3 or p == page + 3 %}
+          <li class="ellipsis"><span>…</span></li>
+          {% endif %}
+        {% endfor %}
+        <li class="{{ 'disabled' if page == total_pages else '' }}">
+          <a href="?search={{ search }}&action_type={{ action_filter }}&admin_id={{ admin_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ page + 1 }}">
+            <i class="bi bi-chevron-right"></i>
+          </a>
+        </li>
+      </ul>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-clipboard2-x"></i>
+      <h5>No Audit Logs Found</h5>
+      <p>No admin actions have been recorded yet{% if search or action_filter or admin_filter %} matching your filters{% endif %}.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

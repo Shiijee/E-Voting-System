@@ -1,0 +1,301 @@
+/* ═══════════════════════════════════════════════════════
+   VOXIFY SUPER ADMIN  —  audit_logs.css
+   Scope: Page header · Summary pills · Filter bar ·
+          Table · Admin cell · Target badges · Action
+          badges · Detail cell · Empty state · Pagination
+   Depends on: base.css
+═══════════════════════════════════════════════════════ */
+
+/* ── Page header ───────────────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.page-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.15;
+  margin: 0 0 4px;
+}
+.page-subheading { font-size: 0.87rem; color: var(--muted); font-weight: 300; margin: 0; }
+
+/* ── Summary pills ─────────────────────────────────── */
+.audit-summary-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.summary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.pill-total { background: var(--super-dim); color: var(--super); }
+
+/* ── Buttons ───────────────────────────────────────── */
+.btn-primary-custom {
+  background: var(--super);
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.87rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--ease);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.btn-primary-custom:hover {
+  background: var(--super-mid);
+  box-shadow: 0 6px 20px rgba(74,29,150,0.35);
+  transform: translateY(-1px);
+  color: #fff;
+}
+.btn-clear-custom {
+  background: #fff;
+  color: var(--muted);
+  border: 1.5px solid var(--border);
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.87rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+  transition: all var(--ease);
+  white-space: nowrap;
+}
+.btn-clear-custom:hover {
+  border-color: var(--super);
+  color: var(--super);
+  background: var(--super-dim);
+}
+
+/* ── Card panel ────────────────────────────────────── */
+.card-panel {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.card-panel-body { padding: 24px; }
+.card-panel-body.p-0 { padding: 0; }
+
+/* ── Filter bar ────────────────────────────────────── */
+.filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.search-input-wrap { position: relative; }
+.search-icon {
+  position: absolute;
+  left: 14px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+.search-input { padding-left: 40px !important; background: #fff; }
+.form-control-custom,
+.form-control,
+.form-select {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--paper);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color var(--ease), box-shadow var(--ease);
+  appearance: auto;
+}
+.form-control-custom:focus,
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--super);
+  box-shadow: 0 0 0 3px var(--super-dim);
+  background: #fff;
+  outline: none;
+}
+
+/* ── Table ─────────────────────────────────────────── */
+.table-responsive { overflow-x: auto; }
+.table-custom { width: 100%; border-collapse: collapse; }
+.table-custom thead th {
+  padding: 12px 18px;
+  font-size: 0.67rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  background: #fdfaf6;
+  border-bottom: 1.5px solid var(--border);
+  white-space: nowrap;
+}
+.table-custom tbody td {
+  padding: 13px 18px;
+  border-bottom: 1px solid rgba(221,213,196,0.45);
+  font-size: 0.875rem;
+  color: var(--ink);
+  vertical-align: middle;
+}
+.table-custom tbody tr:last-child td { border-bottom: none; }
+.text-muted-sm { color: var(--muted); font-size: 0.83rem; }
+.fw-500 { font-weight: 500; }
+.text-nowrap { white-space: nowrap; }
+
+/* ── Admin cell ────────────────────────────────────── */
+.admin-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.admin-avatar-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--super-dim);
+  color: var(--super);
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: 'Playfair Display', serif;
+}
+
+/* ── Target badges ─────────────────────────────────── */
+.target-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.target-election  { background: #ede9fe; color: #5b21b6; }
+.target-voter     { background: #dbeafe; color: #1d4ed8; }
+.target-candidate { background: #fef3c7; color: #92400e; }
+.target-position  { background: #d1fae5; color: #065f46; }
+.target-result    { background: #fce7f3; color: #9d174d; }
+.target-id {
+  background: rgba(0,0,0,0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  margin-left: 2px;
+}
+
+/* ── Log action badges ─────────────────────────────── */
+.log-action-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.log-action-green  { background: #dcfce7; color: #166534; }
+.log-action-red    { background: #fee2e2; color: #991b1b; }
+.log-action-amber  { background: #fffbeb; color: #92400e; }
+.log-action-orange { background: #ffedd5; color: #9a3412; }
+.log-action-blue   { background: #dbeafe; color: #1d4ed8; }
+.log-action-purple { background: var(--super-dim); color: var(--super); }
+.log-action-gray   { background: #f3f4f6; color: #6b7280; }
+
+/* ── Detail cell ───────────────────────────────────── */
+.detail-cell {
+  max-width: 280px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+/* ── Empty state ───────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 24px;
+  gap: 12px;
+  color: var(--muted);
+}
+.empty-state i { font-size: 3rem; color: var(--border); margin-bottom: 4px; }
+.empty-state h5 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--ink); font-weight: 700; margin: 0; }
+.empty-state p { font-size: 0.87rem; max-width: 280px; line-height: 1.6; margin: 0; }
+
+/* ── Pagination ────────────────────────────────────── */
+.pagination-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.pagination-info { font-size: 0.8rem; color: var(--muted); }
+.pagination-custom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  padding: 0; margin: 0;
+}
+.pagination-custom li a,
+.pagination-custom li span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--super);
+  background: #fff;
+  border: 1px solid var(--border);
+  transition: all var(--ease);
+  cursor: pointer;
+  text-decoration: none;
+}
+.pagination-custom li a:hover { background: var(--paper); border-color: var(--super); }
+.pagination-custom li.active a { background: var(--super); border-color: var(--super); color: #fff; }
+.pagination-custom li.disabled a { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.pagination-custom li.ellipsis span { border: none; background: transparent; cursor: default; color: var(--muted); }
+
+/* ── Responsive ────────────────────────────────────── */
+@media (max-width: 600px) {
+  .page-header { flex-direction: column; }
+  .detail-cell { max-width: 160px; }
+}

@@ -67,6 +67,12 @@
       <i class="bi bi-journal-text"></i>
       <span>System Logs</span>
     </a>
+    <a href="{{ url_for('super_admin.audit_logs') }}"
+       class="nav-item {% if request.endpoint == 'super_admin.audit_logs' %}active{% endif %}"
+       data-label="Audit Logs">
+      <i class="bi bi-clipboard2-pulse-fill"></i>
+      <span>Audit Logs</span>
+    </a>
 
     <div class="nav-section-label">Account</div>
     <a href="{{ url_for('super_admin.profile') }}"
