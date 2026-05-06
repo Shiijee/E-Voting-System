@@ -40,16 +40,18 @@
                       placeholder="Brief description of this election...">{{ election.description if election else '' }}</textarea>
           </div>
 
-          {% set is_active = action == 'edit' and election and election.status == 'active' %}
+          {% set election_status = election.status if (action == 'edit' and election) else '' %}
+          {% set is_paused = election_status == 'paused' %}
+          {% set lock_both = election_status in ['draft', 'completed', 'active'] and action == 'edit' %}
           <div class="row g-3 mb-4">
             <div class="col-md-6">
               <label class="form-label-custom">Start Date & Time</label>
               <input type="datetime-local" id="start_date" name="start_date" class="form-control form-control-custom"
                      value="{{ election.start_date.strftime('%Y-%m-%dT%H:%M') if election and election.start_date else '' }}"
-                     {{ 'disabled' if is_active else 'required' }}/>
-              {% if is_active %}
+                     {{ 'disabled' if (lock_both or is_paused) else 'required' }}/>
+              {% if lock_both or is_paused %}
                 <input type="hidden" name="start_date" value="{{ election.start_date.strftime('%Y-%m-%dT%H:%M') if election and election.start_date else '' }}"/>
-                <small class="text-muted mt-1 d-block"><i class="bi bi-lock-fill me-1"></i>Start time cannot be changed while election is ongoing.</small>
+                <small class="text-muted mt-1 d-block"><i class="bi bi-lock-fill me-1"></i>Start time cannot be changed.</small>
               {% endif %}
               <div class="invalid-feedback" id="start_date_error" style="display:none; color:#dc3545; font-size:0.875em;"></div>
             </div>
@@ -57,10 +59,10 @@
               <label class="form-label-custom">End Date & Time</label>
               <input type="datetime-local" id="end_date" name="end_date" class="form-control form-control-custom"
                      value="{{ election.end_date.strftime('%Y-%m-%dT%H:%M') if election and election.end_date else '' }}"
-                     {{ 'disabled' if is_active else 'required' }}/>
-              {% if is_active %}
+                     {{ 'disabled' if lock_both else 'required' }}/>
+              {% if lock_both %}
                 <input type="hidden" name="end_date" value="{{ election.end_date.strftime('%Y-%m-%dT%H:%M') if election and election.end_date else '' }}"/>
-                <small class="text-muted mt-1 d-block"><i class="bi bi-lock-fill me-1"></i>End time cannot be changed while election is ongoing.</small>
+                <small class="text-muted mt-1 d-block"><i class="bi bi-lock-fill me-1"></i>End time cannot be changed.</small>
               {% endif %}
               <div class="invalid-feedback" id="end_date_error" style="display:none; color:#dc3545; font-size:0.875em;"></div>
             </div>
@@ -77,8 +79,8 @@
 
 <script>
   (function () {
-    {% if is_active %}
-    // Election is active — date fields are locked, skip validation
+    {% if lock_both %}
+    // Both date fields are locked — skip validation
     return;
     {% endif %}
     const startInput = document.getElementById('start_date');
