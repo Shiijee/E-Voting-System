@@ -102,7 +102,7 @@ Hello {fullname or 'User'},
 
 Your Voxify account has been created successfully.
 
-Account ID: {student_id}
+Account ID: {student_id.split('-')[-1] if '-' in student_id else student_id}
 Password: {password}
 Role: {role.title()}
 

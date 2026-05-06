@@ -41,3 +41,10 @@ function toggleInstructions(btn) {
   const isCollapsed = body.classList.toggle('collapsed');
   btn.classList.toggle('collapsed', isCollapsed);
 }
+function openPlatformModal(name, party, platform) {
+  document.getElementById('platformModalName').textContent = name;
+  document.getElementById('platformModalParty').textContent = party;
+  document.getElementById('platformModalText').textContent = platform.replace(/\\n/g, '\n');
+  var modal = new bootstrap.Modal(document.getElementById('platformModal'));
+  modal.show();
+}

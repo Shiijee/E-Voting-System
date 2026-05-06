@@ -425,3 +425,28 @@
   color: #7a6520;
   line-height: 1.5;
 }
+/* View Platform button on candidate card */
+.btn-view-platform {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--navy);
+  background: var(--gold-dim);
+  border: 1px solid rgba(212, 168, 67, 0.4);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all var(--ease);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 10;
+}
+.btn-view-platform:hover {
+  background: var(--gold);
+  color: var(--ink);
+  border-color: var(--gold);
+}

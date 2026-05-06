@@ -322,12 +322,16 @@ def create_admin():
             (firstname, middlename, surname, new_student_id, hashed_password, role, email, college_id)
         )
         conn.commit()
+        cursor.execute("SELECT name FROM colleges WHERE id=%s", (college_id,))
+        college_row = cursor.fetchone()
+        college_name = (college_row['name'] if isinstance(college_row, dict) else college_row[0]) if college_row else college_id
+        fullname_parts = [firstname, middlename, surname] if middlename else [firstname, surname]
         email_sent = False
         if email and '@' in email:
             email_sent = send_account_email(
                 email, 'admin', new_student_id, password,
-                fullname=f"{firstname} {surname}",
-                extra_info=f"College ID: {college_id}"
+                fullname=' '.join(fullname_parts),
+                extra_info=f"College/Department: {college_name}"
             )
         message = "Admin account created successfully!"
         if email_sent:

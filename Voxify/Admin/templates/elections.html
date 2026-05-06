@@ -95,10 +95,12 @@
             <td class="text-muted-sm">{{ election.end_date.strftime("%b %d, %Y %I:%M %p") if election.end_date else "—" }}</td>
             <td>
               <div class="action-buttons">
+                {% if election.status != 'completed' %}
                 <a href="{{ url_for('admin.edit_election', election_id=election.id) }}"
                    class="btn-action btn-action-edit" title="Edit">
                   <i class="bi bi-pencil-fill"></i>
                 </a>
+                {% endif %}
                 {% if election.status == 'upcoming' %}
                 <a href="{{ url_for('admin.activate_election', election_id=election.id) }}"
                    class="btn-action btn-action-success" title="Activate now"

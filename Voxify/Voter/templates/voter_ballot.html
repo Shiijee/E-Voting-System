@@ -1,5 +1,31 @@
 {% extends "voter/base.html" %}
 {% block title %}Ballot{% endblock %}
+
+{% block modals %}
+<!-- Platform Modal -->
+<div class="modal fade" id="platformModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:12px;overflow:hidden;">
+      <div class="modal-header" style="background:var(--navy);color:#fff;border:none;padding:20px 24px;">
+        <div>
+          <h5 class="modal-title" id="platformModalName" style="font-family:'Playfair Display',serif;font-size:1.1rem;margin:0 0 2px;"></h5>
+          <div id="platformModalParty" style="font-size:0.75rem;opacity:0.65;font-style:italic;text-transform:uppercase;letter-spacing:0.05em;"></div>
+        </div>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="padding:24px;">
+        <div style="font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:10px;">
+          <i class="bi bi-file-text me-1"></i>Platform / Campaign Statement
+        </div>
+        <p id="platformModalText" style="font-size:0.92rem;line-height:1.7;color:var(--ink);white-space:pre-wrap;margin:0;"></p>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid var(--border);padding:14px 24px;">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
 {% block page_title %}Ballot{% endblock %}
 
 {% block extra_css %}
@@ -99,6 +125,12 @@
       <div class="candidate-info-bar">
         <div class="candidate-name">{{ candidate.full_name }}</div>
         <div class="candidate-party">{{ candidate.partylist or 'Independent' }}</div>
+        {% if candidate.platform %}
+        <button type="button" class="btn-view-platform" onclick="event.stopPropagation(); openPlatformModal('{{ candidate.full_name | e }}', '{{ candidate.partylist or 'Independent' }}', '{{ candidate.platform | replace("'", "&#39;") | replace('"', '&quot;') | replace('
+', '\n') | e }}')">
+          <i class="bi bi-file-text"></i> View Platform
+        </button>
+        {% endif %}
       </div>
     </div>
     {% else %}
