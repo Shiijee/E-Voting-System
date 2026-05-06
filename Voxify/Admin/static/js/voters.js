@@ -11,7 +11,28 @@ function togglePw(inputId, iconId) {
   }
 }
 
-var nameRe = /^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$/;
+function normalizeName(name) {
+  return name.trim().replace(/\s+/g, ' ');
+}
+
+function formatName(name) {
+  return normalizeName(name)
+    .split(' ')
+    .filter(function(word) { return word.length > 0; })
+    .map(function(word) {
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
+}
+
+function isValidName(name, required) {
+  var normalized = normalizeName(name);
+  if (!normalized) return !required;
+  if (normalized.length < 2) return false;
+  return normalized.split(' ').every(function(part) {
+    return /^[A-Za-zÀ-ÖØ-öø-ÿ]{2,}$/.test(part);
+  });
+}
 
 // ── EMAIL DOMAIN VALIDATION ───────────────────────────────────────────
 var authorizedExplicit = [
@@ -31,9 +52,11 @@ var authorizedExplicit = [
 ];
 
 function isValidEmail(email) {
-  var basicRe = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-  if (!basicRe.test(email)) return false;
-  var domain = email.split('@')[1].toLowerCase();
+  var trimmed = email.trim();
+  var basicRe = /^[a-z0-9._%+\-]{3,}@[a-z0-9.\-]+\.[a-z]{2,}$/;
+  if (!basicRe.test(trimmed)) return false;
+  if (trimmed !== trimmed.toLowerCase()) return false;
+  var domain = trimmed.split('@')[1].toLowerCase();
   var isExplicitMatch = authorizedExplicit.indexOf(domain) !== -1;
   var isEduOrPh = domain.endsWith('.edu') ||
                   domain.endsWith('.ph') ||
@@ -132,18 +155,22 @@ function avUpdateMatch() {
 
 function validateAddVoterForm() {
   var ok = true;
-  var fn = document.getElementById('av-firstname').value.trim();
-  if (!fn) { setErr('av-firstname-err', 'First name is required.'); ok = false; }
-  else if (!nameRe.test(fn)) { setErr('av-firstname-err', 'Letters only (no numbers or special characters).'); ok = false; }
+  var fnEl = document.getElementById('av-firstname');
+  var fn = fnEl ? formatName(fnEl.value) : '';
+  if (fnEl) fnEl.value = fn;
+  if (!isValidName(fn, true)) { setErr('av-firstname-err', 'First name is required and must be letters only, at least 2 characters long.'); ok = false; }
   else clearErr('av-firstname-err');
 
-  var mn = document.getElementById('av-middlename').value.trim();
-  if (mn && !nameRe.test(mn)) { setErr('av-middlename-err', 'Letters only (no numbers or special characters).'); ok = false; }
+  var mnEl = document.getElementById('av-middlename');
+  var mn = mnEl ? formatName(mnEl.value) : '';
+  if (mnEl) mnEl.value = mn;
+  if (!isValidName(mn, false)) { setErr('av-middlename-err', 'Middle name must be letters only and at least 2 characters if provided.'); ok = false; }
   else clearErr('av-middlename-err');
 
-  var sn = document.getElementById('av-surname').value.trim();
-  if (!sn) { setErr('av-surname-err', 'Surname is required.'); ok = false; }
-  else if (!nameRe.test(sn)) { setErr('av-surname-err', 'Letters only (no numbers or special characters).'); ok = false; }
+  var snEl = document.getElementById('av-surname');
+  var sn = snEl ? formatName(snEl.value) : '';
+  if (snEl) snEl.value = sn;
+  if (!isValidName(sn, true)) { setErr('av-surname-err', 'Surname is required and must be letters only, at least 2 characters long.'); ok = false; }
   else clearErr('av-surname-err');
 
   var sid = document.getElementById('av-studentid').value.trim();
@@ -154,7 +181,7 @@ function validateAddVoterForm() {
 
   var em = document.getElementById('av-email').value.trim();
   if (!em) { setErr('av-email-err', 'Email is required.'); ok = false; }
-  else if (!isValidEmail(em)) { setErr('av-email-err', 'Please enter a valid email from an accepted provider (e.g. Gmail, Outlook, Yahoo, or a .ph / .edu email).'); ok = false; }
+  else if (!isValidEmail(em)) { setErr('av-email-err', 'Please enter a valid lowercase email with at least 3 characters before @ from an accepted provider (e.g. Gmail, Outlook, Yahoo, or a .ph / .edu email).'); ok = false; }
   else clearErr('av-email-err');
 
   var pw = document.getElementById('av-password').value;
@@ -183,7 +210,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     ['av-firstname','av-middlename','av-surname','av-studentid','av-email','av-password','av-confirm-password'].forEach(function (id) {
       var el = document.getElementById(id);
-      if (el) el.addEventListener('input', function () { clearErr(id + '-err'); });
+      if (el) {
+        el.addEventListener('input', function () { clearErr(id + '-err'); });
+        if (['av-firstname','av-middlename','av-surname'].includes(id)) {
+          el.addEventListener('blur', function() { el.value = formatName(el.value); });
+        }
+      }
     });
   }
 
@@ -194,7 +226,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     ['firstname','middlename','surname','email','password','confirm-password'].forEach(function(field) {
       var el = document.getElementById('ev-' + vid + '-' + field);
-      if (el) el.addEventListener('input', function() { evClearErr(vid, field); });
+      if (el) {
+        el.addEventListener('input', function () { evClearErr(vid, field); });
+        if (['firstname','middlename','surname'].includes(field)) {
+          el.addEventListener('blur', function() { el.value = formatName(el.value); });
+        }
+      }
     });
   });
 });
@@ -329,26 +366,27 @@ function validateEditVoterForm(vid) {
 
   var fnEl = document.getElementById('ev-' + vid + '-firstname');
   if (!fnEl) return true;
-  var fnVal = fnEl.value.trim();
-  if (!fnVal) { evSetErr(vid, 'firstname', 'First name is required.'); ok = false; }
-  else if (!nameRe.test(fnVal)) { evSetErr(vid, 'firstname', 'Letters only (no numbers or special characters).'); ok = false; }
+  var fnVal = formatName(fnEl.value);
+  fnEl.value = fnVal;
+  if (!isValidName(fnVal, true)) { evSetErr(vid, 'firstname', 'First name is required and must be letters only, at least 2 characters long.'); ok = false; }
   else evClearErr(vid, 'firstname');
 
   var mnEl  = document.getElementById('ev-' + vid + '-middlename');
-  var mnVal = mnEl ? mnEl.value.trim() : '';
-  if (mnVal && !nameRe.test(mnVal)) { evSetErr(vid, 'middlename', 'Letters only (no numbers or special characters).'); ok = false; }
+  var mnVal = mnEl ? formatName(mnEl.value) : '';
+  if (mnEl) mnEl.value = mnVal;
+  if (!isValidName(mnVal, false)) { evSetErr(vid, 'middlename', 'Middle name must be letters only and at least 2 characters if provided.'); ok = false; }
   else evClearErr(vid, 'middlename');
 
   var snEl  = document.getElementById('ev-' + vid + '-surname');
-  var snVal = snEl ? snEl.value.trim() : '';
-  if (!snVal) { evSetErr(vid, 'surname', 'Surname is required.'); ok = false; }
-  else if (!nameRe.test(snVal)) { evSetErr(vid, 'surname', 'Letters only (no numbers or special characters).'); ok = false; }
+  var snVal = snEl ? formatName(snEl.value) : '';
+  if (snEl) snEl.value = snVal;
+  if (!isValidName(snVal, true)) { evSetErr(vid, 'surname', 'Surname is required and must be letters only, at least 2 characters long.'); ok = false; }
   else evClearErr(vid, 'surname');
 
   var emEl  = document.getElementById('ev-' + vid + '-email');
   var emVal = emEl ? emEl.value.trim() : '';
   if (!emVal) { evSetErr(vid, 'email', 'Email is required.'); ok = false; }
-  else if (!isValidEmail(emVal)) { evSetErr(vid, 'email', 'Please enter a valid email from an accepted provider (e.g. Gmail, Outlook, Yahoo, or a .ph / .edu email).'); ok = false; }
+  else if (!isValidEmail(emVal)) { evSetErr(vid, 'email', 'Please enter a valid lowercase email with at least 3 characters before @ from an accepted provider (e.g. Gmail, Outlook, Yahoo, or a .ph / .edu email).'); ok = false; }
   else evClearErr(vid, 'email');
 
   var pwEl   = document.getElementById('ev-' + vid + '-password');

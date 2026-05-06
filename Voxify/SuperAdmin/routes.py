@@ -2,11 +2,29 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from werkzeug.security import generate_password_hash
 from Voxify.Authentication.routes import superadmin_required
 from Voxify.utils.otp import send_account_email
+import re
 
 superadmin_bp = Blueprint('super_admin', __name__,
                           template_folder='templates',
                           static_folder='static',
                           static_url_path='/superadmin/static')
+
+
+def normalize_name(name):
+    return re.sub(r'\s+', ' ', name.strip())
+
+
+def format_name(name):
+    return ' '.join([p.capitalize() for p in normalize_name(name).split(' ') if p])
+
+
+def is_valid_name(name, required=True):
+    normalized = normalize_name(name)
+    if not normalized:
+        return not required
+    if len(normalized) < 2:
+        return False
+    return all(re.fullmatch(r'[A-Za-zÀ-ÖØ-öø-ÿ]{2,}', part) for part in normalized.split(' '))
 
 
 @superadmin_bp.route("/")
@@ -226,9 +244,9 @@ def delete_college(college_id):
 @superadmin_bp.route("/create-admin", methods=["POST"])
 @superadmin_required
 def create_admin():
-    firstname = request.form.get("firstname", "").strip()
-    middlename = request.form.get("middlename", "").strip()
-    surname = request.form.get("surname", "").strip()
+    firstname = normalize_name(request.form.get("firstname", ""))
+    middlename = normalize_name(request.form.get("middlename", ""))
+    surname = normalize_name(request.form.get("surname", ""))
     email = request.form.get("email", "").strip()
     password = request.form.get("password", "")
     confirm_password = request.form.get("confirm_password", "")
@@ -239,17 +257,19 @@ def create_admin():
         flash("All fields except middle name are required.", "error")
         return redirect(url_for('super_admin.manage_admins'))
 
-    # Validate names: no numbers, minimum 2 letters
-    import re
-    if not re.match(r'^[a-zA-Z]{2,}$', firstname):
-        flash("First name must be at least 2 letters and contain no numbers.", "error")
+    if not is_valid_name(firstname, True):
+        flash("First name must be at least 2 letters, letters and spaces only.", "error")
         return redirect(url_for('super_admin.manage_admins'))
-    if not re.match(r'^[a-zA-Z]{2,}$', surname):
-        flash("Last name must be at least 2 letters and contain no numbers.", "error")
+    if not is_valid_name(surname, True):
+        flash("Last name must be at least 2 letters, letters and spaces only.", "error")
         return redirect(url_for('super_admin.manage_admins'))
-    if middlename and not re.match(r'^[a-zA-Z]{2,}$', middlename):
-        flash("Middle name must be at least 2 letters and contain no numbers.", "error")
+    if not is_valid_name(middlename, False):
+        flash("Middle name must be at least 2 letters and contain letters only when provided.", "error")
         return redirect(url_for('super_admin.manage_admins'))
+
+    firstname = format_name(firstname)
+    middlename = format_name(middlename)
+    surname = format_name(surname)
 
     # Validate email: lowercase, has @, valid domain
     if email != email.lower():
@@ -257,6 +277,9 @@ def create_admin():
         return redirect(url_for('super_admin.manage_admins'))
     if '@' not in email:
         flash("Email must contain '@'.", "error")
+        return redirect(url_for('super_admin.manage_admins'))
+    if len(email.split('@')[0]) < 3:
+        flash("Email local part must be at least 3 characters.", "error")
         return redirect(url_for('super_admin.manage_admins'))
     domain = email.split('@')[1].lower()
     allowed_domains = [
@@ -284,7 +307,11 @@ def create_admin():
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor()
     try:
-                                                               
+        cursor.execute("SELECT id FROM users WHERE email = %s LIMIT 1", (email,))
+        if cursor.fetchone():
+            flash(f"The email address '{email}' is already registered. Please use a different email.", "error")
+            return redirect(url_for('super_admin.manage_admins'))
+
         cursor.execute("SELECT COUNT(*) as cnt FROM users WHERE role IN ('admin','superadmin')")
         row = cursor.fetchone()
         count = row['cnt'] if isinstance(row, dict) else row[0]
@@ -350,30 +377,30 @@ def edit_admin(admin_id):
         return redirect(url_for('super_admin.manage_admins'))
 
     if request.method == "POST":
-        full_name = request.form.get("full_name", "").strip()
+        firstname = normalize_name(request.form.get("firstname", ""))
+        middlename = normalize_name(request.form.get("middlename", ""))
+        surname = normalize_name(request.form.get("surname", ""))
         email = request.form.get("email", "").strip()
         college_id = request.form.get("college_id", "").strip()
         password = request.form.get("password", "").strip()
 
-        if not full_name or not email or not college_id:
-            flash("Full Name, Email, and College are required.", "error")
+        if not firstname or not surname or not email or not college_id:
+            flash("First name, Last name, Email, and College are required.", "error")
             return redirect(request.url)
 
-        name_parts = full_name.split()
-        if len(name_parts) < 2:
-            flash("Full name must include at least first and last name.", "error")
+        if not is_valid_name(firstname, True):
+            flash("First name must be at least 2 letters, letters and spaces only.", "error")
             return redirect(request.url)
-        firstname = name_parts[0]
-        surname = " ".join(name_parts[1:])
+        if not is_valid_name(surname, True):
+            flash("Last name must be at least 2 letters, letters and spaces only.", "error")
+            return redirect(request.url)
+        if not is_valid_name(middlename, False):
+            flash("Middle name must be at least 2 letters and contain letters only when provided.", "error")
+            return redirect(request.url)
 
-        # Validate names
-        import re
-        if not re.match(r'^[a-zA-Z]{2,}$', firstname):
-            flash("First name must be at least 2 letters and contain no numbers.", "error")
-            return redirect(request.url)
-        if not re.match(r'^[a-zA-Z]{2,}$', surname.replace(' ', '')):  # remove spaces for validation
-            flash("Last name must be at least 2 letters and contain no numbers.", "error")
-            return redirect(request.url)
+        firstname = format_name(firstname)
+        middlename = format_name(middlename)
+        surname = format_name(surname)
 
         # Validate email
         if email != email.lower():
@@ -381,6 +408,9 @@ def edit_admin(admin_id):
             return redirect(request.url)
         if '@' not in email:
             flash("Email must contain '@'.", "error")
+            return redirect(request.url)
+        if len(email.split('@')[0]) < 3:
+            flash("Email local part must be at least 3 characters.", "error")
             return redirect(request.url)
         domain = email.split('@')[1].lower()
         allowed_domains = [
@@ -398,16 +428,21 @@ def edit_admin(admin_id):
         conn = current_app.config["get_db_connection"]()
         cursor = conn.cursor()
         try:
+            cursor.execute("SELECT id FROM users WHERE email = %s AND id != %s LIMIT 1", (email, admin_id))
+            if cursor.fetchone():
+                flash("That email address is already in use.", "error")
+                return redirect(request.url)
+
             if password:
                 from werkzeug.security import generate_password_hash
                 cursor.execute(
-                    "UPDATE users SET firstname=%s, surname=%s, email=%s, college_id=%s, password=%s WHERE id=%s AND role='admin'",
-                    (firstname, surname, email, college_id, generate_password_hash(password), admin_id)
+                    "UPDATE users SET firstname=%s, middlename=%s, surname=%s, email=%s, college_id=%s, password=%s WHERE id=%s AND role='admin'",
+                    (firstname, middlename, surname, email, college_id, generate_password_hash(password), admin_id)
                 )
             else:
                 cursor.execute(
-                    "UPDATE users SET firstname=%s, surname=%s, email=%s, college_id=%s WHERE id=%s AND role='admin'",
-                    (firstname, surname, email, college_id, admin_id)
+                    "UPDATE users SET firstname=%s, middlename=%s, surname=%s, email=%s, college_id=%s WHERE id=%s AND role='admin'",
+                    (firstname, middlename, surname, email, college_id, admin_id)
                 )
             conn.commit()
             flash("Admin updated successfully!", "success")

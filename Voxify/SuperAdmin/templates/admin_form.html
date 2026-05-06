@@ -22,10 +22,22 @@
 <div class="card-panel">
   <div class="card-panel-body">
     <form method="POST" id="adminForm" novalidate>
-      <div class="mb-3">
-        <label class="form-label-custom required">Full Name</label>
-        <input type="text" name="full_name" id="af-fullname" class="form-control-custom" value="{{ admin.firstname + ' ' + admin.surname if admin else '' }}" autocomplete="off"/>
-        <small class="form-error-text" id="af-fullname-err"></small>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="mb-3">
+          <label class="form-label-custom required">First Name</label>
+          <input type="text" name="firstname" id="af-firstname" class="form-control-custom" value="{{ admin.firstname if admin else '' }}" autocomplete="off"/>
+          <small class="form-error-text" id="af-firstname-err"></small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label-custom">Middle Name</label>
+          <input type="text" name="middlename" id="af-middlename" class="form-control-custom" value="{{ admin.middlename if admin else '' }}" autocomplete="off"/>
+          <small class="form-error-text" id="af-middlename-err"></small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label-custom required">Last Name</label>
+          <input type="text" name="surname" id="af-surname" class="form-control-custom" value="{{ admin.surname if admin else '' }}" autocomplete="off"/>
+          <small class="form-error-text" id="af-surname-err"></small>
+        </div>
       </div>
       <div class="mb-3">
         <label class="form-label-custom required">Email</label>
@@ -114,7 +126,22 @@
 {% block extra_js %}
 <script>
 var AF_IS_EDIT = {{ 'true' if action == 'edit' else 'false' }};
-var afNameRe = /^[A-Za-z]{2,}$/; // No numbers, min 2 letters, no spaces for individual names
+
+function afNormalizeName(name) {
+  return name.trim().replace(/\s+/g, ' ');
+}
+
+function afFormatName(name) {
+  return afNormalizeName(name)
+    .split(' ')
+    .filter(function(word) { return word.length > 0; })
+    .map(function(word) {
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
+}
+
+var afNameRe = /^[A-Za-zÀ-ÖØ-öø-ÿ]{2,}$/; // Each name part must be at least 2 letters
 
 // ── EMAIL DOMAIN VALIDATION ───────────────────────────────────────────
 var afAuthorizedExplicit = [
@@ -134,7 +161,7 @@ var afAuthorizedExplicit = [
 ];
 
 function afIsValidEmail(email) {
-  var basicRe = /^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$/; // must be lowercase
+  var basicRe = /^[a-z0-9._%+\-]{3,}@[a-z0-9.\-]+\.[a-z]{2,}$/; // must be lowercase, at least 3 chars before @
   if (!basicRe.test(email)) return false;
   if (email !== email.toLowerCase()) return false; // enforce lowercase
   var domain = email.split('@')[1].toLowerCase();
@@ -230,21 +257,26 @@ function afUpdateMatch() {
 function afValidate() {
   var ok = true;
 
-  var fn = document.getElementById('af-fullname').value.trim();
-  if (!fn) { afSetErr('af-fullname', 'Full name is required.'); ok = false; }
-  else {
-    var parts = fn.split(/\s+/);
-    if (parts.length < 2) { afSetErr('af-fullname', 'Full name must include at least first and last name.'); ok = false; }
-    else {
-      var valid = parts.every(function(p){ return afNameRe.test(p); });
-      if (!valid) { afSetErr('af-fullname', 'Each name part must be at least 2 letters and contain no numbers.'); ok = false; }
-      else afClearErr('af-fullname');
-    }
-  }
+  var fnEl = document.getElementById('af-firstname');
+  var fn = fnEl ? afNormalizeName(fnEl.value) : '';
+  if (!fn) { afSetErr('af-firstname', 'First name is required.'); ok = false; }
+  else if (!afNameRe.test(fn)) { afSetErr('af-firstname', 'First name must be at least 2 letters and contain only letters and spaces.'); ok = false; }
+  else afClearErr('af-firstname');
+
+  var mnEl = document.getElementById('af-middlename');
+  var mn = mnEl ? afNormalizeName(mnEl.value) : '';
+  if (mn && !afNameRe.test(mn)) { afSetErr('af-middlename', 'Middle name must be at least 2 letters and contain only letters and spaces.'); ok = false; }
+  else afClearErr('af-middlename');
+
+  var snEl = document.getElementById('af-surname');
+  var sn = snEl ? afNormalizeName(snEl.value) : '';
+  if (!sn) { afSetErr('af-surname', 'Last name is required.'); ok = false; }
+  else if (!afNameRe.test(sn)) { afSetErr('af-surname', 'Last name must be at least 2 letters and contain only letters and spaces.'); ok = false; }
+  else afClearErr('af-surname');
 
   var em = document.getElementById('af-email').value.trim();
   if (!em) { afSetErr('af-email', 'Email is required.'); ok = false; }
-  else if (!afIsValidEmail(em)) { afSetErr('af-email', 'Email must be lowercase and from an accepted provider (e.g., Gmail, Outlook, Yahoo, or .edu/.ph domains).'); ok = false; }
+  else if (!afIsValidEmail(em)) { afSetErr('af-email', 'Email must be lowercase, have at least 3 characters before @, and come from an accepted provider (e.g., Gmail, Outlook, Yahoo, or .edu/.ph domains).'); ok = false; }
   else afClearErr('af-email');
 
   var col = document.getElementById('af-college').value;
@@ -278,9 +310,22 @@ document.addEventListener('DOMContentLoaded', function () {
     form.addEventListener('submit', function(e) {
       if (!afValidate()) e.preventDefault();
     });
-    ['af-fullname','af-email','af-college','af-password','af-confirm-password'].forEach(function(id) {
+    ['af-firstname','af-middlename','af-surname','af-email','af-college','af-password','af-confirm-password'].forEach(function(id) {
       var el = document.getElementById(id);
-      if (el) el.addEventListener('input', function() { afClearErr(id); });
+      if (el) {
+        el.addEventListener('input', function() { afClearErr(id); });
+        if (id === 'af-firstname' || id === 'af-middlename' || id === 'af-surname') {
+          el.addEventListener('blur', function() { el.value = afFormatName(el.value); });
+        }
+        if (id === 'af-email') {
+          el.addEventListener('blur', function() {
+            var em = el.value.trim();
+            if (em && !afIsValidEmail(em)) {
+              afSetErr('af-email', 'Email must be lowercase, have at least 3 characters before @, and come from an accepted provider (e.g., Gmail, Outlook, Yahoo, or .edu/.ph domains).');
+            }
+          });
+        }
+      }
     });
   }
 });

@@ -4,6 +4,7 @@ from Voxify.Authentication.routes import admin_required
 from Voxify.utils.election_status import sync_election_statuses
 from Voxify.utils.otp import send_account_email
 import os
+import re
 from werkzeug.utils import secure_filename
 import uuid
 
@@ -57,6 +58,23 @@ def get_admin_college_id():
     cursor.close()
     conn.close()
     return result['college_id'] if result else None
+
+
+def normalize_name(name):
+    return re.sub(r'\s+', ' ', name.strip())
+
+
+def format_name(name):
+    return ' '.join([p.capitalize() for p in normalize_name(name).split(' ') if p])
+
+
+def is_valid_name(name, required=True):
+    normalized = normalize_name(name)
+    if not normalized:
+        return not required
+    if len(normalized) < 2:
+        return False
+    return all(re.fullmatch(r'[A-Za-zÀ-ÖØ-öø-ÿ]{2,}', part) for part in normalized.split(' '))
 
                                               
            
@@ -1044,15 +1062,14 @@ def view_voters():
 @admin_required
 def create_voter():
     college_id = get_admin_college_id()
-    firstname   = request.form["firstname"]
-    middlename  = request.form.get("middlename", "")
-    surname     = request.form["surname"]
+    firstname   = normalize_name(request.form["firstname"])
+    middlename  = normalize_name(request.form.get("middlename", ""))
+    surname     = normalize_name(request.form["surname"])
     email       = request.form["email"]
     password    = request.form["password"]
     seq         = request.form.get("student_id_seq", "").strip()
 
     from werkzeug.security import generate_password_hash
-    import re
 
     def save_form_and_redirect(msg):
         """Flash error, stash form values in session, redirect back."""
@@ -1066,8 +1083,15 @@ def create_voter():
         }
         return redirect(url_for('admin.view_voters'))
 
+    if not is_valid_name(firstname, True) or not is_valid_name(surname, True) or not is_valid_name(middlename, False):
+        return save_form_and_redirect("First name and surname are required; names must be letters and spaces only, with each word at least 2 letters. Middle name is optional.")
+
+    firstname = format_name(firstname)
+    middlename = format_name(middlename)
+    surname = format_name(surname)
+
     if not seq.isdigit():
-        return save_form_and_redirect("Student ID sequence must be a number (e.g. 1, 2, 3).")
+        return save_form_and_redirect("Student ID sequence must be a number (e.g. 1, 2, 3.)")
 
     student_id = f"241-{college_id}-{seq.zfill(4)}"
 
@@ -1080,7 +1104,29 @@ def create_voter():
             cursor.close(); conn.close()
             return save_form_and_redirect(f"Student ID {student_id} already exists. Please use a different number.")
 
-                                   
+        if email != email.lower():
+            cursor.close(); conn.close()
+            return save_form_and_redirect("Email must be in lowercase.")
+        if '@' not in email:
+            cursor.close(); conn.close()
+            return save_form_and_redirect("Email must contain '@'.")
+        local_part, domain = email.split('@', 1)
+        if len(local_part) < 3:
+            cursor.close(); conn.close()
+            return save_form_and_redirect("Email local part must be at least 3 characters.")
+        domain = domain.lower()
+        allowed_domains = [
+            'gmail.com', 'yahoo.com', 'ymail.com', 'rocketmail.com',
+            'outlook.com', 'hotmail.com', 'live.com', 'msn.com', 'icloud.com',
+            'me.com', 'mac.com', 'proton.me', 'protonmail.com', 'zoho.com',
+            'zoho.eu', 'aol.com', 'fastmail.com', 'gmx.com', 'mail.com', 'yandex.com',
+            'pldtmail.com', 'pldtdsl.net', 'globe.com.ph', 'smart.com.ph'
+        ]
+        is_allowed = domain in allowed_domains or domain.endswith(('.edu', '.ph', '.edu.ph', '.gov.ph', '.microsoft.com'))
+        if not is_allowed:
+            cursor.close(); conn.close()
+            return save_form_and_redirect("Email must be from an accepted provider (e.g., Gmail, Outlook, Yahoo, or .edu/.ph domains).")
+
         cursor.execute("SELECT id FROM users WHERE email=%s LIMIT 1", (email,))
         if cursor.fetchone():
             cursor.close(); conn.close()
@@ -1120,15 +1166,50 @@ def create_voter():
 @admin_required
 def edit_voter(voter_id):
     college_id = get_admin_college_id()
-    firstname  = request.form["firstname"]
-    middlename = request.form.get("middlename", "")
-    surname    = request.form["surname"]
+    firstname  = normalize_name(request.form["firstname"])
+    middlename = normalize_name(request.form.get("middlename", ""))
+    surname    = normalize_name(request.form["surname"])
     email      = request.form["email"]
     password   = request.form.get("password", "").strip()
+
+    if not is_valid_name(firstname, True) or not is_valid_name(surname, True) or not is_valid_name(middlename, False):
+        flash("First name and surname are required; names must be letters and spaces only, with each word at least 2 letters. Middle name is optional.", "danger")
+        return redirect(url_for('admin.view_voters'))
+
+    firstname = format_name(firstname)
+    middlename = format_name(middlename)
+    surname = format_name(surname)
+
+    if email != email.lower():
+        flash("Email must be in lowercase.", "danger")
+        return redirect(url_for('admin.view_voters'))
+    if '@' not in email:
+        flash("Email must contain '@'.", "danger")
+        return redirect(url_for('admin.view_voters'))
+    local_part, domain = email.split('@', 1)
+    if len(local_part) < 3:
+        flash("Email local part must be at least 3 characters.", "danger")
+        return redirect(url_for('admin.view_voters'))
+    domain = domain.lower()
+    allowed_domains = [
+        'gmail.com', 'yahoo.com', 'ymail.com', 'rocketmail.com',
+        'outlook.com', 'hotmail.com', 'live.com', 'msn.com', 'icloud.com',
+        'me.com', 'mac.com', 'proton.me', 'protonmail.com', 'zoho.com',
+        'zoho.eu', 'aol.com', 'fastmail.com', 'gmx.com', 'mail.com', 'yandex.com',
+        'pldtmail.com', 'pldtdsl.net', 'globe.com.ph', 'smart.com.ph'
+    ]
+    is_allowed = domain in allowed_domains or domain.endswith(('.edu', '.ph', '.edu.ph', '.gov.ph', '.microsoft.com'))
+    if not is_allowed:
+        flash("Email must be from an accepted provider (e.g., Gmail, Outlook, Yahoo, or .edu/.ph domains).", "danger")
+        return redirect(url_for('admin.view_voters'))
 
     conn = current_app.config["get_db_connection"]()
     cursor = conn.cursor()
     try:
+        cursor.execute("SELECT id FROM users WHERE email=%s AND id != %s LIMIT 1", (email, voter_id))
+        if cursor.fetchone():
+            flash("That email address is already registered. Please use a different email.", "danger")
+            return redirect(url_for('admin.view_voters'))
         if password:
             from werkzeug.security import generate_password_hash
             cursor.execute(

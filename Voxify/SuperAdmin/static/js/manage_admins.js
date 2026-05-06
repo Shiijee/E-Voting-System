@@ -11,15 +11,35 @@ function mTogglePw(inputId, iconId) {
   }
 }
 
+function normalizeName(name) {
+  return name.trim().replace(/\s+/g, ' ');
+}
+
+function formatName(name) {
+  return normalizeName(name)
+    .split(' ')
+    .filter(function(word) { return word.length > 0; })
+    .map(function(word) {
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
+}
+
 function mValidateName(name) {
-  // No numbers, minimum 2 letters
-  return /^[a-zA-Z]{2,}$/.test(name.trim());
+  var normalized = normalizeName(name);
+  if (normalized.length < 2) return false;
+  var parts = normalized.split(' ');
+  return parts.every(function(part) {
+    return /^[A-Za-zÀ-ÖØ-öø-ÿ]{2,}$/.test(part);
+  });
 }
 
 function mValidateEmail(email) {
   var trimmed = email.trim();
   if (!trimmed.includes('@')) return false;
   if (trimmed !== trimmed.toLowerCase()) return false; // must be lowercase
+  var local = trimmed.split('@')[0];
+  if (local.length < 3) return false;
   var domain = trimmed.split('@')[1].toLowerCase();
   var allowedDomains = [
     'gmail.com', 'yahoo.com', 'ymail.com', 'rocketmail.com',
@@ -47,15 +67,18 @@ function mClearErr(id) { mSetErr(id, ''); }
 
 function mValidateForm() {
   var ok = true;
-  var firstname = document.getElementById('addAdminForm').elements['firstname'].value.trim();
-  var surname = document.getElementById('addAdminForm').elements['surname'].value.trim();
-  var email = document.getElementById('addAdminForm').elements['email'].value.trim();
+  var firstnameEl = document.getElementById('addAdminForm').elements['firstname'];
+  var surnameEl = document.getElementById('addAdminForm').elements['surname'];
+  var emailEl = document.getElementById('addAdminForm').elements['email'];
+  var firstname = firstnameEl ? normalizeName(firstnameEl.value) : '';
+  var surname = surnameEl ? normalizeName(surnameEl.value) : '';
+  var email = emailEl ? emailEl.value.trim() : '';
 
   if (!firstname) {
     mSetErr('m-firstname', 'First name is required.');
     ok = false;
   } else if (!mValidateName(firstname)) {
-    mSetErr('m-firstname', 'First name must be at least 2 letters and contain no numbers.');
+    mSetErr('m-firstname', 'First name must be at least 2 letters and contain only letters and spaces.');
     ok = false;
   } else {
     mClearErr('m-firstname');
@@ -65,7 +88,7 @@ function mValidateForm() {
     mSetErr('m-surname', 'Last name is required.');
     ok = false;
   } else if (!mValidateName(surname)) {
-    mSetErr('m-surname', 'Last name must be at least 2 letters and contain no numbers.');
+    mSetErr('m-surname', 'Last name must be at least 2 letters and contain only letters and spaces.');
     ok = false;
   } else {
     mClearErr('m-surname');
@@ -75,7 +98,7 @@ function mValidateForm() {
     mSetErr('m-email', 'Email is required.');
     ok = false;
   } else if (!mValidateEmail(email)) {
-    mSetErr('m-email', 'Email must be lowercase and from an accepted provider (e.g., Gmail, Outlook, Yahoo, or .edu/.ph domains).');
+    mSetErr('m-email', 'Email must be lowercase, have at least 3 characters before @, and come from an accepted provider (e.g., Gmail, Outlook, Yahoo, or .edu/.ph domains).');
     ok = false;
   } else {
     mClearErr('m-email');
@@ -167,7 +190,12 @@ document.addEventListener('DOMContentLoaded', function() {
   if (form) {
     ['firstname', 'surname', 'email'].forEach(function(name) {
       var el = form.elements[name];
-      if (el) el.addEventListener('input', function() { mClearErr('m-' + name); mSyncBtn(); });
+      if (el) {
+        el.addEventListener('input', function() { mClearErr('m-' + name); mSyncBtn(); });
+        if (name !== 'email') {
+          el.addEventListener('blur', function() { el.value = formatName(el.value); });
+        }
+      }
     });
   }
 });
