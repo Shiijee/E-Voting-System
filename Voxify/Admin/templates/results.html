@@ -374,9 +374,9 @@
       <div class="card-panel-body">
         <div class="results-table">
           {% for item in result.candidates %}
-          <div class="result-row {{ 'result-row-winner' if loop.first and result.total_votes > 0 }}">
+          <div class="result-row {{ 'result-row-winner' if loop.first and result.total_votes > 0 and not result.has_tie }}">
             <div class="result-rank">
-              {% if loop.first and result.total_votes > 0 %}
+              {% if loop.first and result.total_votes > 0 and not result.has_tie %}
               <i class="bi bi-trophy-fill text-amber"></i>
               {% else %}
               <span>{{ loop.index }}</span>

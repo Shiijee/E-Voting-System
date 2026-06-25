@@ -133,55 +133,147 @@ Please change your password after your first login.
 
 
 def store_otp_in_session(otp, purpose, user_data=None):
-    """Store OTP temporarily in session with expiration and attempt counter"""
+    """Store OTP in database with expiration and attempt counter"""
     hashed_otp = hash_otp(otp)
     expiry_time = datetime.now() + timedelta(minutes=OTP_EXPIRY_MINUTES)
 
-    session[f'otp_{purpose}'] = {
-        'hashed_otp': hashed_otp,
-        'expiry': expiry_time.isoformat(),
-        'attempts': 0
-    }
-    session.permanent = True
-    session.modified = True
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor()
+    try:
+        # Store OTP in database
+        user_id = user_data.get('user_id') if isinstance(user_data, dict) else None
+        cursor.execute("""
+            INSERT INTO otp_codes (user_id, otp, expires_at, used)
+            VALUES (%s, %s, %s, FALSE)
+        """, (user_id, hashed_otp, expiry_time))
+        conn.commit()
+        otp_id = cursor.lastrowid
+        
+        # Store metadata in session for reference
+        session[f'otp_{purpose}'] = {
+            'otp_id': otp_id,
+            'purpose': purpose,
+            'attempts': 0,
+            'expiry': expiry_time.isoformat()
+        }
+        session.permanent = True
+        session.modified = True
 
-                                          
-    if user_data:
-        session[f'user_data_{purpose}'] = user_data
+        # Store user data if provided
+        if user_data:
+            session[f'user_data_{purpose}'] = user_data
+            session.modified = True
+            
+    except Exception as e:
+        print(f"Error storing OTP in database: {e}")
+        # Fallback to session if database fails
+        session[f'otp_{purpose}'] = {
+            'hashed_otp': hashed_otp,
+            'expiry': expiry_time.isoformat(),
+            'attempts': 0
+        }
+        session.permanent = True
+        session.modified = True
+        if user_data:
+            session[f'user_data_{purpose}'] = user_data
+            session.modified = True
+    finally:
+        cursor.close()
+        conn.close()
 
 def verify_otp_from_session(otp, purpose):
-    """Verify OTP from session, check expiry and attempts"""
+    """Verify OTP from database, check expiry and attempts"""
     otp_key = f'otp_{purpose}'
     if otp_key not in session:
         return False, "No OTP found"
 
-    otp_data = session[otp_key]
+    session_data = session[otp_key]
     hashed_input = hash_otp(otp)
 
-                    
-    if otp_data['attempts'] >= MAX_ATTEMPTS:
-        clear_otp_from_session(purpose)
-        return False, "Maximum attempts exceeded"
+    # If otp_id exists, use database verification
+    if 'otp_id' in session_data:
+        otp_id = session_data['otp_id']
+        
+        conn = current_app.config["get_db_connection"]()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            # Get OTP from database
+            cursor.execute("""
+                SELECT id, otp, expires_at, used FROM otp_codes WHERE id=%s
+            """, (otp_id,))
+            otp_record = cursor.fetchone()
+            
+            if not otp_record:
+                clear_otp_from_session(purpose)
+                return False, "No OTP found"
+            
+            # Check if already used
+            if otp_record['used']:
+                clear_otp_from_session(purpose)
+                return False, "OTP has already been used"
+            
+            # Check expiry
+            expiry_time = otp_record['expires_at']
+            if isinstance(expiry_time, str):
+                expiry_time = datetime.fromisoformat(expiry_time)
+            if datetime.now() > expiry_time:
+                clear_otp_from_session(purpose)
+                return False, "OTP has expired"
+            
+            # Check attempts
+            if session_data['attempts'] >= MAX_ATTEMPTS:
+                clear_otp_from_session(purpose)
+                return False, "Maximum attempts exceeded"
+            
+            # Verify OTP
+            if hashed_input != otp_record['otp']:
+                session_data['attempts'] += 1
+                session[otp_key] = session_data
+                return False, f"Invalid OTP. {MAX_ATTEMPTS - session_data['attempts']} attempts remaining"
+            
+            # Mark as used in database
+            cursor.execute("""
+                UPDATE otp_codes SET used=TRUE WHERE id=%s
+            """, (otp_id,))
+            conn.commit()
+            
+            # Clear only OTP metadata, keep user_data for later login completion
+            if otp_key in session:
+                del session[otp_key]
+            session.pop('_otp_fallback', None)
+            session.modified = True
+            return True, "OTP verified successfully"
+            
+        except Exception as e:
+            print(f"Error verifying OTP from database: {e}")
+            return False, "Verification error"
+        finally:
+            cursor.close()
+            conn.close()
+    else:
+        # Fallback to session-based verification for backward compatibility
+        if 'hashed_otp' not in session_data:
+            return False, "No OTP found"
+            
+        if session_data['attempts'] >= MAX_ATTEMPTS:
+            clear_otp_from_session(purpose)
+            return False, "Maximum attempts exceeded"
 
-                  
-    expiry_time = datetime.fromisoformat(otp_data['expiry'])
-    if datetime.now() > expiry_time:
-        clear_otp_from_session(purpose)
-        return False, "OTP has expired"
+        expiry_time = datetime.fromisoformat(session_data['expiry'])
+        if datetime.now() > expiry_time:
+            clear_otp_from_session(purpose)
+            return False, "OTP has expired"
 
-               
-    if hashed_input != otp_data['hashed_otp']:
-        otp_data['attempts'] += 1
-        session[otp_key] = otp_data
-        return False, f"Invalid OTP. {MAX_ATTEMPTS - otp_data['attempts']} attempts remaining"
+        if hashed_input != session_data['hashed_otp']:
+            session_data['attempts'] += 1
+            session[otp_key] = session_data
+            return False, f"Invalid OTP. {MAX_ATTEMPTS - session_data['attempts']} attempts remaining"
 
-                                                                      
-    if otp_key in session:
-        del session[otp_key]
-                                
-    session.pop('_otp_fallback', None)
-
-    return True, "OTP verified successfully"
+        session.pop('_otp_fallback', None)
+        if otp_key in session:
+            del session[otp_key]
+        session.modified = True
+        return True, "OTP verified successfully"
 
 def is_otp_valid(purpose):
     otp_key = f'otp_{purpose}'
@@ -189,6 +281,27 @@ def is_otp_valid(purpose):
         return False
     otp_data = session.get(otp_key, {})
     expiry = otp_data.get('expiry')
+
+    if not expiry and 'otp_id' in otp_data:
+        conn = current_app.config["get_db_connection"]()
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT expires_at FROM otp_codes WHERE id=%s", (otp_data['otp_id'],))
+            record = cursor.fetchone()
+            if record and record.get('expires_at'):
+                expiry_time = record['expires_at']
+                if isinstance(expiry_time, str):
+                    expiry_time = datetime.fromisoformat(expiry_time)
+                expiry = expiry_time.isoformat()
+                otp_data['expiry'] = expiry
+                session[otp_key] = otp_data
+                session.modified = True
+        except Exception as e:
+            print(f"Error checking OTP validity: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+
     if not expiry:
         clear_otp_from_session(purpose)
         return False

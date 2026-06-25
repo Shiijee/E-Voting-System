@@ -126,9 +126,8 @@
   font-size: 0.875rem !important;
   color: var(--ink) !important;
   vertical-align: middle !important;
-  white-space: nowrap !important;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
 }
 .table-custom tbody tr:hover td { background: #fdf8f0; }
 .table-custom tbody tr:last-child td { border-bottom: none; }
@@ -163,8 +162,8 @@
 
 /* administrator cell — flex inside fixed-width td */
 .table-custom td.col-administrator {
-  overflow: hidden;
-  white-space: nowrap;
+  overflow: visible;
+  white-space: normal;
 }
 .admin-cell {
   display: flex;
@@ -176,20 +175,18 @@
 .admin-info {
   min-width: 0;
   flex: 1;
-  overflow: hidden;
+  overflow: visible;
 }
 .admin-info .fw-600 {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
   font-size: 0.875rem;
   color: var(--ink);
   font-weight: 600;
 }
 .admin-info .text-muted-sm {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
   font-size: 0.78rem;
   color: var(--muted);
 }

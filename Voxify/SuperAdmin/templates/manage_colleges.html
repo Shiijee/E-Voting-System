@@ -57,7 +57,7 @@
           {% for college in colleges %}
           <tr>
             <td class="col-num-sm text-muted-sm">{{ (page - 1) * per_page + loop.index }}</td>
-            <td class="col-college-name"><div class="fw-600">{{ college.name }}</div></td>
+            <td class="col-college-name" title="{{ college.name }}"><div class="fw-600">{{ college.name }}</div></td>
             <td class="col-admins" style="text-align:center;"><span class="badge-status badge-super">{{ college.admin_count }}</span></td>
             <td class="col-voters" style="text-align:center;"><span class="badge-status badge-active">{{ college.voter_count }}</span></td>
             <td class="col-elections" style="text-align:center;">{{ college.election_count }}</td>

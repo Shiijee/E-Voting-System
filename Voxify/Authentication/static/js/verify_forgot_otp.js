@@ -1,5 +1,6 @@
 (function () {
-  const expiryStr = "{{ otp_expiry | default('') }}";
+  const expiryInput = document.getElementById('otp-expiry');
+  const expiryStr = expiryInput ? expiryInput.value : '';
   const countdownEl = document.getElementById('countdown');
   const timerBox = document.getElementById('timer-box');
   const resendLink = document.getElementById('resend-link');
@@ -7,7 +8,12 @@
 
   if (!expiryStr || !countdownEl) return;
 
-  const expiry = new Date(expiryStr);
+  const normalizedExpiry = expiryStr.replace(/\.(\d{3})\d+$/, '.$1');
+  const expiry = new Date(normalizedExpiry);
+  if (Number.isNaN(expiry.getTime())) {
+    console.warn('Invalid OTP expiry timestamp:', expiryStr);
+    return;
+  }
 
   // Resend is available only after 30 s from page load
   let resendUnlockAt = Date.now() + 30000;

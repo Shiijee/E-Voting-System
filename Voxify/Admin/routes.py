@@ -1459,6 +1459,14 @@ def view_results():
                 else:
                     for candidate in position['candidates']:
                         candidate['percentage'] = 0.0
+                
+                # Detect if there's a tie for the top position
+                position['has_tie'] = False
+                if position['candidates']:
+                    max_votes = position['candidates'][0]['vote_count']
+                    tied_count = sum(1 for c in position['candidates'] if c['vote_count'] == max_votes and max_votes > 0)
+                    if tied_count > 1:
+                        position['has_tie'] = True
 
             results = list(positions.values())
             total_votes = sum(p['total_votes'] for p in results)
@@ -1559,7 +1567,7 @@ def view_logs():
     cursor = conn.cursor(dictionary=True)
 
     query = """
-        SELECT l.id, l.action, l.details, l.created_at, l.ip_address,
+        SELECT l.id, l.action, l.details, l.created_at,
                CONCAT(COALESCE(u.firstname, ''), ' ', COALESCE(u.surname, '')) AS user_name
         FROM system_logs l
         LEFT JOIN users u ON l.user_id = u.id
@@ -1572,9 +1580,9 @@ def view_logs():
         params.append(action_filter)
 
     if search:
-        query += " AND (l.action LIKE %s OR l.details LIKE %s OR u.firstname LIKE %s OR u.surname LIKE %s OR l.ip_address LIKE %s)"
+        query += " AND (l.action LIKE %s OR l.details LIKE %s OR u.firstname LIKE %s OR u.surname LIKE %s)"
         like_search = f"%{search}%"
-        params.extend([like_search] * 5)
+        params.extend([like_search] * 4)
 
     query += " ORDER BY l.created_at DESC LIMIT 500"
     cursor.execute(query, params)

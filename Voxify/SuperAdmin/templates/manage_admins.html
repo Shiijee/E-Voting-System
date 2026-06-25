@@ -128,13 +128,13 @@
             <td class="col-administrator">
               <div class="admin-cell">
                 <div class="admin-avatar-sm">{{ (admin.firstname ~ admin.surname)|first|upper if admin.firstname else 'A' }}</div>
-                <div class="admin-info">
+                <div class="admin-info" title="{{ admin.firstname }}{% if admin.middlename %} {{ admin.middlename }}{% endif %} {{ admin.surname }}\n{{ admin.email }}">
                   <div class="fw-600">{{ admin.firstname }}{% if admin.middlename %} {{ admin.middlename }}{% endif %} {{ admin.surname }}</div>
                   <div class="text-muted-sm">{{ admin.email }}</div>
                 </div>
               </div>
             </td>
-            <td class="col-college text-muted-sm">{{ admin.college_name or '—' }}</td>
+            <td class="col-college text-muted-sm" title="{{ admin.college_name or '—' }}">{{ admin.college_name or '—' }}</td>
             <td class="col-username text-muted-sm">{{ admin.student_id }}</td>
             <td class="col-role"><span class="badge-status badge-super">{{ admin.role.title() }}</span></td>
             <td class="col-status">

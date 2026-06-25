@@ -50,7 +50,7 @@ function openResultsModal(btn) {
           html += '<div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;">';
           pos.candidates.forEach(function(c, idx) {
             var pct = pos.total_votes > 0 ? Math.round((c.vote_count / pos.total_votes) * 100) : 0;
-            var win = idx === 0 && pos.total_votes > 0;
+            var win = idx === 0 && pos.total_votes > 0 && !pos.has_tie;
             html += '<div style="border-radius:10px;padding:12px 14px;background:' + (win ? 'rgba(212,168,67,0.1)' : 'var(--paper)') + ';border:1.5px solid ' + (win ? 'var(--gold)' : 'var(--border)') + ';">';
             html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
             if (win) {

@@ -139,7 +139,7 @@
           </span>
         </div>
       </div>
-      {% if result.total_votes > 0 and result.candidates %}
+      {% if result.total_votes > 0 and result.candidates and not result.has_tie %}
       <span class="result-winner-pill">
         <i class="bi bi-trophy-fill" style="font-size:0.68rem;margin-right:5px;"></i>
         {{ result.candidates[0].candidate.full_name }}
@@ -151,11 +151,11 @@
     <div class="results-list">
       {% if result.candidates %}
       {% for item in result.candidates %}
-      <div class="result-row {% if loop.first and result.total_votes > 0 %}result-row-winner{% endif %}"
+      <div class="result-row {% if loop.first and result.total_votes > 0 and not result.has_tie %}result-row-winner{% endif %}"
            data-candidate-name="{{ item.candidate.full_name|lower }}">
 
         <div class="result-rank">
-          {% if loop.first and result.total_votes > 0 %}
+          {% if loop.first and result.total_votes > 0 and not result.has_tie %}
           <div class="result-rank-trophy"><i class="bi bi-trophy-fill"></i></div>
           {% else %}
           <div class="result-rank-num">{{ loop.index }}</div>
@@ -163,7 +163,7 @@
         </div>
 
         <div class="result-candidate">
-          <div class="result-avatar {% if loop.first and result.total_votes > 0 %}result-avatar-winner{% endif %}">
+          <div class="result-avatar {% if loop.first and result.total_votes > 0 and not result.has_tie %}result-avatar-winner{% endif %}">
             {% if item.candidate.photo %}
             <img src="{{ url_for('admin.static', filename='uploads/candidates/' + item.candidate.photo) }}" alt="{{ item.candidate.full_name }}">
             {% else %}
@@ -177,14 +177,14 @@
         </div>
 
         <div class="result-votes">
-          <span class="result-count {% if loop.first and result.total_votes > 0 %}result-count-winner{% endif %}">
+          <span class="result-count {% if loop.first and result.total_votes > 0 and not result.has_tie %}result-count-winner{% endif %}">
             {{ item.vote_count }}
           </span>
           <span class="result-pct">{{ item.percentage }}%</span>
         </div>
 
         <div class="result-bar-wrap">
-          <div class="result-bar {% if loop.first and result.total_votes > 0 %}result-bar-winner{% endif %}"
+          <div class="result-bar {% if loop.first and result.total_votes > 0 and not result.has_tie %}result-bar-winner{% endif %}"
                style="width:{{ item.percentage }}%"></div>
         </div>
       </div>

@@ -157,14 +157,12 @@ def ballot(election_id):
         conn.commit()
 
         # Log the vote action to audit logs
-        ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
         cursor.execute(
-            "INSERT INTO system_logs (user_id, action, details, ip_address) VALUES (%s, %s, %s, %s)",
+            "INSERT INTO system_logs (user_id, action, details) VALUES (%s, %s, %s)",
             (
                 session['user_id'],
                 'vote_cast',
-                f"Voted in election: {election['title']} — {votes_cast} position(s)",
-                ip_address
+                f"Voted in election: {election['title']} — {votes_cast} position(s)"
             )
         )
         conn.commit()
@@ -293,6 +291,14 @@ def results():
             for pos in positions.values():
                 for cand in pos['candidates']:
                     cand['percentage'] = round((cand['vote_count'] / pos['total_votes']) * 100, 1) if pos['total_votes'] > 0 else 0.0
+                
+                # Detect if there's a tie for the top position
+                pos['has_tie'] = False
+                if pos['candidates']:
+                    max_votes = pos['candidates'][0]['vote_count']
+                    tied_count = sum(1 for c in pos['candidates'] if c['vote_count'] == max_votes and max_votes > 0)
+                    if tied_count > 1:
+                        pos['has_tie'] = True
 
             results = list(positions.values())
 
@@ -352,6 +358,15 @@ def quick_results(election_id):
                 'vote_count': row['vote_count'] or 0
             })
             pos['total_votes'] += row['vote_count'] or 0
+
+    # Add tie detection
+    for pos in positions.values():
+        pos['has_tie'] = False
+        if pos['candidates']:
+            max_votes = pos['candidates'][0]['vote_count']
+            tied_count = sum(1 for c in pos['candidates'] if c['vote_count'] == max_votes and max_votes > 0)
+            if tied_count > 1:
+                pos['has_tie'] = True
 
     return jsonify({
         'positions': list(positions.values()),

@@ -541,9 +541,9 @@ def system_logs():
     base_where = "WHERE (u.role IN ('admin', 'superadmin') OR l.user_id IS NULL)"
     params = []
     if search:
-        base_where += " AND (l.action LIKE %s OR l.details LIKE %s OR l.ip_address LIKE %s)"
+        base_where += " AND (l.action LIKE %s OR l.details LIKE %s)"
         sp = f"%{search}%"
-        params.extend([sp, sp, sp])
+        params.extend([sp, sp])
     if action_filter:
         base_where += " AND l.action = %s"
         params.append(action_filter.lower())
