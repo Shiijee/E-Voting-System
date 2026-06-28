@@ -119,7 +119,8 @@
                         data-title="{{ ann.title }}"
                         data-body="{{ ann.body }}"
                         data-type="{{ ann.type }}"
-                        data-status="{{ ann.status }}">
+                        data-status="{{ ann.status }}"
+                        data-image="{{ ann.image_url or '' }}">
                   <i class="bi bi-eye"></i>
                 </button>
                 <button class="btn-icon-action btn-edit-ann" title="Edit"
@@ -127,7 +128,8 @@
                         data-title="{{ ann.title }}"
                         data-body="{{ ann.body }}"
                         data-type="{{ ann.type }}"
-                        data-status="{{ ann.status }}">
+                        data-status="{{ ann.status }}"
+                        data-image="{{ ann.image_url or '' }}">
                   <i class="bi bi-pencil"></i>
                 </button>
                 {% if ann.status == 'draft' %}
@@ -182,7 +184,7 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body ann-modal-body">
-        <form id="annForm" method="POST">
+        <form id="annForm" method="POST" enctype="multipart/form-data">
           <input type="hidden" name="ann_id" id="annFormId" value="">
           <div class="mb-3">
             <label class="form-label ann-label">Title <span class="text-danger">*</span></label>
@@ -203,6 +205,24 @@
             <textarea class="form-control form-control-custom" id="annFormBody" name="body"
                       rows="6" placeholder="Write your announcement here…" required maxlength="2000"></textarea>
             <div class="ann-char-count"><span id="annCharCount">0</span> / 2000</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label ann-label">Image <span class="text-muted" style="font-weight:400;">(optional)</span></label>
+            <input type="file" class="form-control form-control-custom" id="annFormImage" name="image"
+                   accept="image/png,image/jpeg,image/gif">
+            <div id="annImagePreview" class="mt-2 d-none">
+              <img id="annImagePreviewImg" src="" alt="Preview"
+                   style="max-height:160px;max-width:100%;border-radius:8px;border:1px solid var(--border);">
+              <button type="button" class="btn btn-sm btn-cancel-custom mt-1" id="annImageClear">
+                <i class="bi bi-x-lg me-1"></i> Remove
+              </button>
+            </div>
+            <div id="annImageExisting" class="mt-2 d-none">
+              <p class="text-muted" style="font-size:0.82rem;">Current image:</p>
+              <img id="annImageExistingImg" src="" alt="Current"
+                   style="max-height:120px;max-width:100%;border-radius:8px;border:1px solid var(--border);">
+              <p class="text-muted mt-1" style="font-size:0.78rem;">Upload a new image above to replace it.</p>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label ann-label">Status</label>
@@ -251,6 +271,10 @@
         <div class="ann-view-badge-row">
           <span class="ann-type-badge" id="annViewTypeBadge"></span>
           <span class="ann-status-badge" id="annViewStatusBadge"></span>
+        </div>
+        <div id="annViewImageWrap" class="d-none mb-3">
+          <img id="annViewImage" src="" alt="Announcement image"
+               style="max-width:100%;border-radius:8px;border:1px solid var(--border);">
         </div>
         <div class="ann-view-body" id="annViewBody"></div>
       </div>

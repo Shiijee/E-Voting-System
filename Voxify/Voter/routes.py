@@ -1,12 +1,20 @@
-﻿from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
+﻿from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app, send_from_directory
 from datetime import datetime
 from Voxify.Authentication.routes import voter_required
 from Voxify.utils.election_status import sync_election_statuses
+import os
 
 voter_bp = Blueprint('voter', __name__,
                      template_folder='templates', 
                      static_folder='static',
                      static_url_path='/voter/static')
+
+@voter_bp.route('/announcements/image/<path:filename>')
+@voter_required
+def announcement_image(filename):
+    """Serve announcement images stored in the Admin static folder."""
+    admin_uploads = os.path.join(os.path.dirname(__file__), '..', 'Admin', 'static', 'uploads', 'announcements')
+    return send_from_directory(os.path.abspath(admin_uploads), filename)
 
 def get_voter_college_id():
     """Get the college_id of the currently logged-in voter."""
@@ -77,7 +85,7 @@ def dashboard():
 
     # Fetch published announcements for this college (or global ones)
     cursor.execute("""
-        SELECT id, title, body, type, created_at
+        SELECT id, title, body, type, created_at, image_url
         FROM announcements
         WHERE status = 'published'
           AND (college_id = %s OR college_id IS NULL)

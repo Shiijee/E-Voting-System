@@ -14,6 +14,7 @@ admin_bp = Blueprint('admin', __name__,
                      static_url_path='/admin/static')
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads', 'candidates')
+ANNOUNCEMENT_UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads', 'announcements')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
@@ -1843,11 +1844,21 @@ def create_announcement():
     if status not in ("draft", "published"):
         status = "draft"
 
+    # Handle image upload
+    image_url = None
+    image_file = request.files.get("image")
+    if image_file and image_file.filename and allowed_file(image_file.filename):
+        os.makedirs(ANNOUNCEMENT_UPLOAD_FOLDER, exist_ok=True)
+        ext = image_file.filename.rsplit('.', 1)[1].lower()
+        filename = f"{uuid.uuid4().hex}.{ext}"
+        image_file.save(os.path.join(ANNOUNCEMENT_UPLOAD_FOLDER, filename))
+        image_url = f"uploads/announcements/{filename}"
+
     conn   = current_app.config["get_db_connection"]()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO announcements (college_id, title, body, type, status) VALUES (%s, %s, %s, %s, %s)",
-        (college_id, title, body, type_, status)
+        "INSERT INTO announcements (college_id, title, body, type, status, image_url) VALUES (%s, %s, %s, %s, %s, %s)",
+        (college_id, title, body, type_, status, image_url)
     )
     conn.commit()
     cursor.close()
@@ -1874,11 +1885,27 @@ def edit_announcement(ann_id):
         status = "draft"
 
     conn   = current_app.config["get_db_connection"]()
-    cursor = conn.cursor()
-    cursor.execute(
-        "UPDATE announcements SET title=%s, body=%s, type=%s, status=%s WHERE id=%s",
-        (title, body, type_, status, ann_id)
-    )
+    cursor = conn.cursor(dictionary=True)
+
+    # Handle image upload
+    image_file = request.files.get("image")
+    if image_file and image_file.filename and allowed_file(image_file.filename):
+        os.makedirs(ANNOUNCEMENT_UPLOAD_FOLDER, exist_ok=True)
+        ext = image_file.filename.rsplit('.', 1)[1].lower()
+        filename = f"{uuid.uuid4().hex}.{ext}"
+        image_file.save(os.path.join(ANNOUNCEMENT_UPLOAD_FOLDER, filename))
+        image_url = f"uploads/announcements/{filename}"
+        cursor.execute(
+            "UPDATE announcements SET title=%s, body=%s, type=%s, status=%s, image_url=%s WHERE id=%s",
+            (title, body, type_, status, image_url, ann_id)
+        )
+    else:
+        # Keep existing image if no new one uploaded
+        cursor.execute(
+            "UPDATE announcements SET title=%s, body=%s, type=%s, status=%s WHERE id=%s",
+            (title, body, type_, status, ann_id)
+        )
+
     conn.commit()
     cursor.close()
     conn.close()

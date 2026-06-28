@@ -156,7 +156,8 @@
          data-title="{{ ann.title }}"
          data-body="{{ ann.body }}"
          data-type="{{ ann.type }}"
-         data-date="{{ ann.created_at.strftime('%B %d, %Y • %I:%M %p') if ann.created_at else '' }}">
+         data-date="{{ ann.created_at.strftime('%B %d, %Y • %I:%M %p') if ann.created_at else '' }}"
+         data-image="{{ ann.image_url or '' }}">
       <div class="ann-voter-left">
         <div class="ann-voter-icon ann-voter-icon-{{ ann.type }}">
           {% if ann.type == 'winner' %}<i class="bi bi-trophy-fill"></i>
@@ -203,6 +204,10 @@
         <div id="annReadDate" style="font-size:0.76rem;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:6px;">
           <i class="bi bi-clock"></i><span></span>
         </div>
+        <div id="annReadImageWrap" style="display:none;margin-bottom:14px;">
+          <img id="annReadImage" src="" alt="Announcement image"
+               style="max-width:100%;border-radius:10px;border:1px solid var(--border);">
+        </div>
         <div id="annReadBody" style="background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:18px 20px;font-size:0.92rem;line-height:1.8;color:var(--ink);white-space:pre-wrap;min-height:60px;"></div>
       </div>
     </div>
@@ -223,10 +228,22 @@ function openAnnModal(btn) {
   var body  = row.dataset.body;
   var type  = row.dataset.type;
   var date  = row.dataset.date;
+  var image = row.dataset.image;
 
   document.getElementById('annReadTitle').textContent = title;
   document.getElementById('annReadBody').textContent  = body;
   document.getElementById('annReadDate').querySelector('span').textContent = date;
+
+  var imageWrap = document.getElementById('annReadImageWrap');
+  var imageEl   = document.getElementById('annReadImage');
+  if (image) {
+    var filename = image.replace('uploads/announcements/', '');
+    imageEl.src = '/voter/announcements/image/' + filename;
+    imageWrap.style.display = 'block';
+  } else {
+    imageWrap.style.display = 'none';
+    imageEl.src = '';
+  }
 
   var icon = typeIconMap[type] || 'bi-megaphone-fill';
   document.getElementById('annReadIcon').innerHTML = '<i class="bi ' + icon + '"></i>';

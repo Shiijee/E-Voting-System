@@ -34,6 +34,32 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  /* ── Image preview ────────────────────────────────── */
+  const annFormImage       = document.getElementById('annFormImage');
+  const annImagePreview    = document.getElementById('annImagePreview');
+  const annImagePreviewImg = document.getElementById('annImagePreviewImg');
+  const annImageClear      = document.getElementById('annImageClear');
+  const annImageExisting   = document.getElementById('annImageExisting');
+  const annImageExistingImg = document.getElementById('annImageExistingImg');
+
+  annFormImage?.addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        annImagePreviewImg.src = e.target.result;
+        annImagePreview.classList.remove('d-none');
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  annImageClear?.addEventListener('click', function () {
+    annFormImage.value = '';
+    annImagePreview.classList.add('d-none');
+    annImagePreviewImg.src = '';
+  });
+
   /* ── Create/Edit Modal ────────────────────────────── */
   const annModal    = document.getElementById('announcementModal');
   const annForm     = document.getElementById('annForm');
@@ -56,6 +82,9 @@ document.addEventListener('DOMContentLoaded', function () {
     annFormBody.value = '';
     if (charCnt) charCnt.textContent = '0';
     document.getElementById('statusDraft').checked = true;
+    if (annFormImage) annFormImage.value = '';
+    if (annImagePreview) annImagePreview.classList.add('d-none');
+    if (annImageExisting) annImageExisting.classList.add('d-none');
   });
 
   // Edit buttons
@@ -75,6 +104,17 @@ document.addEventListener('DOMContentLoaded', function () {
       annFormBody.value = body;
       if (charCnt) charCnt.textContent = body.length;
       document.getElementById(status === 'published' ? 'statusPublished' : 'statusDraft').checked = true;
+
+      // Handle image
+      const image = this.dataset.image;
+      if (annFormImage) annFormImage.value = '';
+      if (annImagePreview) annImagePreview.classList.add('d-none');
+      if (image) {
+        annImageExistingImg.src = `/admin/static/${image}`;
+        annImageExisting.classList.remove('d-none');
+      } else {
+        if (annImageExisting) annImageExisting.classList.add('d-none');
+      }
 
       bootstrap.Modal.getOrCreateInstance(annModal).show();
     });
@@ -119,6 +159,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
       viewStatusBadge.className = `ann-status-badge ann-status-${status}`;
       viewStatusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+
+      const image = this.dataset.image;
+      const annViewImageWrap = document.getElementById('annViewImageWrap');
+      const annViewImage = document.getElementById('annViewImage');
+      if (image) {
+        annViewImage.src = `/admin/static/${image}`;
+        annViewImageWrap.classList.remove('d-none');
+      } else {
+        annViewImageWrap.classList.add('d-none');
+      }
 
       bootstrap.Modal.getOrCreateInstance(viewModal).show();
     });
