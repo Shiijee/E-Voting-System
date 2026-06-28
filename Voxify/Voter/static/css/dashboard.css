@@ -144,3 +144,114 @@
 
 /* ── mt-4 utility ────────────────────────────────────── */
 .mt-4 { margin-top: 24px !important; }
+
+/* ── Announcements on Dashboard ──────────────────────── */
+.ann-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gold);
+  color: var(--navy);
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.ann-voter-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+  cursor: default;
+}
+.ann-voter-row:last-child { border-bottom: none; }
+.ann-voter-row:hover { background: var(--paper); }
+
+.ann-voter-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ann-voter-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.ann-voter-icon-general  { background: rgba(26,58,92,0.1);    color: var(--navy); }
+.ann-voter-icon-election { background: rgba(13,110,253,0.1);  color: #0d6efd; }
+.ann-voter-icon-winner   { background: rgba(201,168,76,0.18); color: #a07800; }
+.ann-voter-icon-reminder { background: rgba(253,126,20,0.12); color: #c9620a; }
+
+.ann-voter-info { flex: 1; min-width: 0; }
+
+.ann-voter-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ann-voter-preview {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+
+.ann-voter-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ann-voter-type-pill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 5px;
+  letter-spacing: 0.03em;
+}
+.ann-voter-type-pill-general  { background: rgba(26,58,92,0.1);    color: var(--navy); }
+.ann-voter-type-pill-election { background: rgba(13,110,253,0.1);  color: #0d6efd; }
+.ann-voter-type-pill-winner   { background: rgba(201,168,76,0.18); color: #a07800; }
+.ann-voter-type-pill-reminder { background: rgba(253,126,20,0.12); color: #c9620a; }
+
+.ann-voter-date {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.ann-voter-read-btn {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--navy);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.ann-voter-read-btn:hover {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}

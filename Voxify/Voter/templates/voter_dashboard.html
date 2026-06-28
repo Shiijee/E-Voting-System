@@ -141,5 +141,97 @@
 </div>
 {% endif %}
 
+<!-- ── Announcements ─────────────────────────────────────── -->
+{% if announcements %}
+<div class="card-panel mt-4" id="announcementsSection">
+  <div class="card-panel-header">
+    <h5 class="card-panel-title">
+      <i class="bi bi-megaphone-fill me-2"></i>Announcements
+      <span class="ann-count-badge">{{ announcements|length }}</span>
+    </h5>
+  </div>
+  <div class="card-panel-body p-0">
+    {% for ann in announcements %}
+    <div class="ann-voter-row ann-voter-type-{{ ann.type }}"
+         data-title="{{ ann.title }}"
+         data-body="{{ ann.body }}"
+         data-type="{{ ann.type }}"
+         data-date="{{ ann.created_at.strftime('%B %d, %Y • %I:%M %p') if ann.created_at else '' }}">
+      <div class="ann-voter-left">
+        <div class="ann-voter-icon ann-voter-icon-{{ ann.type }}">
+          {% if ann.type == 'winner' %}<i class="bi bi-trophy-fill"></i>
+          {% elif ann.type == 'election' %}<i class="bi bi-calendar2-event-fill"></i>
+          {% elif ann.type == 'reminder' %}<i class="bi bi-bell-fill"></i>
+          {% else %}<i class="bi bi-info-circle-fill"></i>{% endif %}
+        </div>
+        <div class="ann-voter-info">
+          <div class="ann-voter-title">{{ ann.title }}</div>
+          <div class="ann-voter-preview">{{ ann.body[:120] }}{% if ann.body|length > 120 %}…{% endif %}</div>
+          <div class="ann-voter-meta">
+            <span class="ann-voter-type-pill ann-voter-type-pill-{{ ann.type }}">{{ ann.type | capitalize }}</span>
+            <span class="ann-voter-date">{{ ann.created_at.strftime('%b %d, %Y') if ann.created_at else '' }}</span>
+          </div>
+        </div>
+      </div>
+      <button class="ann-voter-read-btn" onclick="openAnnModal(this)">
+        <i class="bi bi-eye me-1"></i>Read
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
+{% endblock %}
+
+{% block modals %}
+<!-- Announcement Read Modal -->
+<div class="modal fade" id="annReadModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:520px;">
+    <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(13,17,23,0.28);">
+      <div class="modal-header" style="background:var(--navy);padding:20px 24px 18px;border:none;position:relative;">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--navy-mid));"></div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div id="annReadIcon" style="width:38px;height:38px;border-radius:10px;background:rgba(201,168,76,0.18);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:1.1rem;flex-shrink:0;">
+            <i class="bi bi-megaphone-fill"></i>
+          </div>
+          <h5 class="modal-title" id="annReadTitle" style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;color:#fff;margin:0;"></h5>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="margin:0;"></button>
+      </div>
+      <div class="modal-body" style="background:#fff;padding:24px;">
+        <div id="annReadDate" style="font-size:0.76rem;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:6px;">
+          <i class="bi bi-clock"></i><span></span>
+        </div>
+        <div id="annReadBody" style="background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:18px 20px;font-size:0.92rem;line-height:1.8;color:var(--ink);white-space:pre-wrap;min-height:60px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var typeIconMap = {
+  general:  'bi-info-circle-fill',
+  election: 'bi-calendar2-event-fill',
+  winner:   'bi-trophy-fill',
+  reminder: 'bi-bell-fill'
+};
+
+function openAnnModal(btn) {
+  var row   = btn.closest('.ann-voter-row');
+  var title = row.dataset.title;
+  var body  = row.dataset.body;
+  var type  = row.dataset.type;
+  var date  = row.dataset.date;
+
+  document.getElementById('annReadTitle').textContent = title;
+  document.getElementById('annReadBody').textContent  = body;
+  document.getElementById('annReadDate').querySelector('span').textContent = date;
+
+  var icon = typeIconMap[type] || 'bi-megaphone-fill';
+  document.getElementById('annReadIcon').innerHTML = '<i class="bi ' + icon + '"></i>';
+
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('annReadModal')).show();
+}
+</script>
 {% endblock %}

@@ -1774,3 +1774,271 @@ def update_profile():
     cursor.close()
     conn.close()
     return redirect(url_for('admin.view_profile'))
+
+# ══════════════════════════════════════════════════════════════
+#  ANNOUNCEMENTS
+#  Table DDL (run once):
+#  CREATE TABLE announcements (
+#      id         INT AUTO_INCREMENT PRIMARY KEY,
+#      college_id INT NULL,
+#      title      VARCHAR(200) NOT NULL,
+#      body       TEXT NOT NULL,
+#      type       ENUM('general','election','winner','reminder') NOT NULL DEFAULT 'general',
+#      status     ENUM('draft','published') NOT NULL DEFAULT 'draft',
+#      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+#      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+#  );
+# ══════════════════════════════════════════════════════════════
+
+from flask import jsonify
+
+@admin_bp.route("/announcements")
+@admin_required
+def view_announcements():
+    college_id = get_admin_college_id()
+    conn   = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+
+    if college_id is not None:
+        cursor.execute(
+            "SELECT * FROM announcements WHERE college_id=%s OR college_id IS NULL ORDER BY created_at DESC",
+            (college_id,)
+        )
+    else:
+        cursor.execute("SELECT * FROM announcements ORDER BY created_at DESC")
+    announcements = cursor.fetchall()
+
+    # Completed elections for auto-announce
+    if college_id is not None:
+        cursor.execute(
+            "SELECT id, title FROM elections WHERE status='completed' AND (college_id=%s OR college_id IS NULL) ORDER BY created_at DESC",
+            (college_id,)
+        )
+    else:
+        cursor.execute("SELECT id, title FROM elections WHERE status='completed' ORDER BY created_at DESC")
+    completed_elections = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+    return render_template('announcements.html',
+                           announcements=announcements,
+                           completed_elections=completed_elections)
+
+
+@admin_bp.route("/announcements/create", methods=["POST"])
+@admin_required
+def create_announcement():
+    college_id = get_admin_college_id()
+    title  = request.form.get("title", "").strip()
+    body   = request.form.get("body", "").strip()
+    type_  = request.form.get("type", "general")
+    status = request.form.get("status", "draft")
+
+    if not title or not body:
+        flash("Title and message are required.", "danger")
+        return redirect(url_for("admin.view_announcements"))
+
+    if type_ not in ("general", "election", "winner", "reminder"):
+        type_ = "general"
+    if status not in ("draft", "published"):
+        status = "draft"
+
+    conn   = current_app.config["get_db_connection"]()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO announcements (college_id, title, body, type, status) VALUES (%s, %s, %s, %s, %s)",
+        (college_id, title, body, type_, status)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Announcement created successfully.", "success")
+    return redirect(url_for("admin.view_announcements"))
+
+
+@admin_bp.route("/announcements/<int:ann_id>/edit", methods=["POST"])
+@admin_required
+def edit_announcement(ann_id):
+    title  = request.form.get("title", "").strip()
+    body   = request.form.get("body", "").strip()
+    type_  = request.form.get("type", "general")
+    status = request.form.get("status", "draft")
+
+    if not title or not body:
+        flash("Title and message are required.", "danger")
+        return redirect(url_for("admin.view_announcements"))
+
+    if type_ not in ("general", "election", "winner", "reminder"):
+        type_ = "general"
+    if status not in ("draft", "published"):
+        status = "draft"
+
+    conn   = current_app.config["get_db_connection"]()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE announcements SET title=%s, body=%s, type=%s, status=%s WHERE id=%s",
+        (title, body, type_, status, ann_id)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Announcement updated successfully.", "success")
+    return redirect(url_for("admin.view_announcements"))
+
+
+@admin_bp.route("/announcements/<int:ann_id>/publish")
+@admin_required
+def publish_announcement(ann_id):
+    conn   = current_app.config["get_db_connection"]()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE announcements SET status='published' WHERE id=%s", (ann_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Announcement published.", "success")
+    return redirect(url_for("admin.view_announcements"))
+
+
+@admin_bp.route("/announcements/<int:ann_id>/unpublish")
+@admin_required
+def unpublish_announcement(ann_id):
+    conn   = current_app.config["get_db_connection"]()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE announcements SET status='draft' WHERE id=%s", (ann_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Announcement moved to draft.", "success")
+    return redirect(url_for("admin.view_announcements"))
+
+
+@admin_bp.route("/announcements/<int:ann_id>/delete")
+@admin_required
+def delete_announcement(ann_id):
+    conn   = current_app.config["get_db_connection"]()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM announcements WHERE id=%s", (ann_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Announcement deleted.", "success")
+    return redirect(url_for("admin.view_announcements"))
+
+
+@admin_bp.route("/announcements/winner-preview")
+@admin_required
+def winner_preview():
+    """Return a JSON preview of the auto-generated winner announcement."""
+    election_id = request.args.get("election_id", type=int)
+    if not election_id:
+        return jsonify({"error": "No election selected."})
+
+    conn   = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM elections WHERE id=%s AND status='completed'", (election_id,))
+    election = cursor.fetchone()
+    if not election:
+        cursor.close(); conn.close()
+        return jsonify({"error": "Election not found or not yet completed."})
+
+    # Fetch winners per position (candidate with most votes)
+    cursor.execute("""
+        SELECT
+            p.title AS position_title,
+            c.firstname, c.middlename, c.surname,
+            COUNT(v.id) AS vote_count
+        FROM positions p
+        LEFT JOIN candidates c ON c.position_id = p.id
+        LEFT JOIN votes v ON v.candidate_id = c.id AND v.election_id = %s
+        WHERE p.election_id = %s AND c.id IS NOT NULL
+        GROUP BY p.id, p.title, c.id, c.firstname, c.middlename, c.surname
+        ORDER BY p.display_order, vote_count DESC
+    """, (election_id, election_id))
+    rows = cursor.fetchall()
+    cursor.close(); conn.close()
+
+    # Pick the top candidate per position
+    seen_positions = {}
+    winners = []
+    for row in rows:
+        pos = row["position_title"]
+        if pos not in seen_positions:
+            seen_positions[pos] = True
+            full_name = " ".join(filter(None, [row["firstname"], row["middlename"], row["surname"]])).strip()
+            winners.append({"position": pos, "name": full_name, "votes": row["vote_count"]})
+
+    if not winners:
+        return jsonify({"error": "No vote data found for this election."})
+
+    title = f"🏆 Official Election Results: {election['title']}"
+    lines = [f"We are pleased to announce the official winners of the {election['title']}:\n"]
+    for w in winners:
+        lines.append(f"  {w['position']}: {w['name']} ({w['votes']} vote{'s' if w['votes'] != 1 else ''})")
+    lines.append("\nCongratulations to all the winners! Thank you to everyone who participated.")
+    body = "\n".join(lines)
+
+    return jsonify({"title": title, "body": body})
+
+
+@admin_bp.route("/announcements/winner-create", methods=["POST"])
+@admin_required
+def winner_create():
+    """Create and publish an auto-generated winner announcement."""
+    college_id = get_admin_college_id()
+    data = request.get_json(silent=True) or {}
+    election_id = data.get("election_id")
+    if not election_id:
+        return jsonify({"error": "No election_id provided."})
+
+    # Reuse the preview logic to build the message
+    conn   = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM elections WHERE id=%s AND status='completed'", (election_id,))
+    election = cursor.fetchone()
+    if not election:
+        cursor.close(); conn.close()
+        return jsonify({"error": "Election not found or not yet completed."})
+
+    cursor.execute("""
+        SELECT
+            p.title AS position_title,
+            c.firstname, c.middlename, c.surname,
+            COUNT(v.id) AS vote_count
+        FROM positions p
+        LEFT JOIN candidates c ON c.position_id = p.id
+        LEFT JOIN votes v ON v.candidate_id = c.id AND v.election_id = %s
+        WHERE p.election_id = %s AND c.id IS NOT NULL
+        GROUP BY p.id, p.title, c.id, c.firstname, c.middlename, c.surname
+        ORDER BY p.display_order, vote_count DESC
+    """, (election_id, election_id))
+    rows = cursor.fetchall()
+
+    seen_positions = {}
+    winners = []
+    for row in rows:
+        pos = row["position_title"]
+        if pos not in seen_positions:
+            seen_positions[pos] = True
+            full_name = " ".join(filter(None, [row["firstname"], row["middlename"], row["surname"]])).strip()
+            winners.append({"position": pos, "name": full_name, "votes": row["vote_count"]})
+
+    if not winners:
+        cursor.close(); conn.close()
+        return jsonify({"error": "No vote data found for this election."})
+
+    title = f"Official Election Results: {election['title']}"
+    lines = [f"We are pleased to announce the official winners of the {election['title']}:\n"]
+    for w in winners:
+        lines.append(f"  {w['position']}: {w['name']} ({w['votes']} vote{'s' if w['votes'] != 1 else ''})")
+    lines.append("\nCongratulations to all the winners! Thank you to everyone who participated.")
+    body = "\n".join(lines)
+
+    cursor.execute(
+        "INSERT INTO announcements (college_id, title, body, type, status) VALUES (%s, %s, %s, 'winner', 'published')",
+        (college_id, title, body)
+    )
+    conn.commit()
+    cursor.close(); conn.close()
+    return jsonify({"success": True})
