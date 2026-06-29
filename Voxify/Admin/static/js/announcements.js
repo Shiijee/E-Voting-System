@@ -106,11 +106,12 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById(status === 'published' ? 'statusPublished' : 'statusDraft').checked = true;
 
       // Handle image
-      const image = this.dataset.image;
+      const image    = this.dataset.image;
+      const imageSrc = this.dataset.imageSrc;
       if (annFormImage) annFormImage.value = '';
       if (annImagePreview) annImagePreview.classList.add('d-none');
-      if (image) {
-        annImageExistingImg.src = `/admin/static/${image}`;
+      if (image && imageSrc) {
+        annImageExistingImg.src = imageSrc;
         annImageExisting.classList.remove('d-none');
       } else {
         if (annImageExisting) annImageExisting.classList.add('d-none');
@@ -160,11 +161,13 @@ document.addEventListener('DOMContentLoaded', function () {
       viewStatusBadge.className = `ann-status-badge ann-status-${status}`;
       viewStatusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
 
-      const image = this.dataset.image;
+      const image    = this.dataset.image;
+      const imageSrc = this.dataset.imageSrc;
       const annViewImageWrap = document.getElementById('annViewImageWrap');
       const annViewImage = document.getElementById('annViewImage');
-      if (image) {
-        annViewImage.src = `/admin/static/${image}`;
+      if (image && imageSrc) {
+        annViewImage.src = imageSrc;
+        annViewImage.onerror = function () { annViewImageWrap.classList.add('d-none'); };
         annViewImageWrap.classList.remove('d-none');
       } else {
         annViewImageWrap.classList.add('d-none');

@@ -120,7 +120,8 @@
                         data-body="{{ ann.body }}"
                         data-type="{{ ann.type }}"
                         data-status="{{ ann.status }}"
-                        data-image="{{ ann.image_url or '' }}">
+                        data-image="{{ ann.image_url or '' }}"
+                        data-image-src="{{ url_for('admin.static', filename=ann.image_url) if ann.image_url else '' }}">
                   <i class="bi bi-eye"></i>
                 </button>
                 <button class="btn-icon-action btn-edit-ann" title="Edit"
@@ -129,7 +130,8 @@
                         data-body="{{ ann.body }}"
                         data-type="{{ ann.type }}"
                         data-status="{{ ann.status }}"
-                        data-image="{{ ann.image_url or '' }}">
+                        data-image="{{ ann.image_url or '' }}"
+                        data-image-src="{{ url_for('admin.static', filename=ann.image_url) if ann.image_url else '' }}">
                   <i class="bi bi-pencil"></i>
                 </button>
                 {% if ann.status == 'draft' %}
