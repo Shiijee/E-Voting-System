@@ -68,10 +68,28 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label-custom">Partylist / Party Affiliation</label>
+            <label class="form-label-custom">Partylist / Party Affiliation <span class="text-muted-sm">(optional)</span></label>
+            {% if partylists %}
+            <select name="partylist" class="form-select form-control-custom">
+              <option value="">— None / Independent —</option>
+              {% for pl in partylists %}
+              <option value="{{ pl.name }}"
+                {% if candidate and candidate.partylist == pl.name %}selected{% endif %}>
+                {{ pl.name }}{% if pl.description %} — {{ pl.description }}{% endif %}
+              </option>
+              {% endfor %}
+              {% if candidate and candidate.partylist and candidate.partylist not in partylists|map(attribute='name')|list %}
+              {# Preserve existing value if it's no longer in the list #}
+              <option value="{{ candidate.partylist }}" selected>{{ candidate.partylist }} (custom)</option>
+              {% endif %}
+            </select>
+            <small class="text-muted">Partylists are managed in the <a href="{{ url_for('admin.view_positions') }}">Positions</a> tab.</small>
+            {% else %}
             <input type="text" name="partylist" class="form-control form-control-custom"
                    value="{{ candidate.partylist if candidate and candidate.partylist else '' }}"
-                   placeholder="e.g. STEPS, KABILIN, Independent…"/>
+                   placeholder="e.g. STEPS, KABILIN, Independent… (no partylists created yet)"/>
+            <small class="text-muted">Add partylists in the <a href="{{ url_for('admin.view_positions') }}">Positions</a> tab to use a dropdown here.</small>
+            {% endif %}
           </div>
 
           <div class="mb-4">

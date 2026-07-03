@@ -737,9 +737,18 @@ def view_positions():
         positions = cursor.fetchall()
         cursor.execute("SELECT id, title FROM elections WHERE status NOT IN ('completed', 'draft')")
     elections = cursor.fetchall()
+    # Fetch partylists scoped to this college
+    if college_id is not None:
+        cursor.execute(
+            "SELECT * FROM partylists WHERE college_id=%s OR college_id IS NULL ORDER BY name",
+            (college_id,)
+        )
+    else:
+        cursor.execute("SELECT * FROM partylists WHERE college_id IS NULL ORDER BY name")
+    partylists = cursor.fetchall()
     cursor.close()
     conn.close()
-    return render_template('positions.html', positions=positions, elections=elections)
+    return render_template('positions.html', positions=positions, elections=elections, partylists=partylists)
 
 @admin_bp.route("/positions/new", methods=["GET", "POST"])
 @admin_required
@@ -852,9 +861,76 @@ def delete_position(position_id):
     flash("Position deleted!", "success")
     return redirect(url_for('admin.view_positions'))
 
-                                              
-                      
-                                              
+# ── Partylist routes ──────────────────────────────────────────────────────────
+
+@admin_bp.route("/partylists/new", methods=["POST"])
+@admin_required
+def create_partylist():
+    college_id = get_admin_college_id()
+    name = request.form.get("name", "").strip()
+    description = request.form.get("description", "").strip()
+    if not name:
+        flash("Partylist name is required.", "error")
+        return redirect(url_for('admin.view_positions'))
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+    # Check duplicate within same college scope
+    if college_id is not None:
+        cursor.execute("SELECT id FROM partylists WHERE name=%s AND (college_id=%s OR college_id IS NULL)", (name, college_id))
+    else:
+        cursor.execute("SELECT id FROM partylists WHERE name=%s AND college_id IS NULL", (name,))
+    if cursor.fetchone():
+        cursor.close()
+        conn.close()
+        flash(f"Partylist '{name}' already exists.", "error")
+        return redirect(url_for('admin.view_positions'))
+    cursor.execute(
+        "INSERT INTO partylists (name, description, college_id) VALUES (%s, %s, %s)",
+        (name, description or None, college_id)
+    )
+    conn.commit()
+    new_id = cursor.lastrowid
+    cursor.execute(
+        "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+        (session['user_id'], 'CREATE_PARTYLIST', f"Created partylist: {name}", 'Partylist', new_id)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash(f"Partylist '{name}' added successfully!", "success")
+    return redirect(url_for('admin.view_positions'))
+
+@admin_bp.route("/partylists/<int:partylist_id>/delete")
+@admin_required
+def delete_partylist(partylist_id):
+    college_id = get_admin_college_id()
+    conn = current_app.config["get_db_connection"]()
+    cursor = conn.cursor(dictionary=True)
+    # Fetch name for audit log
+    cursor.execute("SELECT name FROM partylists WHERE id=%s", (partylist_id,))
+    row = cursor.fetchone()
+    if not row:
+        cursor.close()
+        conn.close()
+        flash("Partylist not found.", "error")
+        return redirect(url_for('admin.view_positions'))
+    name = row['name']
+    if college_id is not None:
+        cursor.execute("DELETE FROM partylists WHERE id=%s AND (college_id=%s OR college_id IS NULL)", (partylist_id, college_id))
+    else:
+        cursor.execute("DELETE FROM partylists WHERE id=%s", (partylist_id,))
+    conn.commit()
+    cursor.execute(
+        "INSERT INTO audit_logs (user_id, action, details, target_type, target_id) VALUES (%s, %s, %s, %s, %s)",
+        (session['user_id'], 'DELETE_PARTYLIST', f"Deleted partylist: {name} (ID: {partylist_id})", 'Partylist', partylist_id)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash(f"Partylist '{name}' deleted!", "success")
+    return redirect(url_for('admin.view_positions'))
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 @admin_bp.route("/candidates")
 @admin_required
@@ -978,9 +1054,19 @@ def create_candidate():
         """)
     positions = cursor.fetchall()
 
+    # Fetch partylists for dropdown (before closing cursor/conn)
+    if college_id is not None:
+        cursor.execute(
+            "SELECT * FROM partylists WHERE college_id=%s OR college_id IS NULL ORDER BY name",
+            (college_id,)
+        )
+    else:
+        cursor.execute("SELECT * FROM partylists WHERE college_id IS NULL ORDER BY name")
+    partylists = cursor.fetchall()
+
     cursor.close()
     conn.close()
-    return render_template('candidate_form.html', action='add', candidate=None, positions=positions, voters=[], elections=elections)
+    return render_template('candidate_form.html', action='add', candidate=None, positions=positions, voters=[], elections=elections, partylists=partylists)
 
 @admin_bp.route("/candidates/<int:candidate_id>/edit", methods=["GET", "POST"])
 @admin_required
@@ -1082,9 +1168,18 @@ def edit_candidate(candidate_id):
         cursor.execute("SELECT id, title FROM elections WHERE status NOT IN ('completed', 'paused') ORDER BY created_at DESC")
     elections = cursor.fetchall()
 
+    # Fetch partylists for dropdown
+    if college_id is not None:
+        cursor.execute(
+            "SELECT * FROM partylists WHERE college_id=%s OR college_id IS NULL ORDER BY name",
+            (college_id,)
+        )
+    else:
+        cursor.execute("SELECT * FROM partylists WHERE college_id IS NULL ORDER BY name")
+    partylists = cursor.fetchall()
     cursor.close()
     conn.close()
-    return render_template('candidate_form.html', action='edit', candidate=candidate, positions=positions, voters=[], elections=elections)
+    return render_template('candidate_form.html', action='edit', candidate=candidate, positions=positions, voters=[], elections=elections, partylists=partylists)
 
 @admin_bp.route("/candidates/<int:candidate_id>/delete")
 @admin_required
@@ -1493,6 +1588,8 @@ def view_results():
             cursor.execute("""
                 SELECT DISTINCT
                     u.id,
+                    u.firstname,
+                    u.surname,
                     CONCAT(COALESCE(u.firstname,''), ' ', COALESCE(u.middlename,''), ' ', COALESCE(u.surname,'')) AS full_name,
                     u.email,
                     u.student_id

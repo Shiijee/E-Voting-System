@@ -62,6 +62,47 @@
       </div>
     </div>
 
+    <!-- Partylist Management -->
+    <div class="card-panel mt-3">
+      <div class="card-panel-header">
+        <h5 class="card-panel-title"><i class="bi bi-flag-fill me-2" style="color:#6f42c1;"></i>Partylist Management</h5>
+      </div>
+      <div class="card-panel-body">
+        <form method="POST" action="{{ url_for('admin.create_partylist') }}" class="mb-3">
+          <div class="mb-2">
+            <label class="form-label-custom">Partylist Name</label>
+            <input type="text" name="name" class="form-control form-control-custom"
+                   placeholder="e.g. STEPS, KABILIN…" maxlength="100" required/>
+          </div>
+          <div class="mb-2">
+            <label class="form-label-custom">Description <span class="text-muted-sm">(optional)</span></label>
+            <input type="text" name="description" class="form-control form-control-custom"
+                   placeholder="Short description…" maxlength="255"/>
+          </div>
+          <button type="submit" class="btn btn-primary-custom w-100">
+            <i class="bi bi-plus-lg me-2"></i>Add Partylist
+          </button>
+        </form>
+
+        {% if partylists %}
+        <div class="partylist-chips">
+          {% for pl in partylists %}
+          <div class="partylist-chip">
+            <span class="partylist-chip-name" title="{{ pl.description or '' }}">{{ pl.name }}</span>
+            <a href="{{ url_for('admin.delete_partylist', partylist_id=pl.id) }}"
+               class="partylist-chip-del"
+               onclick="return vxConfirm(event, 'Delete Partylist', 'Delete partylist &quot;{{ pl.name }}&quot;? Candidates already assigned to it will keep the name.')">
+              <i class="bi bi-x-lg"></i>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted-sm mb-0">No partylists added yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
     <!-- Quick Add -->
     <div class="card-panel mt-3">
       <div class="card-panel-header" style="justify-content:space-between;">
@@ -96,21 +137,29 @@
       <div class="card-panel-body p-0">
         {% if positions %}
         <div class="table-responsive">
-          <table class="table-custom" id="positionsTable">
+          <table class="table-custom pos-table" id="positionsTable">
+            <colgroup>
+              <col class="col-order">
+              <col class="col-position">
+              <col class="col-election">
+              <col class="col-maxvotes">
+              <col class="col-candidates">
+              <col class="col-actions">
+            </colgroup>
             <thead>
               <tr>
-                <th>Order</th>
+                <th class="text-center">Order</th>
                 <th>Position</th>
                 <th>Election</th>
-                <th>Max Votes</th>
-                <th>Candidates</th>
-                <th>Actions</th>
+                <th class="text-center">Max Votes</th>
+                <th class="text-center">Candidates</th>
+                <th class="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
               {% for position in positions %}
               <tr data-election-id="{{ position.election_id }}">
-                <td><span class="order-badge">{{ position.display_order }}</span></td>
+                <td class="text-center"><span class="order-badge">{{ position.display_order }}</span></td>
                 <td>
                   <div class="fw-600">{{ position.title }}</div>
                   {% if position.description %}
@@ -120,7 +169,7 @@
                   {% endif %}
                 </td>
                 <td><span class="election-tag">{{ position.election_title or '—' }}</span></td>
-                <td>
+                <td class="text-center">
                   <span class="badge-count">
                     {% if position.max_votes == 1 %}
                       <i class="bi bi-person-fill me-1"></i>
@@ -130,13 +179,13 @@
                     {{ position.max_votes }}
                   </span>
                 </td>
-                <td>
+                <td class="text-center">
                   <a href="{{ url_for('admin.view_candidates') }}?position={{ position.id }}" class="cand-link">
                     <i class="bi bi-person-lines-fill"></i> View
                   </a>
                 </td>
-                <td>
-                  <div class="action-buttons">
+                <td class="text-center">
+                  <div class="action-buttons" style="justify-content:center;">
                     <button type="button" class="btn-action btn-action-edit" title="Edit"
                       onclick="openEditModal(
                         {{ position.id }},
